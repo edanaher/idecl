@@ -1,4 +1,5 @@
 from flask import Flask, request, send_file
+from functools import reduce
 import os
 import shutil
 import subprocess
@@ -22,13 +23,17 @@ def run():
     if proc.returncode != 0:
         return "Error compiling:\n:" + proc.stderr
 
-    proc = subprocess.run(["java", "-cp", tmp, "Main"], capture_output=True, text=True, timeout=30)
     if proc.returncode != 0:
         return "Error running program:\n:" + proc.stderr
+    proc = subprocess.Popen(["java", "-cp", tmp, "Main"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # TODO: timeout
+    while proc.returncode is None:
+        proc.wait()
+    if proc.returncode != 0:
+        return "Error compiling:\n:" + proc.stderr
 
-    shutil.remtree(tmp)
+    shutil.rmtree(tmp)
 
-    return proc.stdout
+    return reduce((lambda a, b : a + b), iter(proc.stdout.readline, ""), "")
 
 @app.route("/")
 def root():

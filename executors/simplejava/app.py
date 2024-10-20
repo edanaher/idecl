@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, Response, stream_with_context
 from functools import reduce
 import os
 import shutil
@@ -19,21 +19,23 @@ def run():
     with open(src, "w") as f:
         f.write(formdata["file"])
 
-    proc = subprocess.run(["javac", src], capture_output=True, text=True, timeout=30)
-    if proc.returncode != 0:
-        return "Error compiling:\n:" + proc.stderr
+    def stream():
+        proc = subprocess.run(["javac", src], capture_output=True, text=True, timeout=30)
+        if proc.returncode != 0:
+            yield "Error compiling program:\n" + proc.stderr
+            return
 
-    if proc.returncode != 0:
-        return "Error running program:\n:" + proc.stderr
-    proc = subprocess.Popen(["java", "-cp", tmp, "Main"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) # TODO: timeout
-    while proc.returncode is None:
+        proc = subprocess.Popen(["java", "-cp", tmp, "Main"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
+        while l := proc.stdout.readline():
+            yield l
         proc.wait()
-    if proc.returncode != 0:
-        return "Error compiling:\n:" + proc.stderr
+        if proc.returncode != 0:
+            return "Error running: " + proc.returncode + "\n:" + reduce((lambda a, b : a + b), iter(proc.stderr.readline, ""), "")
 
-    shutil.rmtree(tmp)
+        shutil.rmtree(tmp)
 
-    return reduce((lambda a, b : a + b), iter(proc.stdout.readline, ""), "")
+    response = Response(stream_with_context(stream()))
+    return response
 
 @app.route("/")
 def root():

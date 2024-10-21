@@ -6,12 +6,26 @@
   </head>
   <body>
     <button type="button" id="run">run</button><br>
-    <textarea rows="25" cols="80" id="code">public class Main {
+    <textarea rows="25" cols="80" id="code">import java.util.Scanner;
+
+public class Main {
   public static void main(String args[]) {
-  System.out.println("Hello Idecl!");
+    System.out.println("Hello!");
+    try {
+      Thread.sleep(1000);
+    } catch(Exception e) {}
+    System.out.println("What's your name?");
+    Scanner input = new Scanner(System.in);
+    System.out.println("Hello, " + input.next() + "!");
   }
 }
-    </textarea><br>
+        </textarea><br>
+    <textarea rows="8" cols="80" id="code2">public class Num {
+  public static inc(int n) {
+    return n + 1;
+  }
+}
+</textarea><br>
     <input type="text" id="stdin"></input>
     <button type="button" id="sendinput" disabled="true">Send on stdin</button><br>
     <pre id="output">

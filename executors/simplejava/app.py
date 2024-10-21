@@ -10,17 +10,16 @@ app = Flask(__name__)
 @app.route("/run", methods=["POST"])
 def run():
     formdata = request.form
-    if "file" not in formdata:
-        return "Error; no file provided"
 
     tmp = tempfile.mkdtemp()
     src = os.path.join(tmp, "Main.java")
     bin = os.path.join(tmp, "Main")
-    with open(src, "w") as f:
-        f.write(formdata["file"])
+    for k in formdata:
+        with open(os.path.join(tmp, k), "w") as f:
+            f.write(formdata[k])
 
     def stream():
-        proc = subprocess.run(["javac", src], capture_output=True, text=True, timeout=30)
+        proc = subprocess.run(["javac", "-cp", tmp, src], capture_output=True, text=True, timeout=30)
         if proc.returncode != 0:
             yield "0\nError compiling program:\n" + proc.stderr
             return

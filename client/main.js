@@ -25,7 +25,8 @@ window.onload = function() {
       document.getElementById("sendinput").disabled = true;
     }
     var formdata = new FormData();
-    formdata.append("file", document.getElementById("code").value)
+    formdata.append("Main.java", document.getElementById("code").value)
+    formdata.append("Num.java", document.getElementById("code2").value)
     xhr.send(formdata);
     document.getElementById("sendinput").disabled = false;
   })

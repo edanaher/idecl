@@ -45,6 +45,10 @@ def root():
 def js():
     return send_file("../../client/main.js")
 
+@app.route("/main.css")
+def css():
+    return send_file("../../client/main.css")
+
 @app.route("/<pid>/stdin", methods=["POST"])
 def stdin(pid):
     formdata = request.form

@@ -2,11 +2,14 @@
 <html>
   <head>
     <title>lightweight IDE for CLassrooms</title>
+    <link rel="stylesheet" href="main.css"></script>
     <script src="main.js"></script>
   </head>
   <body>
-    <button type="button" id="run">run</button><br>
-    <textarea rows="25" cols="80" id="code">import java.util.Scanner;
+    <div id="maincontent">
+      <div id="leftcontent">
+        <button type="button" id="run">run</button>
+        <textarea rows="25" cols="80" id="code">import java.util.Scanner;
 
 public class Main {
   public static void main(String args[]) {
@@ -19,15 +22,19 @@ public class Main {
     System.out.println("Hello, " + input.next() + "!");
   }
 }
-        </textarea><br>
-    <textarea rows="8" cols="80" id="code2">public class Num {
+        </textarea>
+        <textarea rows="8" cols="80" id="code2">public class Num {
   public static inc(int n) {
     return n + 1;
   }
 }
-</textarea><br>
-    <input type="text" id="stdin"></input>
-    <button type="button" id="sendinput" disabled="true">Send on stdin</button><br>
-    <pre id="output">
+        </textarea>
+      </div>
+      <div id="rightcontent">
+        <input type="text" id="stdin"></input>
+        <button type="button" id="sendinput" disabled="true">Send on stdin</button><br>
+        <pre id="output"></pre>
+      </div>
+    </div>
   </body>
 </html>

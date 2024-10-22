@@ -3,7 +3,7 @@ var saveFile = function() {
   localStorage.setItem("files." + filename, document.getElementById("code").value);
 }
 
-var rename = function(elem) {
+var renameFile = function(elem) {
   if (elem.classList.contains("editing"))
     return
   elem.classList.add("editing");
@@ -31,13 +31,43 @@ var rename = function(elem) {
   });
 }
 
-var loadFile = function() {
+var loadFile = function(filename) {
   if (this.classList.contains("open"))
-    return rename(this);
+    return renameFile(this);
   document.querySelector(".filename.open").classList.remove("open");
   localStorage.setItem("lastfile", this.innerText);
   document.getElementById("code").value = localStorage.getItem("files." + this.innerText);
   this.classList.add("open");
+}
+
+var addFile = function() {
+  var filenames = JSON.parse(localStorage.getItem("files"));
+  var max = -1;
+  for (var f in filenames) {
+    if (filenames[f] == "untitled")
+      max = 0;
+    else if (filenames[f].slice(0, 8) == "untitled")
+      max = Math.max(max, parseInt(filenames[f].slice(8)));
+  }
+  var newfile = max == -1 ? "untitled" : "untitled" + (max + 1);
+  filenames.push(newfile)
+  localStorage.setItem("files", JSON.stringify(filenames));
+  localStorage.setItem("files." + newfile, "");
+
+  // TODO: dedup this with initFiles
+  var filelist = document.getElementById("filelist");
+  var div = document.createElement("div");
+  div.innerText = newfile;
+  div.classList.add("filename");
+  filelist.appendChild(div);
+
+  // TODO: dedup with loadFile
+  document.querySelector(".filename.open").classList.remove("open");
+  localStorage.setItem("lastfile", div.innerText);
+  document.getElementById("code").value = localStorage.getItem("files." + div.innerText);
+  div.classList.add("open");
+
+  div.addEventListener("click", loadFile);
 }
 
 var runcode = function() {
@@ -137,6 +167,7 @@ window.onload = function() {
   document.getElementById("run").addEventListener("click", runcode);
   document.getElementById("sendinput").addEventListener("click", sendinput);
   document.getElementById("code").addEventListener("blur", saveFile);
+  document.getElementById("addfile").addEventListener("click", addFile);
   filenames = document.getElementsByClassName("filename");
   for (var i = 0; i < filenames.length; i++)
     filenames[i].addEventListener("click", loadFile);

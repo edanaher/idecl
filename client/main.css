@@ -1,3 +1,28 @@
+#filecontainer {
+  vertical-align: top;
+  display: inline-block;
+}
+
+#filelist {
+  vertical-align: top;
+}
+
+#filelist .filename {
+  border: 1px solid black;
+  padding: 2px;
+  margin: 2px;
+}
+
+#filelist .filename.open {
+  background-color: #CCFFCC;
+}
+
+#addfile {
+  border: 1px solid black;
+  margin: 2px;
+  width: 20px;
+}
+
 #leftcontent {
   display: inline-block;
 }

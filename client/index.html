@@ -7,28 +7,14 @@
   </head>
   <body>
     <div id="maincontent">
+      <div id="filecontainer">
+        <div id="filelist">
+        </div>
+        <div id="addfile">+</div>
+      </div>
       <div id="leftcontent">
         <button type="button" id="run">run</button>
-        <textarea rows="25" cols="80" id="code">import java.util.Scanner;
-
-public class Main {
-  public static void main(String args[]) {
-    System.out.println("Hello!");
-    try {
-      Thread.sleep(1000);
-    } catch(Exception e) {}
-    System.out.println("What's your name?");
-    Scanner input = new Scanner(System.in);
-    System.out.println("Hello, " + input.next() + "!");
-  }
-}
-        </textarea>
-        <textarea rows="8" cols="80" id="code2">public class Num {
-  public static inc(int n) {
-    return n + 1;
-  }
-}
-        </textarea>
+        <textarea rows="25" cols="80" id="code"></textarea>
       </div>
       <div id="rightcontent">
         <input type="text" id="stdin"></input>

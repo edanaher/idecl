@@ -31,7 +31,7 @@ var renameFile = function(elem) {
   });
 }
 
-var loadFile = function(filename) {
+var loadFile = function() {
   if (this.classList.contains("open"))
     return renameFile(this);
   document.querySelector(".filename.open").classList.remove("open");
@@ -68,6 +68,27 @@ var addFile = function() {
   div.classList.add("open");
 
   div.addEventListener("click", loadFile);
+}
+
+var removeFile = function() {
+  var div = document.querySelector(".filename.open");
+  var filename = div.innerText;
+
+  if (!confirm("Are you sure you want to delete " + filename + "?"))
+    return;
+
+  var filelist = document.getElementById("filelist");
+
+  // TODO: handle deleting first file.
+  loadFile.call(filelist.children[0]);
+  filelist.removeChild(div);
+
+  localStorage.removeItem("file." + filename);
+
+  var filenames = JSON.parse(localStorage.getItem("files"));
+  filenames.splice(filenames.indexOf(filename), 1);
+  localStorage.setItem("files", JSON.stringify(filenames));
+
 }
 
 var runcode = function() {
@@ -168,6 +189,7 @@ window.onload = function() {
   document.getElementById("sendinput").addEventListener("click", sendinput);
   document.getElementById("code").addEventListener("blur", saveFile);
   document.getElementById("addfile").addEventListener("click", addFile);
+  document.getElementById("removefile").addEventListener("click", removeFile);
   filenames = document.getElementsByClassName("filename");
   for (var i = 0; i < filenames.length; i++)
     filenames[i].addEventListener("click", loadFile);

@@ -3,7 +3,37 @@ var saveFile = function() {
   localStorage.setItem("files." + filename, document.getElementById("code").value);
 }
 
+var rename = function(elem) {
+  if (elem.classList.contains("editing"))
+    return
+  elem.classList.add("editing");
+  var name = elem.innerText;
+  elem.innerText = ""
+  var editbox = document.createElement("input");
+  editbox.value = name;
+  elem.appendChild(editbox);
+  editbox.focus();
+  editbox.addEventListener("blur", function() {
+    var newname = editbox.value;
+    elem.removeChild(editbox);
+    elem.innerText = editbox.value;
+    elem.classList.remove("editing");
+
+    var files = JSON.parse(localStorage.getItem("files"));
+    for (var i = 0; i < files.length; i++)
+      if (files[i] == name)
+        files[i] = newname;
+    localStorage.setItem("files", JSON.stringify(files));
+
+    var contents = localStorage.getItem("files." + name);
+    localStorage.setItem("files." + newname, contents);
+    localStorage.removeItem("files." + name);
+  });
+}
+
 var loadFile = function() {
+  if (this.classList.contains("open"))
+    return rename(this);
   document.querySelector(".filename.open").classList.remove("open");
   localStorage.setItem("lastfile", this.innerText);
   document.getElementById("code").value = localStorage.getItem("files." + this.innerText);
@@ -84,11 +114,11 @@ public class Main {
 
 var initFiles = function() {
   var lastfile = localStorage.getItem("lastfile");
-  var filelist = document.getElementById("filelist");
-  if (!lastfile in filelist)
-    lastfile = filelist[0];
-  document.getElementById("code").value = localStorage.getItem("files." + lastfile);
   var filenames = JSON.parse(localStorage.getItem("files"));
+  if (!(lastfile in filenames))
+    lastfile = filenames[0];
+  document.getElementById("code").value = localStorage.getItem("files." + lastfile);
+  var filelist = document.getElementById("filelist");
 
   for(f in filenames) {
     var div = document.createElement("div");

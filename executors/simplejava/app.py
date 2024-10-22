@@ -4,8 +4,32 @@ import os
 import shutil
 import subprocess
 import tempfile
+import oauth
 
 app = Flask(__name__)
+
+# TODO: Put these routes in oauth.py
+app.add_url_rule("/authorize/google", view_func=oauth.authorize)
+app.add_url_rule("/callback/google", view_func=oauth.oauth2_callback)
+# TODO: move oauth config into oauth.py
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+app.config["DATABASE_URI"] = "sqlite:///idecl.sqlite"
+app.config['OAUTH2_PROVIDERS'] = {
+    # Google OAuth 2.0 documentation:
+    # https://developers.google.com/identity/protocols/oauth2/web-server#httprest
+    'google': {
+        'client_id': os.environ.get('GOOGLE_CLIENT_ID'),
+        'client_secret': os.environ.get('GOOGLE_CLIENT_SECRET'),
+        'authorize_url': 'https://accounts.google.com/o/oauth2/auth',
+        'token_url': 'https://accounts.google.com/o/oauth2/token',
+        'userinfo': {
+            'url': 'https://www.googleapis.com/oauth2/v3/userinfo',
+            'email': lambda json: json['email'],
+        },
+        'scopes': ['https://www.googleapis.com/auth/userinfo.email']
+    }
+}
+
 
 @app.route("/run", methods=["POST"])
 def run():
@@ -36,6 +60,10 @@ def run():
 
     response = Response(stream_with_context(stream()))
     return response
+
+@app.route("/login")
+def login():
+    return send_file("../../client/login.html")
 
 @app.route("/")
 def root():

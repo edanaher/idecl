@@ -169,19 +169,22 @@ public class Main {
 var initFiles = function() {
   var lastfile = localStorage.getItem("lastfile");
   var filenames = JSON.parse(localStorage.getItem("files"));
-  if (!(lastfile in filenames))
-    lastfile = filenames[0];
   document.getElementById("code").value = localStorage.getItem("files." + lastfile);
   var filelist = document.getElementById("filelist");
 
+  var opened = false;
   for(f in filenames) {
     var div = document.createElement("div");
     div.innerText = filenames[f];
     div.classList.add("filename");
-    if (filenames[f] == lastfile)
+    if (filenames[f] == lastfile) {
       div.classList.add("open");
+      opened = true;
+    }
     filelist.appendChild(div);
   }
+  if (!opened)
+    div.children[0].classList.add("open")
 }
 
 window.onload = function() {

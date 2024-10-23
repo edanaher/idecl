@@ -15,54 +15,54 @@ Milestone 1: PoC running Java on the server
 Milestone 2: Usable for writing unit tests to copy to another platform.
 - [X] True multi-file editing, including storing files in localStorage
 - [X] Authentication
-- [] Basic host security
-  - [] sandboxing programs
-- [] Unit test creation and running.
+- [ ] Basic host security
+  - [ ] sandboxing programs
+- [ ] Unit test creation and running.
 
 Milestone 2.5?: UX
-- [] Real text editor (Monaco?  **CodeMirror**? ace.c9.io?)
-- [] Inline text entry for stdin; terminal emulator? (xtermjs? terminal.js)
-- [] Maybe some pretty.  Maybe keep the simple style.
+- [ ] Real text editor (Monaco?  **CodeMirror**? ace.c9.io?)
+- [ ] Inline text entry for stdin; terminal emulator? (xtermjs? terminal.js)
+- [ ] Maybe some pretty.  Maybe keep the simple style.
 
 Milestone 3: A real server
-- [] Use a real python server, ideally evented, to support multiple simultaneous users
-- [] Reasonable Deployment
-- [] Store files server-side
+- [ ] Use a real python server, ideally evented, to support multiple simultaneous users
+- [ ] Reasonable Deployment
+- [ ] Store files server-side
 
 Milestone 4: Projects
-- [] Starter code/template for the project
-- [] Tests
-- [] Solution for testing tests/giving to students after
+- [ ] Starter code/template for the project
+- [ ] Tests
+- [ ] Solution for testing tests/giving to students after
 
 Milestone 5: MVP Classroom
-- [] Student management/invites
+- [ ] Student management/invites
   - Basic RBAC
-- [] Better security
-  - [] enforced timeouts (time for compile, CPU for program)
-  - [] queueing compiles to avoid OOM
-- [] View student code
-- [] Cache builds for quick reruns (nix? bazel? manual hashing?)
-- [] Backups (S3)
-- [] Import/export of some sort
+- [ ] Better security
+  - [ ] enforced timeouts (time for compile, CPU for program)
+  - [ ] queueing compiles to avoid OOM
+- [ ] View student code
+- [ ] Cache builds for quick reruns (nix? bazel? manual hashing?)
+- [ ] Backups (S3)
+- [ ] Import/export of some sort
 
 Milestone 6: Full classroom
-- [] History to help detect cheating
-- [] UI to show student status, easily look at code
-- [] Hide tests or other files from students
-- [] Hide implementation of specific methods from students
-- [] Assignment (markdown) within the platform
-- [] Ability to pull in libraries
+- [ ] History to help detect cheating
+- [ ] UI to show student status, easily look at code
+- [ ] Hide tests or other files from students
+- [ ] Hide implementation of specific methods from students
+- [ ] Assignment (markdown) within the platform
+- [ ] Ability to pull in libraries
 
 Milestone 6b: Deployable
-- [] "One button" deploy on Digital Ocean or other cheap cloud
-- [] Web UI configuration for things like backups
-- [] Documentation
+- [ ] "One button" deploy on Digital Ocean or other cheap cloud
+- [ ] Web UI configuration for things like backups
+- [ ] Documentation
 
 Future:
-- [] Cheating detection (MOSS, behavior like typing a lot with no backspaces)
-- [] Integration with github for storing student code
-- [] Running code client-side with CheerpJ/CheerpX/V86
-- [] Persistent filesystem/container per student (maybe in a milestone?  Not sure if this is needed)
-- [] Cost savings: spin down VM when not in use?
-- [] Scaling: spin up more/bigger VM's for high demand (may be milestone 5/6?)
-- [] Custom run/compile commands
+- [ ] Cheating detection (MOSS, behavior like typing a lot with no backspaces)
+- [ ] Integration with github for storing student code
+- [ ] Running code client-side with CheerpJ/CheerpX/V86
+- [ ] Persistent filesystem/container per student (maybe in a milestone?  Not sure if this is needed)
+- [ ] Cost savings: spin down VM when not in use?
+- [ ] Scaling: spin up more/bigger VM's for high demand (may be milestone 5/6?)
+- [ ] Custom run/compile commands

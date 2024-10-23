@@ -19,6 +19,9 @@ var renameFile = function(elem) {
     elem.innerText = editbox.value;
     elem.classList.remove("editing");
 
+    if (newname == name)
+      return;
+
     var files = JSON.parse(localStorage.getItem("files"));
     for (var i = 0; i < files.length; i++)
       if (files[i] == name)

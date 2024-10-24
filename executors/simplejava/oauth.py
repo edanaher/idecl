@@ -117,4 +117,5 @@ def oauth2_callback(provider):
         login_user(User(email))
         return redirect("/")
 
+    print("Unknown user: " + str(email))
     return redirect("/unknown")

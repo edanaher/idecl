@@ -26,7 +26,6 @@ def run():
             f.write(formdata[k])
         if testing:
             if (k.startswith("Test") and k.endswith(".java")) or k.endswith("Test.java") or k.endswith("Tests.java"):
-                print("Testing " + k)
                 tests.append(k)
 
     if testing and not tests:

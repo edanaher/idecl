@@ -94,14 +94,15 @@ var removeFile = function() {
 
 }
 
-var runcode = function() {
+var runcommand = function(test) {
   saveFile();
   pid = 0;
-  var runbutton = document.getElementById("run");
-  runbutton.innerText = "running...";
+  var runbutton = document.getElementById(test ? "runtests" : "run");
+  runbutton.innerText = test ? "running tests..." :"running...";
   var output = document.getElementById("output");
   var xhr = new XMLHttpRequest();
-  xhr.open("POST", "/run", true);
+  var params = test ? "?test=1" : ""
+  xhr.open("POST", "/run" + params, true);
   xhr.onprogress = function() {
     if (xhr.readyState === XMLHttpRequest.DONE || xhr.readyState === XMLHttpRequest.LOADING) {
       if(xhr.status != 200)
@@ -116,7 +117,7 @@ var runcode = function() {
   };
   xhr.onload = function() {
     xhr.onprogress();
-    runbutton.innerText = "run";
+    runbutton.innerText = test ? "run tests" : "run";
     document.getElementById("sendinput").disabled = true;
   }
   var formdata = new FormData();
@@ -126,6 +127,14 @@ var runcode = function() {
   formdata.append("Main.java", document.getElementById("code").value)
   xhr.send(formdata);
   document.getElementById("sendinput").disabled = false;
+}
+
+var runcode = function() {
+  runcommand(false);
+}
+
+var runtests = function() {
+  runcommand(true);
 }
 
 var sendinput = function() {
@@ -233,6 +242,7 @@ window.onload = function() {
     bootstrapStorage();
   initFiles();
   document.getElementById("run").addEventListener("click", runcode);
+  document.getElementById("runtests").addEventListener("click", runtests);
   document.getElementById("sendinput").addEventListener("click", sendinput);
   document.getElementById("code").addEventListener("blur", saveFile);
   document.getElementById("addfile").addEventListener("click", addFile);

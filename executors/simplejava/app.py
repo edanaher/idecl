@@ -15,6 +15,8 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 def run():
     formdata = request.form
 
+    testing = request.args.get("test") == "1"
+
     tmp = tempfile.mkdtemp()
     src = os.path.join(tmp, "Main.java")
     bin = os.path.join(tmp, "Main")
@@ -23,18 +25,27 @@ def run():
             f.write(formdata[k])
 
     def stream():
-        proc = subprocess.run(["javac", "-cp", tmp, src], capture_output=True, text=True, timeout=30)
+        if testing:
+            proc = subprocess.run(["javac", "-cp", f"junit/junit-4.13.2.jar:{tmp}", f"{tmp}/TestNum.java"], capture_output=True, text=True, timeout=30)
+        else:
+            proc = subprocess.run(["javac", "-cp", tmp, src], capture_output=True, text=True, timeout=30)
         if proc.returncode != 0:
-            yield "0\nError compiling program:\n" + proc.stderr
+            yield f"0\nError compiling {'tests' if testing else 'program'}:\n" + proc.stderr
             return
 
-        proc = subprocess.Popen(["java", "-cp", tmp, "Main"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
+        if testing:
+            proc = subprocess.Popen(["java", "-cp", f"junit/junit-4.13.2.jar:junit/hamcrest-core-1.3.jar:{tmp}:junit", "org.junit.runner.JUnitCore", "TestNum"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
+        else:
+            proc = subprocess.Popen(["java", "-cp", tmp, "Main"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
         yield str(proc.pid) + "\n"
+        # TODO: intersperse stdout and stderr
         while l := proc.stdout.readline():
+            yield l
+        while l := proc.stderr.readline():
             yield l
         proc.wait()
         if proc.returncode != 0:
-            return "Error running: " + proc.returncode + "\n:" + reduce((lambda a, b : a + b), iter(proc.stderr.readline, ""), "")
+            return "Error running: " + str(proc.returncode) + "\n:" + reduce((lambda a, b : a + b), iter(proc.stderr.readline, ""), "")
 
         shutil.rmtree(tmp)
 

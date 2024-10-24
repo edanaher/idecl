@@ -23,16 +23,18 @@ Milestone 2.5?: UX
 - [ ] Real text editor (Monaco?  **CodeMirror**? ace.c9.io?)
 - [ ] Inline text entry for stdin; terminal emulator? (xtermjs? terminal.js)
 - [ ] Maybe some pretty.  Maybe keep the simple style.
+- [ ] Directories for files
 
 Milestone 3: A real server
 - [ ] Use a real python server, ideally evented, to support multiple simultaneous users
 - [ ] Reasonable Deployment
-- [ ] Store files server-side
+- [ ] Store files server-side tied to user account
 
 Milestone 4: Projects
 - [ ] Starter code/template for the project
 - [ ] Tests
 - [ ] Solution for testing tests/giving to students after
+- [ ] UI for managing all of this
 
 Milestone 5: MVP Classroom
 - [ ] Student management/invites
@@ -40,6 +42,7 @@ Milestone 5: MVP Classroom
 - [ ] Better security
   - [ ] enforced timeouts (time for compile, CPU for program)
   - [ ] queueing compiles to avoid OOM
+  - [ ] block Internet access
 - [ ] View student code
 - [ ] Cache builds for quick reruns (nix? bazel? manual hashing?)
 - [ ] Backups (S3)

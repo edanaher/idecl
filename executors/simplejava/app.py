@@ -20,13 +20,21 @@ def run():
     tmp = tempfile.mkdtemp()
     src = os.path.join(tmp, "Main.java")
     bin = os.path.join(tmp, "Main")
+    tests = []
     for k in formdata:
         with open(os.path.join(tmp, k), "w") as f:
             f.write(formdata[k])
+        if testing:
+            if (k.startswith("Test") and k.endswith(".java")) or k.endswith("Test.java") or k.endswith("Tests.java"):
+                print("Testing " + k)
+                tests.append(k)
+
+    if testing and not tests:
+        return "No tests found; tests should start with Test or end with Test or Tests.  E.g., TestNum.java, NumTest.java, or NumTests.java"
 
     def stream():
         if testing:
-            proc = subprocess.run(["javac", "-cp", f"junit/junit-4.13.2.jar:{tmp}", f"{tmp}/TestNum.java"], capture_output=True, text=True, timeout=30)
+            proc = subprocess.run(["javac", "-cp", f"junit/junit-4.13.2.jar:{tmp}"] + [f"{tmp}/{t}" for t in tests], capture_output=True, text=True, timeout=30)
         else:
             proc = subprocess.run(["javac", "-cp", tmp, src], capture_output=True, text=True, timeout=30)
         if proc.returncode != 0:
@@ -34,7 +42,7 @@ def run():
             return
 
         if testing:
-            proc = subprocess.Popen(["java", "-cp", f"junit/junit-4.13.2.jar:junit/hamcrest-core-1.3.jar:{tmp}:junit", "org.junit.runner.JUnitCore", "TestNum"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
+            proc = subprocess.Popen(["java", "-cp", f"junit/junit-4.13.2.jar:junit/hamcrest-core-1.3.jar:{tmp}:junit", "org.junit.runner.JUnitCore"] + [t.rstrip('.java') for t in tests], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
         else:
             proc = subprocess.Popen(["java", "-cp", tmp, "Main"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
         yield str(proc.pid) + "\n"

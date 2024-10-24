@@ -17,16 +17,18 @@ Milestone 2: Usable for writing unit tests to copy to another platform.
 - [X] Authentication
 - [ ] Basic host security
   - [ ] sandboxing programs
-- [ ] Unit test creation and running.
+  - [ ] stdin restricted to known pids
+- [X] Unit test creation and running.
 
 Milestone 2.5?: UX
-- [ ] Real text editor (Monaco?  **CodeMirror**? ace.c9.io?)
+- [X] Real text editor (Monaco?  **CodeMirror**? ace.c9.io?)
 - [ ] Inline text entry for stdin; terminal emulator? (xtermjs? terminal.js)
 - [ ] Maybe some pretty.  Maybe keep the simple style.
 - [ ] Directories for files
 
 Milestone 3: A real server
 - [ ] Use a real python server, ideally evented, to support multiple simultaneous users
+- [ ] Use nginx as frontend and for and static assets
 - [ ] Reasonable Deployment
 - [ ] Store files server-side tied to user account
 
@@ -66,14 +68,18 @@ Milestone 6b: Deployable
   - custom DNS? NFS?
   - if custom, detect when host down, provide useful error?
 
-Future:
+Milestone 7: "Real product"
+- [ ] API
+- [ ] Mobile interface
+- [ ] Custom run/compile commands
+- [ ] Cost savings: spin down VM when not in use?
+- [ ] Scaling: spin up more/bigger VM's for high demand (may be milestone 5/6?)
+
+Bonus:
 - [ ] Cheating detection (MOSS, behavior like typing a lot with no backspaces)
 - [ ] Integration with github for storing student code
 - [ ] Running code client-side with CheerpJ/CheerpX/V86
 - [ ] Persistent filesystem/container per student (maybe in a milestone?  Not sure if this is needed)
-- [ ] Cost savings: spin down VM when not in use?
-- [ ] Scaling: spin up more/bigger VM's for high demand (may be milestone 5/6?)
-- [ ] Custom run/compile commands
 - [ ] Performance optimizations
   - [ ] Domain/cookie?
   - [ ] Version in cookie so first load includes updated files?

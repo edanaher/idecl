@@ -146,7 +146,7 @@ var sendinput = function() {
 }
 
 var bootstrapStorage = function() {
-    localStorage.setItem("files", JSON.stringify(["Main.java", "Num.java"]));
+    localStorage.setItem("files", JSON.stringify(["Main.java", "Num.java", "TestNum.java"]));
     localStorage.setItem("lastfile", "Main.java");
     localStorage.setItem("files.Main.java", `import java.util.Scanner;
 
@@ -154,17 +154,54 @@ public class Main {
   public static void main(String args[]) {
     System.out.println("Hello!");
     try {
-      //Thread.sleep(1000);
+      Thread.sleep(1000);
     } catch(Exception e) {}
     System.out.println("What's your name?");
     Scanner input = new Scanner(System.in);
     System.out.println("Hello, " + input.next() + "!");
+    System.out.println("11 + 23 is " + Num.add(11, 23));
   }
 }
 `);
-  localStorage.setItem("files.Num.java", `// Num`);
+  localStorage.setItem("files.Num.java", `public class Num {
+  public static int add(int a, int b) {
+    return a + b;
+  }
+}`);
+  localStorage.setItem("files.TestNum.java", `import org.junit.*;
 
+public class TestNum extends CodeTestHelper
+{
+
+  @Test
+  public void checkAdd()
+  {
+    assertEquals("1 plus 2", 3, Num.add(1, 2));
+    assertEquals("5 plus 8", 13, Num.add(5, 8));
+  }
+}`);
 }
+
+var resetFiles = function() {
+  if (!confirm("Are you sure you want to reset all your files to the defaults?  This cannot be undone."))
+    return;
+  if (confirm("Really?  Click Cancel to reset; OK will leave your files."))
+    return;
+
+  var filenames = JSON.parse(localStorage.getItem("files"));
+  localStorage.removeItem("files", "");
+
+  for (var i = 0; i < filenames.length; i++)
+    localStorage.removeItem("file." + filenames[i]);
+
+  var filelist = document.getElementById("filelist");
+  while (filelist.firstChild)
+    filelist.removeChild(filelist.lastChild);
+
+  bootstrapStorage();
+  initFiles();
+}
+
 
 var initFiles = function() {
   var lastfile = localStorage.getItem("lastfile");
@@ -185,6 +222,10 @@ var initFiles = function() {
   }
   if (!opened)
     div.children[0].classList.add("open")
+
+  filenames = document.getElementsByClassName("filename");
+  for (var i = 0; i < filenames.length; i++)
+    filenames[i].addEventListener("click", loadFile);
 }
 
 window.onload = function() {
@@ -196,7 +237,5 @@ window.onload = function() {
   document.getElementById("code").addEventListener("blur", saveFile);
   document.getElementById("addfile").addEventListener("click", addFile);
   document.getElementById("removefile").addEventListener("click", removeFile);
-  filenames = document.getElementsByClassName("filename");
-  for (var i = 0; i < filenames.length; i++)
-    filenames[i].addEventListener("click", loadFile);
+  document.getElementById("resetfiles").addEventListener("click", resetFiles);
 }

@@ -59,3 +59,17 @@
   display: inline-block;
   vertical-align: top;
 }
+
+#code {
+  position: relative;
+  width: 40vw;
+  height: 90vh;
+  top: 4px;
+
+}
+
+#output {
+  width: 40vw;
+  height: 90vh;
+  overflow: auto;
+}

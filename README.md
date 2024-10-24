@@ -44,9 +44,10 @@ Milestone 5: MVP Classroom
   - [ ] queueing compiles to avoid OOM
   - [ ] block Internet access
 - [ ] View student code
-- [ ] Cache builds for quick reruns (nix? bazel? manual hashing?)
+- [ ] Cache builds for quick reruns (nix? bazel? manual hashing?) (maybe next milestone?)
 - [ ] Backups (S3)
 - [ ] Import/export of some sort
+- [ ] Detect stdin usage on tests
 
 Milestone 6: Full classroom
 - [ ] History to help detect cheating
@@ -60,6 +61,10 @@ Milestone 6b: Deployable
 - [ ] "One button" deploy on Digital Ocean or other cheap cloud
 - [ ] Web UI configuration for things like backups
 - [ ] Documentation
+- [ ] DNS of some sort
+  - Teachers register via oauth against allowlist, get token for update?
+  - custom DNS? NFS?
+  - if custom, detect when host down, provide useful error?
 
 Future:
 - [ ] Cheating detection (MOSS, behavior like typing a lot with no backspaces)
@@ -69,3 +74,6 @@ Future:
 - [ ] Cost savings: spin down VM when not in use?
 - [ ] Scaling: spin up more/bigger VM's for high demand (may be milestone 5/6?)
 - [ ] Custom run/compile commands
+- [ ] Performance optimizations
+  - [ ] Domain/cookie?
+  - [ ] Version in cookie so first load includes updated files?

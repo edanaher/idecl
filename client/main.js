@@ -178,8 +178,9 @@ public class Main {
   }
 }`);
   localStorage.setItem("files.TestNum.java", `import org.junit.*;
+import static org.junit.Assert.*;
 
-public class TestNum extends CodeTestHelper
+public class TestNum
 {
 
   @Test

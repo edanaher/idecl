@@ -40,7 +40,13 @@ var loadFile = function() {
     return renameFile(this);
   document.querySelector(".filename.open").classList.remove("open");
   localStorage.setItem("lastfile", this.innerText);
-  editor.session.setValue(localStorage.getItem("files." + this.innerText), -1);
+  var sess = sessions[this.innerText]
+  if (!sess) {
+    sess = ace.createEditSession(localStorage.getItem("files." + this.innerText));
+    sess.setMode("ace/mode/java");
+    sessions[this.innerText] = sess;
+  }
+  editor.setSession(sess);
   this.classList.add("open");
 }
 
@@ -216,7 +222,10 @@ var resetFiles = function() {
 var initFiles = function() {
   var lastfile = localStorage.getItem("lastfile");
   var filenames = JSON.parse(localStorage.getItem("files"));
-  editor.setValue(localStorage.getItem("files." + lastfile), -1);
+  var sess = ace.createEditSession(localStorage.getItem("files." + lastfile));
+  sess.setMode("ace/mode/java");
+  editor.setSession(sess);
+  sessions[lastfile] = sess;
   var filelist = document.getElementById("filelist");
 
   var opened = false;
@@ -240,7 +249,7 @@ var initFiles = function() {
 
 var initAce = function() {
   editor = ace.edit("code");
-  editor.session.setMode("ace/mode/java");
+  sessions = {}
 }
 
 window.onload = function() {

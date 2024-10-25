@@ -14,6 +14,23 @@
           jdk
         ];
       };
+      packages.idecl-java-runner = pkgs.dockerTools.buildImage {
+          name = "idecl-java-runner";
+          tag = "0.0.1";
+
+          copyToRoot = pkgs.buildEnv {
+            name = "image-root";
+            paths = [ pkgs.jdk ];
+            pathsToLink = "/bin";
+          };
+
+          config = {
+            Env = [ "PATH=/bin/" ];
+            Cmd = [ "${pkgs.bash}/bin/bash" ]; # TODO: this is for testing and should be removed
+          };
+
+          created = "now";
+        };
     }
   );
 }

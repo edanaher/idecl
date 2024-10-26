@@ -98,3 +98,4 @@ def stdin(containerid):
     return ""
 
 import oauth
+import filestore

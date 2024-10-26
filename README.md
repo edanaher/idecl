@@ -85,3 +85,4 @@ Bonus:
   - [ ] Domain/cookie?
   - [ ] Version in cookie so first load includes updated files?
 - [ ] Switch to CodeMirror for better support?
+- [ ] Figure out why Docker is slow and fix or replace it.

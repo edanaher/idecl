@@ -44,7 +44,7 @@ Milestone 5: MVP Classroom
 - [ ] Better security
   - [ ] enforced timeouts (time for compile, CPU for program)
   - [ ] queueing compiles to avoid OOM
-  - [ ] block Internet access
+  - [X] block Internet access
 - [ ] View student code
 - [ ] Cache builds for quick reruns (nix? bazel? manual hashing?) (maybe next milestone?)
 - [ ] Backups (S3)

@@ -86,3 +86,4 @@ Bonus:
   - [ ] Version in cookie so first load includes updated files?
 - [ ] Switch to CodeMirror for better support?
 - [ ] Figure out why Docker is slow and fix or replace it.
+  - [ ] Looks like it's container startup; execing in an existing one is fast.  So a container pool...  Or not docker.

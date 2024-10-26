@@ -20,7 +20,9 @@
 
           copyToRoot = pkgs.buildEnv {
             name = "image-root";
-            paths = [ pkgs.jdk ];
+            paths = [ pkgs.jdk
+              pkgs.busybox # For debugging
+            ];
             pathsToLink = "/bin";
           };
 

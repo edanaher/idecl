@@ -103,7 +103,7 @@ var removeFile = function() {
 
 var runcommand = function(test) {
   saveFile();
-  pid = 0;
+  container = undefined;
   var runbutton = document.getElementById(test ? "runtests" : "run");
   runbutton.innerText = test ? "running tests..." :"running...";
   var output = document.getElementById("output");
@@ -117,7 +117,7 @@ var runcommand = function(test) {
       else {
         i = xhr.response.indexOf("\n");
         if (i)
-          pid = parseInt(xhr.response.slice(0, i));
+          container = xhr.response.slice(0, i);
         output.textContent = xhr.response.slice(i + 1);
       }
     }
@@ -147,7 +147,7 @@ var sendinput = function() {
   document.getElementById("sendinput").disabled = true;
   var stdin = document.getElementById("stdin");
   var xhr = new XMLHttpRequest();
-  xhr.open("POST", "/" + pid + "/stdin", true);
+  xhr.open("POST", "/" + container + "/stdin", true);
   xhr.onload = function() {
     if (xhr.readyState === XMLHttpRequest.DONE) {
       document.getElementById("sendinput").disabled = false;

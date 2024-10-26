@@ -42,8 +42,9 @@ def run():
         if testing:
             proc = subprocess.Popen(["docker", "run", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "idecl-java-runner", "java", "-cp", f"/junit/junit-4.13.2.jar:/junit/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"] + [t.rstrip('.java') for t in tests], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
         else:
-            proc = subprocess.Popen(["docker", "run", f"-v{tmp}:/app", "idecl-java-runner", "java", "-cp", "/app", "Main"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
-        yield str(proc.pid) + "\n"
+            os.mkfifo(os.path.join(tmp, "stdin.fifo"))
+            proc = subprocess.Popen(["docker", "run", f"-v{tmp}:/app", "idecl-java-runner", "/bin/sh", "-c", "java -cp /app Main <> /app/stdin.fifo"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
+        yield f"{tmp.replace('/', '_')}\n"
         # TODO: intersperse stdout and stderr
         while l := proc.stdout.readline():
             yield l
@@ -88,11 +89,11 @@ def css():
     return send_file("../../client/main.css")
 
 @login_required
-@app.route("/<pid>/stdin", methods=["POST"])
-def stdin(pid):
+@app.route("/<containerid>/stdin", methods=["POST"])
+def stdin(containerid):
     formdata = request.form
     input = formdata["input"]
-    with open(f"/proc/{pid}/fd/0", "w") as f:
+    with open(os.path.join(containerid.replace("_", "/"), "stdin.fifo"), "w") as f:
         f.write(input + "\n")
     return ""
 

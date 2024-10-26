@@ -15,19 +15,19 @@ Milestone 1: PoC running Java on the server
 Milestone 2: Usable for writing unit tests to copy to another platform.
 - [X] True multi-file editing, including storing files in localStorage
 - [X] Authentication
-- [ ] Basic host security
-  - [ ] sandboxing programs
-  - [ ] stdin restricted to known pids
+- [X] Basic host security
+  - [X] sandboxing programs
+  - [!] stdin restricted to known pids
 - [X] Unit test creation and running.
 
 Milestone 2.5?: UX
-- [X] Real text editor (Monaco?  **CodeMirror**? ace.c9.io?)
+- [X] Real text editor (Monaco?  CodeMirror? **ace.c9.io?**)
 - [ ] Inline text entry for stdin; terminal emulator? (xtermjs? terminal.js)
 - [ ] Maybe some pretty.  Maybe keep the simple style.
 - [ ] Directories for files
 
 Milestone 3: A real server
-- [ ] Use a real python server, ideally evented, to support multiple simultaneous users
+- [X] Use a real python server, ~ideally evented~, to support multiple simultaneous users
 - [ ] Use nginx as frontend and for and static assets
 - [ ] Reasonable Deployment
 - [ ] Store files server-side tied to user account
@@ -58,6 +58,7 @@ Milestone 6: Full classroom
 - [ ] Hide implementation of specific methods from students
 - [ ] Assignment (markdown) within the platform
 - [ ] Ability to pull in libraries
+- [ ] Dark mode
 
 Milestone 6b: Deployable
 - [ ] "One button" deploy on Digital Ocean or other cheap cloud
@@ -83,3 +84,4 @@ Bonus:
 - [ ] Performance optimizations
   - [ ] Domain/cookie?
   - [ ] Version in cookie so first load includes updated files?
+- [ ] Switch to CodeMirror for better support?

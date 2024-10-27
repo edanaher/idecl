@@ -1,4 +1,4 @@
-from flask import Flask, redirect, request, send_file, session, Response, stream_with_context
+from flask import Flask, redirect, render_template, request, send_file, session, Response, stream_with_context
 from flask_login import login_required
 from functools import reduce
 import os
@@ -76,7 +76,7 @@ def unknown():
 @app.route("/")
 @login_required
 def root():
-    return send_file("../../client/index.html")
+    return render_template("editor.html", project_name="scratchpad")
 
 @login_required
 @app.route("/main.js")

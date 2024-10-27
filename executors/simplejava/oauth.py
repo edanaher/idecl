@@ -50,7 +50,7 @@ class User:
 
 @login_manager.user_loader
 def load_user(id):
-    return User(id)
+    return id
 
 # TODO: Why does <provider> not work here?
 @app.route("/authorize/<provider>")

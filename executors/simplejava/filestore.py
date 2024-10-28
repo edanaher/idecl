@@ -1,6 +1,7 @@
 from flask import Flask, abort, redirect, request, send_file, session, Response, stream_with_context
 from flask_login import login_required
 from sqlalchemy import text
+import json
 import os
 
 from app import app
@@ -28,3 +29,15 @@ def save_project(pid):
         conn.commit()
 
     return "Success"
+
+@login_required
+@app.route("/projects/<pid>/load", methods=["GET"])
+def load_project(pid):
+    formdata = request.form
+    with engine.connect() as conn:
+        row = conn.execute(text("SELECT * FROM projects JOIN users ON owner=users.id WHERE email=:email AND projects.id=:pid"), [{"pid": pid, "email": "edanaher@gmail.com"}]).first()
+        if not row:
+            abort(401)
+        rows = conn.execute(text("SELECT id, name, contents FROM files WHERE project_id=:pid"), [{"pid": pid}]).all()
+
+    return json.dumps([{"id": r.id, "name": r.name, "contents": r.contents} for r in rows])

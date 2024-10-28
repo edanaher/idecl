@@ -143,6 +143,46 @@ var saveToServer = function() {
   xhr.send(formdata);
 }
 
+var loadFromServer = function() {
+  var loadbutton = document.getElementById("loadfiles");
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", baseURL() + "/load", true);
+  xhr.onerror = function() {
+    loadbutton.textContent = "Error talking to server";
+  }
+  xhr.onload = function() {
+    var serverFiles = JSON.parse(xhr.response); 
+
+    // TODO: dedupe with reset
+    var filenames = JSON.parse(localStorage.getItem(localFileStore()));
+    localStorage.removeItem(localFileStore(), "");
+
+    for (var i = 0; i < filenames.length; i++)
+      localStorage.removeItem(localFileStore(filenames[i]));
+
+    var filelist = document.getElementById("filelist");
+    while (filelist.firstChild)
+      filelist.removeChild(filelist.lastChild);
+
+    // Do this somewhere better?
+    filenames = [];
+    for (var i = 0; i < serverFiles.length; i++) {
+      localStorage.setItem(localFileStore(serverFiles[i].name), serverFiles[i].contents);
+      filenames = filenames.concat(serverFiles[i].name);
+    }
+
+    localStorage.setItem(localFileStore(), JSON.stringify(filenames));
+    localStorage.setItem("lastfile|" + projectId(), serverFiles[0].name);
+
+    initFiles();
+    loadbutton.innerText = "load";
+  }
+  xhr.send();
+  loadbutton.innerText = "loading";
+
+  return
+}
+
 var runcommand = function(test) {
   saveFile();
   container = undefined;
@@ -306,5 +346,6 @@ window.onload = function() {
   document.getElementById("addfile").addEventListener("click", addFile);
   document.getElementById("removefile").addEventListener("click", removeFile);
   document.getElementById("savefiles").addEventListener("click", saveToServer);
+  document.getElementById("loadfiles").addEventListener("click", loadFromServer);
   document.getElementById("resetfiles").addEventListener("click", resetFiles);
 }

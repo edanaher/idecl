@@ -17,7 +17,7 @@ Milestone 2: Usable for writing unit tests to copy to another platform.
 - [X] Authentication
 - [X] Basic host security
   - [X] sandboxing programs
-  - [!] stdin restricted to known pids
+  - [ ] stdin restricted to known pids (this should show up for free later?
 - [X] Unit test creation and running.
 
 Milestone 2.5?: UX
@@ -30,9 +30,10 @@ Milestone 3: A real server
 - [X] Use a real python server, ~ideally evented~, to support multiple simultaneous users
 - [ ] Use nginx as frontend and for and static assets
 - [ ] Reasonable Deployment
-- [ ] Store files server-side tied to user account
+- [X] Store files server-side tied to user account
 
 Milestone 4: Projects
+- [ ] Sharing code across users
 - [ ] Starter code/template for the project
 - [ ] Tests
 - [ ] Solution for testing tests/giving to students after
@@ -59,6 +60,7 @@ Milestone 6: Full classroom
 - [ ] Assignment (markdown) within the platform
 - [ ] Ability to pull in libraries
 - [ ] Dark mode
+- [ ] View as student (sudo? Associated student?)
 
 Milestone 6b: Deployable
 - [ ] "One button" deploy on Digital Ocean or other cheap cloud

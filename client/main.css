@@ -21,6 +21,15 @@
   position: relative;
 }
 
+#savefiles {
+  border: 1px solid black;
+  padding: 2px;
+  margin: 2px;
+  text-align:center;
+  background-color: #EEFFEE;
+  color: #004400;
+}
+
 #resetfiles {
   border: 1px solid black;
   padding: 2px;

@@ -10,6 +10,11 @@ var localFileStore = function(filename) {
       return "files|" + projectId() + "|" + filename;
     else
       return "files|" + projectId();
+  } else {
+    if (filename)
+      return "files." + filename;
+    else
+      return "files"
   }
 }
 
@@ -116,6 +121,27 @@ var removeFile = function() {
 
 }
 
+var saveToServer = function() {
+  saveFile();
+  var savebutton = document.getElementById("savefiles");
+  savebutton.innerText = "Saving..."
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", baseURL() + "save", true);
+  xhr.onprogress = function() {
+    if (xhr.readyState === XMLHttpRequest.DONE || xhr.readyState === XMLHttpRequest.LOADING) {
+      if(xhr.status != 200)
+        savebutton.innerText = "Error talking to server";
+      else {
+        savebutton.innerText = "save";
+      }
+    }
+  };
+  var formdata = new FormData();
+  var filenames = JSON.parse(localStorage.getItem(localFileStore()))
+  for (var i = 0; i < filenames.length; i++)
+    formdata.append(filenames[i], localStorage.getItem(localFileStore(filenames[i])));
+  xhr.send(formdata);
+}
 
 var runcommand = function(test) {
   saveFile();
@@ -279,5 +305,6 @@ window.onload = function() {
   editor.on("blur", saveFile);
   document.getElementById("addfile").addEventListener("click", addFile);
   document.getElementById("removefile").addEventListener("click", removeFile);
+  document.getElementById("savefiles").addEventListener("click", saveToServer);
   document.getElementById("resetfiles").addEventListener("click", resetFiles);
 }

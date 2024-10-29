@@ -31,6 +31,7 @@ Milestone 3: A real server
 - [ ] Use nginx as frontend and for and static assets
 - [ ] Reasonable Deployment
 - [X] Store files server-side tied to user account
+- [ ] Database migrations
 
 Milestone 4: Projects
 - [ ] Sharing code across users
@@ -61,6 +62,8 @@ Milestone 6: Full classroom
 - [ ] Ability to pull in libraries
 - [ ] Dark mode
 - [ ] View as student (sudo? Associated student?)
+- [ ] Live shared editing
+- [ ] Comments on code/chat on project
 
 Milestone 6b: Deployable
 - [ ] "One button" deploy on Digital Ocean or other cheap cloud
@@ -77,15 +80,22 @@ Milestone 7: "Real product"
 - [ ] Custom run/compile commands
 - [ ] Cost savings: spin down VM when not in use?
 - [ ] Scaling: spin up more/bigger VM's for high demand (may be milestone 5/6?)
+- [ ] Other languages
+- [ ] One-click app-updating
+
+Milestone 8(?): Fully offline work
+- [ ] SPA to load once
+- [ ] Buffer updates to send to server
+- [ ] Smart diff for conflicting updates
+- [ ] Running code client-side with CheerpJ/CheerpX/V86
 
 Bonus:
 - [ ] Cheating detection (MOSS, behavior like typing a lot with no backspaces)
 - [ ] Integration with github for storing student code
-- [ ] Running code client-side with CheerpJ/CheerpX/V86
 - [ ] Persistent filesystem/container per student (maybe in a milestone?  Not sure if this is needed)
 - [ ] Performance optimizations
   - [ ] Domain/cookie?
   - [ ] Version in cookie so first load includes updated files?
 - [ ] Switch to CodeMirror for better support?
 - [ ] Figure out why Docker is slow and fix or replace it.
-  - [ ] Looks like it's container startup; execing in an existing one is fast.  So a container pool...  Or not docker.
+  - [ ] Looks like it's container startup; execing in an existing one is fast.  So a container pool, or container per student...  Or not docker.

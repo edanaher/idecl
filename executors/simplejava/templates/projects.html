@@ -1,0 +1,31 @@
+<html>
+  <script>
+    window.onload = function() {
+      document.getElementById("addproject").addEventListener("click", function() {
+        var name = prompt("What is the new project called?");
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/projects", true);
+        xhr.onload = function() {
+          var a = document.createElement("a");
+          a.href = "/projects/" + xhr.response;
+          a.innerText = name;
+          var li = document.createElement("li");
+          li.appendChild(a);
+          var ul = document.getElementById("projectlist");
+          ul.appendChild(li);
+        };
+        var formdata = new FormData();
+        formdata.append("name", name);
+        xhr.send(formdata);
+
+      })
+    }
+  </script>
+  <ul id="projectlist">
+    {% for project in projects %}
+    <li><a href="/projects/{{ project.id }}">{{ project.name }}</a></li>
+    {% endfor %}
+  </ul>
+  <button id="addproject">New project</button>
+</html>
+

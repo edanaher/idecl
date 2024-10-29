@@ -51,10 +51,13 @@ var renameFile = function(elem) {
       if (files[i] == name)
         files[i] = newname;
     localStorage.setItem(localFileStore(), JSON.stringify(files));
+    localStorage.setItem("lastfile|" + projectId(), newname);
 
     var contents = localStorage.getItem(localFileStore(name));
     localStorage.setItem(localFileStore(newname), contents);
     localStorage.removeItem(localFileStore(name));
+    sessions[newname] = sessions[name];
+    delete sessions[name]
   };
   editbox.addEventListener("blur", finishEdit);
   editbox.addEventListener("beforeinput", function(e) {
@@ -315,10 +318,6 @@ var resetFiles = function() {
 var initFiles = function() {
   var lastfile = localStorage.getItem("lastfile|" + projectId());
   var filenames = JSON.parse(localStorage.getItem(localFileStore()));
-  var sess = ace.createEditSession(localStorage.getItem(localFileStore(lastfile)));
-  sess.setMode("ace/mode/java");
-  editor.setSession(sess);
-  sessions[lastfile] = sess;
   var filelist = document.getElementById("filelist");
 
   var opened = false;
@@ -332,8 +331,15 @@ var initFiles = function() {
     }
     filelist.appendChild(div);
   }
-  if (!opened)
-    div.children[0].classList.add("open")
+  if (!opened) {
+    filelist.children[0].classList.add("open")
+    lastfile = filelist.children[0].innerText
+  }
+
+  var sess = ace.createEditSession(localStorage.getItem(localFileStore(lastfile)));
+  sess.setMode("ace/mode/java");
+  editor.setSession(sess);
+  sessions[lastfile] = sess;
 
   filenames = document.getElementsByClassName("filename");
   for (var i = 0; i < filenames.length; i++)

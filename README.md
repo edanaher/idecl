@@ -24,7 +24,7 @@ Milestone 2.5?: UX
 - [X] Real text editor (Monaco?  CodeMirror? **ace.c9.io?**)
 - [ ] Inline text entry for stdin; terminal emulator? (xtermjs? terminal.js)
 - [ ] Maybe some pretty.  Maybe keep the simple style.
-- [ ] Directories for files
+- [X] Directories for files
 
 Milestone 3: A real server
 - [X] Use a real python server, ~ideally evented~, to support multiple simultaneous users

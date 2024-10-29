@@ -20,10 +20,15 @@ def run():
     tmp = tempfile.mkdtemp()
     tests = []
     for k in formdata:
+        if "/" in k:
+            dirname = os.path.join(tmp, os.path.dirname(k))
+            if not os.path.exists(dirname):
+                os.makedirs(os.path.join(tmp, os.path.dirname(k)))
         with open(os.path.join(tmp, k), "w") as f:
             f.write(formdata[k])
         if testing:
-            if (k.startswith("Test") and k.endswith(".java")) or k.endswith("Test.java") or k.endswith("Tests.java"):
+            basename = os.path.basename(k)
+            if (basename.startswith("Test") and k.endswith(".java")) or k.endswith("Test.java") or k.endswith("Tests.java"):
                 tests.append(k)
 
     if testing and not tests:
@@ -40,7 +45,7 @@ def run():
             return
 
         if testing:
-            proc = subprocess.Popen(["docker", "run", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "java", "-cp", f"/junit/junit-4.13.2.jar:/junit/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"] + [t.rstrip('.java') for t in tests], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
+            proc = subprocess.Popen(["docker", "run", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "java", "-cp", f"/junit/junit-4.13.2.jar:/junit/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"] + [t.replace("/", ".").rstrip('.java') for t in tests], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
         else:
             os.mkfifo(os.path.join(tmp, "stdin.fifo"))
             proc = subprocess.Popen(["docker", "run", f"-v{tmp}:/app", "--net", "none", "idecl-java-runner", "/bin/sh", "-c", "java -cp /app Main <> /app/stdin.fifo"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout

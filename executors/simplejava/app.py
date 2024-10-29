@@ -76,7 +76,8 @@ def unknown():
 @app.route("/")
 @login_required
 def root():
-    return render_template("editor.html", project_name="scratchpad")
+    return redirect("/projects")
+    #return render_template("editor.html", project_name="scratchpad")
 
 @login_required
 @app.route("/main.js")

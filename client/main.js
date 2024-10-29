@@ -37,7 +37,7 @@ var renameFile = function(elem) {
   editbox.value = name;
   elem.appendChild(editbox);
   editbox.focus();
-  editbox.addEventListener("blur", function() {
+  var finishEdit = function() {
     var newname = editbox.value;
     elem.removeChild(editbox);
     elem.innerText = editbox.value;
@@ -55,6 +55,11 @@ var renameFile = function(elem) {
     var contents = localStorage.getItem(localFileStore(name));
     localStorage.setItem(localFileStore(newname), contents);
     localStorage.removeItem(localFileStore(name));
+  };
+  editbox.addEventListener("blur", finishEdit);
+  editbox.addEventListener("beforeinput", function(e) {
+    if (e.inputType == "insertLineBreak")
+      finishEdit();
   });
 }
 

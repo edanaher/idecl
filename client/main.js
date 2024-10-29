@@ -19,9 +19,12 @@ var localFileStore = function(filename) {
 }
 
 var saveFile = function() {
-  console.log("Saving");
   var filename = document.querySelector(".filename.open").innerText;
   localStorage.setItem(localFileStore(filename), editor.getValue());
+}
+
+var markDirty = function() {
+  document.getElementById("savefiles").classList.add("dirty");
 }
 
 var renameFile = function(elem) {
@@ -133,6 +136,7 @@ var saveToServer = function() {
         savebutton.innerText = "Error talking to server";
       else {
         savebutton.innerText = "save";
+        document.getElementById("savefiles").classList.remove("dirty");
       }
     }
   };
@@ -155,6 +159,7 @@ var loadFromServer = function() {
 
     // TODO: dedupe with reset
     var filenames = JSON.parse(localStorage.getItem(localFileStore()));
+    sessions = [];
     localStorage.removeItem(localFileStore(), "");
 
     for (var i = 0; i < filenames.length; i++)
@@ -176,6 +181,7 @@ var loadFromServer = function() {
 
     initFiles();
     loadbutton.innerText = "load";
+    document.getElementById("savefiles").classList.remove("dirty");
   }
   xhr.send();
   loadbutton.innerText = "loading";
@@ -343,6 +349,7 @@ window.onload = function() {
   document.getElementById("runtests").addEventListener("click", runtests);
   document.getElementById("sendinput").addEventListener("click", sendinput);
   editor.on("blur", saveFile);
+  editor.on("change", markDirty);
   document.getElementById("addfile").addEventListener("click", addFile);
   document.getElementById("removefile").addEventListener("click", removeFile);
   document.getElementById("savefiles").addEventListener("click", saveToServer);

@@ -30,6 +30,11 @@
   color: #004400;
 }
 
+#savefiles.dirty {
+  background-color: #FFFFEE;
+  color: #444400;
+}
+
 #loadfiles {
   border: 1px solid black;
   padding: 2px;

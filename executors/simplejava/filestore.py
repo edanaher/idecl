@@ -25,6 +25,7 @@ def save_project(pid):
         row = conn.execute(text("SELECT * FROM projects WHERE owner=:uid AND projects.id=:pid"), [{"pid": pid, "uid": current_user.id }]).first()
         if not row:
             abort(401)
+        conn.execute(text("DELETE FROM files WHERE project_id=:pid"), [{"pid": pid}])
         conn.execute(text("INSERT INTO files (project_id, name, contents) VALUES (:pid, :name, :contents) ON CONFLICT DO UPDATE SET contents=:contents"), [{"pid": pid, "name": k, "contents": formdata[k]} for k in formdata])
         conn.commit()
 

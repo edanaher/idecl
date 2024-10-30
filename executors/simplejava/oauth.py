@@ -3,11 +3,13 @@
 
 from flask_login import LoginManager, login_user, logout_user, current_user
 from flask import abort, current_app, redirect, request, session, url_for, Flask
+from sqlalchemy import text
 from urllib.parse import urlencode
 import os
 import requests
 import secrets
 from app import app
+from db import engine
 
 login_manager = LoginManager(app)
 login_manager.init_app(app)
@@ -33,8 +35,9 @@ oauth_config = {
 
 
 class User:
-    def __init__(self, id):
-        self.id = id
+    def __init__(self, email):
+        with engine.connect() as conn:
+            self.id = conn.execute(text("SELECT id FROM users WHERE email=:email"), [{"email": email}]).first().id
 
     def is_authenticated(self):
         return True
@@ -74,6 +77,8 @@ def authorize(provider):
 @app.route("/callback/<provider>")
 def oauth2_callback(provider):
     if not current_user.is_anonymous:
+        with engine.connect() as conn:
+            email = conn.execute(text("SELECT email FROM users WHERE id=:uid"), [{"uid": id}]).first().email
         return "logged in as " + current_user.id
 
     provider_data = oauth_config.get(provider)

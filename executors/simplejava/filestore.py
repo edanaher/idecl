@@ -22,7 +22,7 @@ with engine.connect() as conn:
 def save_project(pid):
     formdata = request.form
     with engine.connect() as conn:
-        row = conn.execute(text("SELECT * FROM projects JOIN users ON owner=users.id WHERE email=:email AND projects.id=:pid"), [{"pid": pid, "email": current_user.id }]).first()
+        row = conn.execute(text("SELECT * FROM projects WHERE owner=:uid AND projects.id=:pid"), [{"pid": pid, "uid": current_user.id }]).first()
         if not row:
             abort(401)
         conn.execute(text("INSERT INTO files (project_id, name, contents) VALUES (:pid, :name, :contents) ON CONFLICT DO UPDATE SET contents=:contents"), [{"pid": pid, "name": k, "contents": formdata[k]} for k in formdata])
@@ -34,9 +34,9 @@ def save_project(pid):
 @app.route("/projects/<pid>/load", methods=["GET"])
 def load_project(pid):
     formdata = request.form
-    user = current_user.id
+    uid = current_user.id
     with engine.connect() as conn:
-        row = conn.execute(text("SELECT * FROM projects JOIN users ON owner=users.id WHERE email=:email AND projects.id=:pid"), [{"pid": pid, "email": user}]).first()
+        row = conn.execute(text("SELECT * FROM projects WHERE owner=:uid AND projects.id=:pid"), [{"pid": pid, "uid": uid}]).first()
         if not row:
             abort(401)
         rows = conn.execute(text("SELECT id, name, contents FROM files WHERE project_id=:pid"), [{"pid": pid}]).all()

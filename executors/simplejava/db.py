@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, BLOB, ForeignKey, UniqueConstraint
+import os
 
-engine = create_engine("sqlite+pysqlite:////tmp/idecl.db")
+engine = create_engine("sqlite+pysqlite:///" + os.environ.get("HOME") + "/idecl.db")
 metadata_obj = MetaData()
 
 user_table = Table(
@@ -29,5 +30,3 @@ files_table = Table(
     Column("contents", BLOB),
     UniqueConstraint("project_id", "name", name="uniq_file_project_name")
 )
-
-metadata_obj.create_all(engine)

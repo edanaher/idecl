@@ -10,7 +10,7 @@
       devShell = pkgs.mkShell {
         buildInputs = with pkgs; [
           python3 python3Packages.flask python3Packages.flask-login python3Packages.requests
-          python3Packages.gunicorn python3Packages.sqlalchemy
+          python3Packages.gunicorn python3Packages.sqlalchemy python3Packages.alembic
           jdk
         ];
       };

@@ -49,7 +49,7 @@ def run():
         else:
             os.mkfifo(os.path.join(tmp, "stdin.fifo"))
             proc = subprocess.Popen(["docker", "run", f"-v{tmp}:/app", "--net", "none", "idecl-java-runner", "/bin/sh", "-c", "java -cp /app Main <> /app/stdin.fifo"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
-        yield f"{tmp.replace('/', '_')}\n"
+        yield f"{tmp.replace('/', '@')}\n"
         # TODO: intersperse stdout and stderr
         while l := proc.stdout.readline():
             yield l
@@ -99,7 +99,7 @@ def css():
 def stdin(containerid):
     formdata = request.form
     input = formdata["input"]
-    with open(os.path.join(containerid.replace("_", "/"), "stdin.fifo"), "w") as f:
+    with open(os.path.join(containerid.replace("@", "/"), "stdin.fifo"), "w") as f:
         f.write(input + "\n")
     return ""
 

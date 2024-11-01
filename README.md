@@ -31,10 +31,10 @@ Milestone 3: A real server
 - [ ] Use nginx as frontend and for and static assets
 - [ ] Reasonable Deployment
 - [X] Store files server-side tied to user account
-- [ ] Database migrations
+- [X] Database migrations
 
 Milestone 4: Projects
-- [ ] Sharing code across users
+- [X] Sharing code across users
 - [ ] Starter code/template for the project
 - [ ] Tests
 - [ ] Solution for testing tests/giving to students after

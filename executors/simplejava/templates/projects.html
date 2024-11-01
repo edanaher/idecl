@@ -4,7 +4,7 @@
       document.getElementById("addproject").addEventListener("click", function() {
         var name = prompt("What is the new project called?");
         var xhr = new XMLHttpRequest();
-        xhr.open("POST", "/projects", true);
+        xhr.open("POST", document.location, true);
         xhr.onload = function() {
           var a = document.createElement("a");
           a.href = "/projects/" + xhr.response;

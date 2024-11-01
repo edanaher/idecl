@@ -1,0 +1,31 @@
+<html>
+  <script>
+    window.onload = function() {
+      document.getElementById("addclassroom").addEventListener("click", function() {
+        var name = prompt("What is the new classroom called?");
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/classrooms", true);
+        xhr.onload = function() {
+          var a = document.createElement("a");
+          a.href = "/classrooms/" + xhr.response + "/projects";
+          a.innerText = name;
+          var li = document.createElement("li");
+          li.appendChild(a);
+          var ul = document.getElementById("classroomlist");
+          ul.appendChild(li);
+        };
+        var formdata = new FormData();
+        formdata.append("name", name);
+        xhr.send(formdata);
+
+      })
+    }
+  </script>
+  <ul id="classroomlist">
+    {% for classroom in classrooms %}
+    <li><a href="/classrooms/{{ classroom.id }}/projects">{{ classroom.name }}</a></li>
+    {% endfor %}
+  </ul>
+  <button id="addclassroom">New classroom</button>
+</html>
+

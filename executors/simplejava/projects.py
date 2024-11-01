@@ -6,27 +6,46 @@ from app import app
 from db import engine
 
 @login_required
-@app.route("/projects")
-def projects():
+@app.route("/classrooms")
+def classrooms():
     with engine.connect() as conn:
-        projects = conn.execute(text("SELECT projects.id, projects.name FROM projects WHERE owner=:uid"), [{"uid": current_user.id}]).all()
+        classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms JOIN classrooms_users ON classroom_id=classrooms.id WHERE user_id=:uid"), [{"uid": current_user.id}]).all()
+    return render_template("classrooms.html", classrooms=classrooms)
+
+@login_required
+@app.route("/classrooms", methods=["POST"])
+def newclassroom():
+    formdata = request.form
+    with engine.connect() as conn:
+        classroom = conn.execute(text("INSERT INTO classrooms (name) VALUES (:name) RETURNING id"), [{"name": formdata["name"]}]).first()
+        conn.execute(text("INSERT INTO classrooms_users (classroom_id, user_id) VALUES (:classroom, :user)"), [{"classroom": classroom.id, "user": current_user.id}])
+        conn.commit()
+    return str(classroom.id)
+
+@login_required
+@app.route("/classrooms/<classroom>/projects")
+def projects(classroom):
+    with engine.connect() as conn:
+        projects = conn.execute(text("SELECT projects.id, projects.name FROM projects WHERE classroom_id=:classroom"), [{"classroom": classroom}]).all()
     return render_template("projects.html", projects=projects)
 
 @login_required
-@app.route("/projects", methods=["POST"])
-def newproject():
+@app.route("/classrooms/<classroom>/projects", methods=["POST"])
+def newproject(classroom):
     formdata = request.form
     with engine.connect() as conn:
-        project = conn.execute(text("INSERT INTO projects (name, owner) VALUES (:name, :uid) RETURNING id"), [{"uid": current_user.id, "name": formdata["name"]}]).first()
+        # TODO: check permissions on classroom
+        project = conn.execute(text("INSERT INTO projects (name, classroom_id, owner) VALUES (:name, :classroom, :uid) RETURNING id"), [{"uid": current_user.id, "classroom": classroom, "name": formdata["name"]}]).first()
         conn.commit()
     return str(project.id)
 
 
 @app.route("/projects/<pid>")
 def project(pid):
+    # TODO: check permissions on classroom
     with engine.connect() as conn:
-        row  = conn.execute(text("SELECT projects.name FROM projects WHERE owner=:uid AND projects.id=:pid"), [{"uid": current_user.id, "pid": pid}]).first()
+        row  = conn.execute(text("SELECT projects.name FROM projects WHERE projects.id=:pid"), [{"pid": pid}]).first()
 
     if row == None:
-        return redirect("/projects")
+        return redirect(f"/classrooms/{classroom}/projects")
     return render_template("editor.html", project_name=row.name)

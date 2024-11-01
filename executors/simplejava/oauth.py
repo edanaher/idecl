@@ -38,7 +38,7 @@ class User:
     def __init__(self, email):
         with engine.connect() as conn:
             if isinstance(email, int):
-                self.id = conn.execute(text("SELECT id FROM users WHERE id=:email"), [{"email": email}]).first().id
+                self.id = conn.execute(text("SELECT id FROM users WHERE id=:id"), [{"id": email}]).first().id
             else:
                 self.id = conn.execute(text("SELECT id FROM users WHERE email=:email"), [{"email": email}]).first().id
 

@@ -9,7 +9,9 @@ from db import engine
 @app.route("/classrooms")
 def classrooms():
     with engine.connect() as conn:
-        classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms JOIN classrooms_users ON classroom_id=classrooms.id WHERE user_id=:uid"), [{"uid": current_user.id}]).all()
+        # TODO: add user management for classrooms.  Probably when students/RBAC show up.
+        #classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms JOIN classrooms_users ON classroom_id=classrooms.id WHERE user_id=:uid"), [{"uid": current_user.id}]).all()
+        classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms"), [{"uid": current_user.id}]).all()
     return render_template("classrooms.html", classrooms=classrooms)
 
 @login_required

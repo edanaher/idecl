@@ -26,7 +26,13 @@
       pp.flask pp.flask-login pp.requests
       pp.gunicorn pp.sqlalchemy pp.alembic
     ]);
-
+    init-script = pkgs.writeShellScript "init-idecl" ''
+      export HOME=/app
+      mkdir -p /app
+      cd ${idecl-src}/executors/simplejava
+      source /app/secrets.sh
+      ${pkgs.python3Packages.alembic}/bin/alembic upgrade head
+      '';
   in {
     imports = lib.optional (builtins.pathExists ./do-userdata.nix) ./do-userdata.nix ++ [
       (modulesPath + "/virtualisation/digital-ocean-config.nix")
@@ -47,6 +53,14 @@
       } ];
     };
 
+    deployment.secrets.env-file = {
+      source = "./secrets.sh";
+      destination = "/app/secrets.sh";
+      owner.user = "root";
+      owner.group = "root";
+      action = [ "systemctl" "restart" "idecl" ];
+    };
+
     networking.firewall.allowedTCPPorts = [ 80 ];
     services.nginx = {
       enable = true;
@@ -56,16 +70,19 @@
       };
     };
 
-
     systemd.services.idecl =  {
       description = "daemon for idecl";
       after = [ "network.target" ];
       wantedBy = [ "multiuser.target" ];
+      environment = {
+        PYTHONPATH="${python-with-packages}/${python-with-packages.sitePackages}";
+        HOME="/app";
+        USERS="edanaher@gmail.com";
+      };
       serviceConfig = {
         WorkingDirectory = "${idecl-src}/executors/simplejava";
-        Environment = ''PYTHONPATH="${python-with-packages}/${python-with-packages.sitePackages}"'';
-        ExecStart = "${pkgs.python3Packages.gunicorn}/bin/gunicorn app:app --bind 0.0.0.0";
-#ExecStart = ''/bin/sh -c "echo $PYTHONPATH"'';
+        ExecStartPre = "${init-script}";
+        ExecStart = "/bin/sh -c 'source /app/secrets.sh && ${pkgs.python3Packages.gunicorn}/bin/gunicorn app:app --bind 0.0.0.0'";
       };
     };
   };

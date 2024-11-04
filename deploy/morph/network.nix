@@ -4,6 +4,7 @@
     resources = terraform-state.values.root_module.resources;
     host = builtins.elemAt resources 0;
     ip = host.values.ipv4_address;
+    idecl-port = 9453;
     idecl-src = pkgs.stdenv.mkDerivation {
       name = "idecl-src";
 
@@ -32,6 +33,10 @@
       cd ${idecl-src}/executors/simplejava
       source /app/secrets.sh
       ${pkgs.python3Packages.alembic}/bin/alembic upgrade head
+      for u in ''${USERS//,/ }; do
+        echo "Adding user $u"
+        ${pkgs.sqlite}/bin/sqlite3 ~/idecl.db "INSERT INTO users (email) VALUES ('$u') ON CONFLICT DO NOTHING"
+      done
       '';
   in {
     imports = lib.optional (builtins.pathExists ./do-userdata.nix) ./do-userdata.nix ++ [
@@ -58,7 +63,7 @@
       destination = "/app/secrets.sh";
       owner.user = "root";
       owner.group = "root";
-      action = [ "systemctl" "restart" "idecl" ];
+#action = [ "systemctl" "restart" "idecl" ];
     };
 
     networking.firewall.allowedTCPPorts = [ 80 ];
@@ -66,7 +71,14 @@
       enable = true;
       virtualHosts.default = {
         default = true;
-        locations."/".return = ''200 "Hello from idecl-poc"'';
+        locations."/" = {
+          proxyPass = "http://localhost:${builtins.toString idecl-port}";
+          extraConfig = ''
+            proxy_set_header Host $host;
+            proxy_set_header X-Forwarded-For $remote_addr;
+          '';
+        };
+#enableACME = true;
       };
     };
 
@@ -82,7 +94,7 @@
       serviceConfig = {
         WorkingDirectory = "${idecl-src}/executors/simplejava";
         ExecStartPre = "${init-script}";
-        ExecStart = "/bin/sh -c 'source /app/secrets.sh && ${pkgs.python3Packages.gunicorn}/bin/gunicorn app:app --bind 0.0.0.0'";
+        ExecStart = "/bin/sh -c 'source /app/secrets.sh && ${pkgs.python3Packages.gunicorn}/bin/gunicorn app:app --bind 0.0.0.0:${builtins.toString idecl-port}'";
       };
     };
   };

@@ -1,0 +1,3 @@
+[submodule "deploy/terraform/terraform-provider-nfs"]
+	path = deploy/terraform/terraform-provider-nfs
+	url = https://github.com/aareet/terraform-provider-nfs

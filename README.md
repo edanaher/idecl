@@ -30,6 +30,7 @@ Milestone 3: A real server
 - [X] Use a real python server, ~ideally evented~, to support multiple simultaneous users
 - [ ] Use nginx as frontend and for and static assets
 - [ ] Reasonable Deployment
+- [ ] TLS (Let's Encrypt)
 - [X] Store files server-side tied to user account
 - [X] Database migrations
 

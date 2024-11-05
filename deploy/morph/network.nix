@@ -54,7 +54,7 @@
       for u in ''${USERS//,/ }; do
         ${pkgs.sqlite}/bin/sqlite3 ~/idecl.db "INSERT INTO users (email) VALUES ('$u') ON CONFLICT DO NOTHING"
       done
-      docker images -q idecl-java-runner:latest | grep . || docker load < /nix/store/rbr4ic9s9zmj62l17hvrrmj1af4hghgm-docker-image-idecl-java-runner.tar.gz | awk '{print $3}' | xargs -I {} docker tag {} idecl-java-runner
+      docker images -q idecl-java-runner:latest | grep . || docker load < ${idecl-java-runner} | ${pkgs.gawk}/bin/awk '{print $3}' | xargs -I {} docker tag {} idecl-java-runner
       '';
   in {
     imports = lib.optional (builtins.pathExists ./do-userdata.nix) ./do-userdata.nix ++ [

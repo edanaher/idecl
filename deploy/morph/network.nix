@@ -20,9 +20,27 @@
       propagatedBuildInputs = with pkgs; [
           python3 python3Packages.flask python3Packages.flask-login python3Packages.requests
           python3Packages.gunicorn python3Packages.sqlalchemy python3Packages.alembic
-          jdk
         ];
     };
+    idecl-java-runner = pkgs.dockerTools.buildImage {
+        name = "idecl-java-runner";
+        tag = "0.0.1";
+
+        copyToRoot = pkgs.buildEnv {
+          name = "image-root";
+          paths = [ pkgs.jdk
+            pkgs.busybox # For debugging
+          ];
+          pathsToLink = "/bin";
+        };
+
+        config = {
+          Env = [ "PATH=/bin/" ];
+          Cmd = [ "${pkgs.bash}/bin/bash" ]; # TODO: this is for testing and should be removed
+        };
+
+        created = "now";
+      };
     python-with-packages = pkgs.python3.withPackages (pp: with pp; [
       pp.flask pp.flask-login pp.requests
       pp.gunicorn pp.sqlalchemy pp.alembic
@@ -34,9 +52,9 @@
       source /app/secrets.sh
       ${pkgs.python3Packages.alembic}/bin/alembic upgrade head
       for u in ''${USERS//,/ }; do
-        echo "Adding user $u"
         ${pkgs.sqlite}/bin/sqlite3 ~/idecl.db "INSERT INTO users (email) VALUES ('$u') ON CONFLICT DO NOTHING"
       done
+      docker images -q idecl-java-runner:latest | grep . || docker load < /nix/store/rbr4ic9s9zmj62l17hvrrmj1af4hghgm-docker-image-idecl-java-runner.tar.gz | awk '{print $3}' | xargs -I {} docker tag {} idecl-java-runner
       '';
   in {
     imports = lib.optional (builtins.pathExists ./do-userdata.nix) ./do-userdata.nix ++ [
@@ -82,10 +100,13 @@
       };
     };
 
+    virtualisation.docker.enable = true;
+
     systemd.services.idecl =  {
       description = "daemon for idecl";
       after = [ "network.target" ];
       wantedBy = [ "multiuser.target" ];
+      path = [ pkgs.docker ];
       environment = {
         PYTHONPATH="${python-with-packages}/${python-with-packages.sitePackages}";
         HOME="/app";

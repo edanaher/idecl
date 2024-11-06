@@ -28,9 +28,9 @@ Milestone 2.5?: UX
 
 Milestone 3: A real server
 - [X] Use a real python server, ~ideally evented~, to support multiple simultaneous users
-- [ ] Use nginx as frontend and for and static assets
-- [ ] Reasonable Deployment
-- [ ] TLS (Let's Encrypt)
+- [X] Use nginx as frontend and for and static assets
+- [X] Reasonable Deployment
+- [X] TLS (Let's Encrypt)
 - [X] Store files server-side tied to user account
 - [X] Database migrations
 
@@ -43,7 +43,7 @@ Milestone 4: Projects
 
 Milestone 5: MVP Classroom
 - [ ] Student management/invites
-  - Basic RBAC
+  - [ ] Basic RBAC
 - [ ] Better security
   - [ ] enforced timeouts (time for compile, CPU for program)
   - [ ] queueing compiles to avoid OOM
@@ -65,6 +65,7 @@ Milestone 6: Full classroom
 - [ ] View as student (sudo? Associated student?)
 - [ ] Live shared editing
 - [ ] Comments on code/chat on project
+- [ ] Emails for invites, assignments?
 
 Milestone 6b: Deployable
 - [ ] "One button" deploy on Digital Ocean or other cheap cloud
@@ -89,6 +90,7 @@ Milestone 8(?): Fully offline work
 - [ ] Buffer updates to send to server
 - [ ] Smart diff for conflicting updates
 - [ ] Running code client-side with CheerpJ/CheerpX/V86
+- [ ] Handle multiple users locally within reason
 
 Bonus:
 - [ ] Cheating detection (MOSS, behavior like typing a lot with no backspaces)

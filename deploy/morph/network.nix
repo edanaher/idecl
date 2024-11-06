@@ -89,6 +89,9 @@
       enable = true;
       virtualHosts.default = {
         default = true;
+        locations."/static/" = {
+          alias = "${idecl-src}/client/";
+        };
         locations."/" = {
           proxyPass = "http://localhost:${builtins.toString idecl-port}";
           extraConfig = ''

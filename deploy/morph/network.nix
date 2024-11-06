@@ -69,8 +69,9 @@
 
     deployment.healthChecks = {
       http = [ {
-        scheme = "http";
-        port = 80;
+        scheme = "https";
+        host = "dev.idecl.edanaher.net";
+        port = 443;
         path = "/";
         description = "check that nginx is running";
       } ];
@@ -84,10 +85,12 @@
 #action = [ "systemctl" "restart" "idecl" ];
     };
 
-    networking.firewall.allowedTCPPorts = [ 80 ];
+    networking.firewall.allowedTCPPorts = [ 80 443 ];
+    security.acme.acceptTerms = true;
+    security.acme.defaults.email = "ssl@edanaher.net";
     services.nginx = {
       enable = true;
-      virtualHosts.default = {
+      virtualHosts."dev.idecl.edanaher.net" = {
         default = true;
         locations."/static/" = {
           alias = "${idecl-src}/client/";
@@ -100,7 +103,8 @@
             proxy_buffering off;
           '';
         };
-#enableACME = true;
+        enableACME = true;
+        forceSSL = true;
       };
     };
 

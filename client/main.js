@@ -158,7 +158,7 @@ var saveToServer = function() {
 var loadFromServer = function() {
   var loadbutton = document.getElementById("loadfiles");
   var xhr = new XMLHttpRequest();
-  xhr.open("GET", baseURL() + "/load", true);
+  xhr.open("GET", baseURL() + "load", true);
   xhr.onerror = function() {
     loadbutton.textContent = "Error talking to server";
   }

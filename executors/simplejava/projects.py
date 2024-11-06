@@ -5,8 +5,8 @@ from sqlalchemy import text
 from app import app
 from db import engine
 
-@login_required
 @app.route("/classrooms")
+@login_required
 def classrooms():
     with engine.connect() as conn:
         # TODO: add user management for classrooms.  Probably when students/RBAC show up.
@@ -14,8 +14,8 @@ def classrooms():
         classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms"), [{"uid": current_user.id}]).all()
     return render_template("classrooms.html", classrooms=classrooms)
 
-@login_required
 @app.route("/classrooms", methods=["POST"])
+@login_required
 def newclassroom():
     formdata = request.form
     with engine.connect() as conn:
@@ -24,15 +24,15 @@ def newclassroom():
         conn.commit()
     return str(classroom.id)
 
-@login_required
 @app.route("/classrooms/<classroom>/projects")
+@login_required
 def projects(classroom):
     with engine.connect() as conn:
         projects = conn.execute(text("SELECT projects.id, projects.name FROM projects WHERE classroom_id=:classroom"), [{"classroom": classroom}]).all()
     return render_template("projects.html", projects=projects)
 
-@login_required
 @app.route("/classrooms/<classroom>/projects", methods=["POST"])
+@login_required
 def newproject(classroom):
     formdata = request.form
     with engine.connect() as conn:
@@ -43,6 +43,7 @@ def newproject(classroom):
 
 
 @app.route("/projects/<pid>")
+@login_required
 def project(pid):
     # TODO: check permissions on classroom
     with engine.connect() as conn:

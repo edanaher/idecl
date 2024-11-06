@@ -10,8 +10,8 @@ app = Flask(__name__)
 
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 
-@login_required
 @app.route("/run", methods=["POST"])
+@login_required
 def run():
     formdata = request.form
 
@@ -84,18 +84,16 @@ def root():
     return redirect("/classrooms")
     #return render_template("editor.html", project_name="scratchpad")
 
-@login_required
-@app.route("/main.js")
+@app.route("/static/main.js")
 def js():
     return send_file("../../client/main.js")
 
-@login_required
-@app.route("/main.css")
+@app.route("/static/main.css")
 def css():
     return send_file("../../client/main.css")
 
-@login_required
 @app.route("/<containerid>/stdin", methods=["POST"])
+@login_required
 def stdin(containerid):
     formdata = request.form
     input = formdata["input"]

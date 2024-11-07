@@ -18,9 +18,71 @@ var localFileStore = function(filename) {
   }
 }
 
+var lastedittime = 0;
+var edits = [];
+var logedit = function(type, position, data) {
+  var now = Date.now();
+  var row = null;
+  var col = null;
+  if (position) {
+    row = position.row;
+    col = position.column;
+  }
+  edits.push([type, now - lastedittime, row, col, data]);
+  console.log(type, now - lastedittime, row, col, data);
+  lastedittime = now;
+}
+
+var cursorupdate = function(e) {
+  logedit("m", editor.selection.getCursor())
+}
+var editorupdate = function(delta) {
+  var action = delta.action[0];
+  var text = delta.lines.join("\n");
+  console.log(delta, delta.start, delta.start.row)
+  logedit(delta.action[0], delta.start, text);
+}
+
 var saveFile = function() {
   var filename = document.querySelector(".filename.open").innerText;
   localStorage.setItem(localFileStore(filename), editor.getValue());
+}
+
+var currenthistory = -1;
+var historymove = function(adjust) {
+  var histlen = edits.length;
+  if (currenthistory == -1)
+    currenthistory = edits.length;
+  currenthistory += adjust;
+  console.log(currenthistory, "/", edits.length);
+  if (currenthistory < 0) {
+    currenthistory = 0;
+    return;
+  }
+  if (currenthistory >= edits.length) {
+    currenthistory = edits.length - 1;
+    return;
+  }
+
+  var edit = edits[currenthistory];
+  if (edit[0] == "m" && adjust > 0) {
+    editor.moveCursorTo(edit[2], edit[3]);
+  } else if (edit[0] == "m" && adjust < 0) {
+    if (currenthistory == 0)
+      editor.moveCursorTo(0, 0);
+    else {
+      var prev = edits[currenthistory - 1];
+      editor.moveCursorTo(prev[2], prev[3]);
+    }
+  } else if (edit[0] == "i" && adjust > 0 || edit[0] == "r" && adjust < 0) {
+    console.log("Inserting ", edit[4]);
+    editor.insert(edit[4]);
+  } else if (edit[0] == "i" && adjust < 0 || edit[0] == "r" && adjust > 0) {
+    console.log("Deleting ", edit[2], ",", edit[3], "len", edit[4].length);
+    editor.session.replace(new ace.Range(edit[2], edit[3], edit[2], edit[3] + edit[4].length), "");
+  }
+  while (edits.length > histlen)
+    edits.pop();
 }
 
 var markDirty = function() {
@@ -75,6 +137,8 @@ var loadFile = function() {
   if (!sess) {
     sess = ace.createEditSession(localStorage.getItem(localFileStore(this.innerText)));
     sess.setMode("ace/mode/java");
+    sess.on("change", editorupdate);
+    sess.on("changeSelection", cursorupdate);
     sessions[this.innerText] = sess;
   }
   editor.setSession(sess);
@@ -338,6 +402,8 @@ var initFiles = function() {
 
   var sess = ace.createEditSession(localStorage.getItem(localFileStore(lastfile)));
   sess.setMode("ace/mode/java");
+  sess.on("change", editorupdate);
+  sess.on("changeSelection", cursorupdate);
   editor.setSession(sess);
   sessions[lastfile] = sess;
 
@@ -366,4 +432,6 @@ window.onload = function() {
   document.getElementById("savefiles").addEventListener("click", saveToServer);
   document.getElementById("loadfiles").addEventListener("click", loadFromServer);
   document.getElementById("resetfiles").addEventListener("click", resetFiles);
+  document.getElementById("historyback").addEventListener("click", function() { historymove(-1); });
+  document.getElementById("historyforward").addEventListener("click", function() { historymove(1); });
 }

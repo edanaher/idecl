@@ -70,7 +70,7 @@
     deployment.healthChecks = {
       http = [ {
         scheme = "https";
-        host = "dev.idecl.edanaher.net";
+        host = "idecl.edanaher.net";
         port = 443;
         path = "/";
         description = "check that nginx is running";
@@ -90,7 +90,7 @@
     security.acme.defaults.email = "ssl@edanaher.net";
     services.nginx = {
       enable = true;
-      virtualHosts."dev.idecl.edanaher.net" = {
+      virtualHosts."idecl.edanaher.net" = {
         default = true;
         locations."/static/" = {
           alias = "${idecl-src}/client/";
@@ -113,7 +113,7 @@
     systemd.services.idecl =  {
       description = "daemon for idecl";
       after = [ "network.target" ];
-      wantedBy = [ "multiuser.target" ];
+      wantedBy = [ "multi-user.target" ];
       path = [ pkgs.docker ];
       environment = {
         PYTHONPATH="${python-with-packages}/${python-with-packages.sitePackages}";

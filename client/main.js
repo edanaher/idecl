@@ -28,8 +28,13 @@ var logedit = function(type, position, data) {
     row = position.row;
     col = position.column;
   }
+  if (edits.length > 0 && type == "m") {
+    var lastedit = edits[edits.length - 1];
+    if (lastedit[2] == row && lastedit[3] == col)
+      return;
+  }
   edits.push([type, now - lastedittime, row, col, data]);
-  console.log(type, now - lastedittime, row, col, data);
+  console.log(type, now - lastedittime, row, col, data, "/", edits.length);
   lastedittime = now;
 }
 

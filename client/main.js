@@ -66,8 +66,10 @@ var historymove = function(adjust) {
   }
   if (currenthistory >= edits.length) {
     currenthistory = edits.length - 1;
+    editor.setReadOnly(false);
     return;
   }
+  editor.setReadOnly(true);
 
   var edit = edits[currenthistory];
   if (edit[0] == "m" && adjust > 0) {

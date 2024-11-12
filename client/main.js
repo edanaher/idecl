@@ -29,6 +29,11 @@ var displayeditstate = function() {
   disp.innerText = cur + "/" + edits.length;
 }
 
+// Log events:
+//   [m]ove
+//   [i]nsert
+//   [d]elete
+//   [s]elect
 var logedit = function(type, position, data) {
   var now = Date.now();
   var row = null;
@@ -58,9 +63,16 @@ var logedit = function(type, position, data) {
 }
 
 
-var cursorupdate = function(e) {
-  logedit("m", editor.selection.getCursor())
+var cursorupdate = function() {
+  console.log(editor.selection);
+  var anchor = editor.selection.getAnchor();
+  var cursor = editor.selection.getCursor();
+  if (anchor.row == cursor.row && anchor.column == cursor.column)
+    logedit("m", cursor);
+  else
+    logedit("s", cursor, anchor);
 }
+
 var editorupdate = function(delta) {
   var action = delta.action[0];
   var text = delta.lines.join("\n");
@@ -99,6 +111,10 @@ var historymove = function(adjust) {
       var prev = edits[currenthistory - 1];
       editor.gotoLine(prev[2] + 1, prev[3]);
     }
+  } else if (edit[0] == "s") {
+
+    editor.selection.moveCursorTo(edit[2], edit[3]);
+    editor.selection.setAnchor(edit[4].row, edit[4].column);
   } else if (edit[0] == "i" && adjust > 0 || edit[0] == "d" && adjust < 0) {
     console.log("Inserting ", edit[4]);
     editor.gotoLine(edit[2] + 1, edit[3]);

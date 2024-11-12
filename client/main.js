@@ -18,8 +18,17 @@ var localFileStore = function(filename) {
   }
 }
 
+
 var lastedittime = 0;
 var edits = [];
+var currenthistory = -1;
+
+var displayeditstate = function() {
+  var disp = document.getElementById("historystate");
+  var cur = currenthistory == -1 ? edits.length : currenthistory;
+  disp.innerText = cur + "/" + edits.length;
+}
+
 var logedit = function(type, position, data) {
   var now = Date.now();
   var row = null;
@@ -30,13 +39,24 @@ var logedit = function(type, position, data) {
   }
   if (edits.length > 0 && type == "m") {
     var lastedit = edits[edits.length - 1];
-    if (lastedit[2] == row && lastedit[3] == col)
+    if (lastedit[0] == "m" && lastedit[2] == row && lastedit[3] == col)
       return;
+    if (lastedit[0] == "i" && lastedit[2] == row && lastedit[3] + lastedit[4].length == col)
+      return;
+    if (lastedit[0] == "d" && lastedit[2] == row && lastedit[3]== col)
+      return;
+  }
+  if (edits.length > 0 && type == "d") {
+    var lastedit = edits[edits.length - 1];
+    if (lastedit[0] == "m" && lastedit[2] == row && lastedit[3] == col)
+      edits.pop();
   }
   edits.push([type, now - lastedittime, row, col, data]);
   console.log(type, now - lastedittime, row, col, data, "/", edits.length);
   lastedittime = now;
+  displayeditstate();
 }
+
 
 var cursorupdate = function(e) {
   logedit("m", editor.selection.getCursor())
@@ -45,7 +65,8 @@ var editorupdate = function(delta) {
   var action = delta.action[0];
   var text = delta.lines.join("\n");
   console.log(delta, delta.start, delta.start.row)
-  logedit(delta.action[0], delta.start, text);
+  var type = delta.action[0] == "r" ? "d" : delta.action[0];
+  logedit(type, delta.start, text);
 }
 
 var saveFile = function() {
@@ -53,44 +74,52 @@ var saveFile = function() {
   localStorage.setItem(localFileStore(filename), editor.getValue());
 }
 
-var currenthistory = -1;
 var historymove = function(adjust) {
   var histlen = edits.length;
+  if (currenthistory == -1 && adjust > 0)
+    return;
   if (currenthistory == -1)
     currenthistory = edits.length;
-  currenthistory += adjust;
+  if (adjust < 0)
+    currenthistory += adjust;
   console.log(currenthistory, "/", edits.length);
   if (currenthistory < 0) {
     currenthistory = 0;
-    return;
-  }
-  if (currenthistory >= edits.length) {
-    currenthistory = edits.length - 1;
-    editor.setReadOnly(false);
     return;
   }
   editor.setReadOnly(true);
 
   var edit = edits[currenthistory];
   if (edit[0] == "m" && adjust > 0) {
-    editor.moveCursorTo(edit[2], edit[3]);
+    editor.gotoLine(edit[2] + 1, edit[3]);
   } else if (edit[0] == "m" && adjust < 0) {
     if (currenthistory == 0)
-      editor.moveCursorTo(0, 0);
+      editor.gotoLine(0, 0);
     else {
       var prev = edits[currenthistory - 1];
-      editor.moveCursorTo(prev[2], prev[3]);
+      editor.gotoLine(prev[2] + 1, prev[3]);
     }
-  } else if (edit[0] == "i" && adjust > 0 || edit[0] == "r" && adjust < 0) {
+  } else if (edit[0] == "i" && adjust > 0 || edit[0] == "d" && adjust < 0) {
     console.log("Inserting ", edit[4]);
+    editor.gotoLine(edit[2] + 1, edit[3]);
     editor.insert(edit[4]);
-  } else if (edit[0] == "i" && adjust < 0 || edit[0] == "r" && adjust > 0) {
+  } else if (edit[0] == "i" && adjust < 0 || edit[0] == "d" && adjust > 0) {
     console.log("Deleting ", edit[2], ",", edit[3], "len", edit[4].length);
     editor.session.replace(new ace.Range(edit[2], edit[3], edit[2], edit[3] + edit[4].length), "");
   }
   while (edits.length > histlen)
     edits.pop();
+  if (adjust > 0)
+    currenthistory += adjust;
+  if (currenthistory >= edits.length) {
+    currenthistory = -1;
+    editor.setReadOnly(false);
+    displayeditstate();
+    return;
+  }
+  displayeditstate();
 }
+
 
 var markDirty = function() {
   document.getElementById("savefiles").classList.add("dirty");

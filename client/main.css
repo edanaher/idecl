@@ -72,6 +72,16 @@
   text-align: center;
 }
 
+#historystate {
+  position: absolute;
+  width: 100%;
+  top: 0px;
+  padding-top: 2px;
+  text-align: center;
+  z-index: -1;
+}
+
+
 #historyforward {
   border: 1px solid black;
   margin: 2px;

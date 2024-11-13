@@ -56,6 +56,12 @@ var logedit = function(type, position, data) {
     if (lastedit[0] == "m" && lastedit[2] == row && lastedit[3] == col)
       edits.pop();
   }
+  if (edits.length > 0 && type == "s") {
+    var lastedit = edits[edits.length - 1];
+    if (lastedit[0] == "s" && lastedit[2] == row && lastedit[3] == col &&
+        lastedit[4].row == data.row && lastedit[4].column == data.column)
+      return;
+  }
   edits.push([type, now - lastedittime, row, col, data]);
   console.log(type, now - lastedittime, row, col, data, "/", edits.length);
   lastedittime = now;

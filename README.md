@@ -39,6 +39,7 @@ Milestone 4: Projects
 - [ ] Starter code/template for the project
 - [ ] Tests
 - [ ] Solution for testing tests/giving to students after
+  - [ ] Points assigned to each test.
 - [ ] UI for managing all of this
 
 Milestone 5: MVP Classroom
@@ -64,6 +65,7 @@ Milestone 6: Full classroom
 - [ ] Dark mode
 - [ ] View as student (sudo? Associated student?)
 - [ ] Live shared editing
+  - [ ] With shared cursors (https://github.com/convergencelabs/ace-collab-ext)
 - [ ] Comments on code/chat on project
 - [ ] Emails for invites, assignments?
 
@@ -102,3 +104,4 @@ Bonus:
 - [ ] Switch to CodeMirror for better support?
 - [ ] Figure out why Docker is slow and fix or replace it.
   - [ ] Looks like it's container startup; execing in an existing one is fast.  So a container pool, or container per student...  Or not docker.
+- [ ] Run transforms on code before running tests (e.g., use sed to modify a class constant)

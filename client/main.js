@@ -20,13 +20,13 @@ var localFileStore = function(filename) {
 
 
 var lastedittime = 0;
-var edits = [];
+var edits = [("m", 0, 0, 0)];
 var currenthistory = -1;
 
 var displayeditstate = function() {
   var disp = document.getElementById("historystate");
-  var cur = currenthistory == -1 ? edits.length : currenthistory;
-  disp.innerText = cur + "/" + edits.length;
+  var cur = currenthistory == -1 ? edits.length - 1: currenthistory;
+  disp.innerText = cur + "/" + (edits.length - 1);
 }
 
 // Log events:
@@ -94,46 +94,54 @@ var saveFile = function() {
 
 var historymove = function(adjust) {
   var histlen = edits.length;
-  if (currenthistory == -1 && adjust > 0)
+  if (currenthistory == -1 && adjust > 0 || currenthistory == 0 && adjust < 0)
     return;
   if (currenthistory == -1)
-    currenthistory = edits.length;
-  if (adjust < 0)
+    currenthistory = edits.length - 1;
+  console.log("pre:", currenthistory, "/", edits.length);
+  if (adjust > 0)
     currenthistory += adjust;
-  console.log(currenthistory, "/", edits.length);
-  if (currenthistory < 0) {
-    currenthistory = 0;
-    return;
-  }
   editor.setReadOnly(true);
 
   var edit = edits[currenthistory];
-  if (edit[0] == "m" && adjust > 0) {
-    editor.gotoLine(edit[2] + 1, edit[3]);
-  } else if (edit[0] == "m" && adjust < 0) {
-    if (currenthistory == 0)
-      editor.gotoLine(0, 0);
-    else {
-      var prev = edits[currenthistory - 1];
-      editor.gotoLine(prev[2] + 1, prev[3]);
+  if (adjust > 0) {
+    if (edit[0] == "m") {
+      editor.gotoLine(edit[2] + 1, edit[3]);
+    } else if (edit[0] == "i") {
+      editor.gotoLine(edit[2] + 1, edit[3]);
+      editor.insert(edit[4]);
+    } else if (edit[0] == "d") {
+      console.log("Deleting ", edit[2], ",", edit[3], "len", edit[4].length);
+      editor.session.replace(new ace.Range(edit[2], edit[3], edit[2], edit[3] + edit[4].length), "");
+    } else if (edit[0] == "s") {
+      editor.selection.moveCursorTo(edit[2], edit[3]);
+      editor.selection.setAnchor(edit[4].row, edit[4].column);
     }
-  } else if (edit[0] == "s") {
-
-    editor.selection.moveCursorTo(edit[2], edit[3]);
-    editor.selection.setAnchor(edit[4].row, edit[4].column);
-  } else if (edit[0] == "i" && adjust > 0 || edit[0] == "d" && adjust < 0) {
-    console.log("Inserting ", edit[4]);
-    editor.gotoLine(edit[2] + 1, edit[3]);
-    editor.insert(edit[4]);
-  } else if (edit[0] == "i" && adjust < 0 || edit[0] == "d" && adjust > 0) {
-    console.log("Deleting ", edit[2], ",", edit[3], "len", edit[4].length);
-    editor.session.replace(new ace.Range(edit[2], edit[3], edit[2], edit[3] + edit[4].length), "");
+  } else {
+    if (edit[0] == "i") {
+      editor.session.replace(new ace.Range(edit[2], edit[3], edit[2], edit[3] + edit[4].length), "");
+    } else if (edit[0] == "d" && adjust < 0) {
+      editor.gotoLine(edit[2] + 1, edit[3]);
+      editor.insert(edit[4]);
+    }
+    var prevedit = edits[currenthistory - 1];
+    if (prevedit[0] == "m") {
+      editor.gotoLine(prevedit[2] + 1, prevedit[3]);
+    } else if (prevedit[0] == "i") {
+      editor.gotoLine(prevedit[2] + 1, prevedit[3] + prevedit[4].length);
+    } else if (prevedit[0] == "d") {
+      editor.gotoLine(prevedit[2] + 1, prevedit[3]);
+    } else if (prevedit[0] == "s") {
+      editor.selection.moveCursorTo(prevedit[2], prevedit[3]);
+      editor.selection.setAnchor(prevedit[4].row, prevedit[4].column);
+    }
   }
+
   while (edits.length > histlen)
     edits.pop();
-  if (adjust > 0)
+  if (adjust < 0)
     currenthistory += adjust;
-  if (currenthistory >= edits.length) {
+  if (currenthistory >= edits.length - 1) {
     currenthistory = -1;
     editor.setReadOnly(false);
     displayeditstate();

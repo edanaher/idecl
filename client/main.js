@@ -51,6 +51,8 @@ var logedit = function(type, position, data) {
       return;
     if (lastedit[0] == "d" && lastedit[2] == row && lastedit[3]== col)
       return;
+    if (lastedit[0] == "s" && lastedit[2] == row && lastedit[3]== col && now - lastedittime < 20)
+      overwrite = true;
   }
   if (edits.length > 0 && type == "d") {
     var lastedit = edits[edits.length - 1];
@@ -123,8 +125,7 @@ var historymove = function(adjust) {
       editor.session.replace(new ace.Range(edit[2], edit[3], edit[2], edit[3] + edit[4].length), "");
     } else if (edit[0] == "s") {
       console.log("Selecting...", edit[2], edit[3], edit[4]);
-      editor.selection.moveCursorTo(edit[2], edit[3]);
-      editor.selection.setAnchor(edit[4].row, edit[4].column);
+      editor.selection.setRange(new ace.Range(edit[2], edit[3], edit[4].row, edit[4].column));
     }
   } else {
     if (edit[0] == "i") {
@@ -143,8 +144,7 @@ var historymove = function(adjust) {
     } else if (prevedit[0] == "d") {
       editor.gotoLine(prevedit[2] + 1, prevedit[3]);
     } else if (prevedit[0] == "s") {
-      editor.selection.moveCursorTo(prevedit[2], prevedit[3]);
-      editor.selection.setAnchor(prevedit[4].row, prevedit[4].column);
+      editor.selection.setRange(new ace.Range(prevedit[2], prevedit[3], prevedit[4].row, prevedit[4].column));
     }
   }
 

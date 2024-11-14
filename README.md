@@ -37,6 +37,7 @@ Milestone 3: A real server
 Milestone 4: Projects
 - [X] Sharing code across users
 - [ ] Starter code/template for the project
+  - [ ] Via generalized forking; files can be editable, inherited, hidden, or ignored, and static or updated.
 - [ ] Tests
 - [ ] Solution for testing tests/giving to students after
   - [ ] Points assigned to each test.

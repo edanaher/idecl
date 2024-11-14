@@ -20,7 +20,7 @@ var localFileStore = function(filename) {
 
 
 var lastedittime = 0;
-var edits = [("m", 0, 0, 0)];
+var edits = [["m", 0, 0, 0]];
 var currenthistory = -1;
 
 var displayeditstate = function() {
@@ -38,6 +38,7 @@ var logedit = function(type, position, data) {
   var now = Date.now();
   var row = null;
   var col = null;
+  var overwrite = false;
   if (position) {
     row = position.row;
     col = position.column;
@@ -54,13 +55,20 @@ var logedit = function(type, position, data) {
   if (edits.length > 0 && type == "d") {
     var lastedit = edits[edits.length - 1];
     if (lastedit[0] == "m" && lastedit[2] == row && lastedit[3] == col)
-      edits.pop();
+      overwrite = true;
+    if (lastedit[0] == "s" && lastedit[2] == row && lastedit[3] == col && now - lastedittime < 20)
+      overwrite = true;
   }
   if (edits.length > 0 && type == "s") {
     var lastedit = edits[edits.length - 1];
-    if (lastedit[0] == "s" && lastedit[2] == row && lastedit[3] == col &&
-        lastedit[4].row == data.row && lastedit[4].column == data.column)
-      return;
+    if (lastedit[0] == "s" && ((lastedit[2] == row && lastedit[3] == col) ||
+        (lastedit[4].row == data.row && lastedit[4].column == data.column)) &&
+        now - lastedittime < 20)
+      overwrite = true;
+  }
+  if (overwrite) {
+    lastedittime -= edits[edits.length -1][1];
+    edits.pop();
   }
   edits.push([type, now - lastedittime, row, col, data]);
   console.log(type, now - lastedittime, row, col, data, "/", edits.length);
@@ -114,6 +122,7 @@ var historymove = function(adjust) {
       console.log("Deleting ", edit[2], ",", edit[3], "len", edit[4].length);
       editor.session.replace(new ace.Range(edit[2], edit[3], edit[2], edit[3] + edit[4].length), "");
     } else if (edit[0] == "s") {
+      console.log("Selecting...", edit[2], edit[3], edit[4]);
       editor.selection.moveCursorTo(edit[2], edit[3]);
       editor.selection.setAnchor(edit[4].row, edit[4].column);
     }
@@ -125,7 +134,9 @@ var historymove = function(adjust) {
       editor.insert(edit[4]);
     }
     var prevedit = edits[currenthistory - 1];
+    console.log("Prevedit:", prevedit);
     if (prevedit[0] == "m") {
+      console.log("Moving to ", currenthistory - 1);
       editor.gotoLine(prevedit[2] + 1, prevedit[3]);
     } else if (prevedit[0] == "i") {
       editor.gotoLine(prevedit[2] + 1, prevedit[3] + prevedit[4].length);

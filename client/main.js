@@ -29,6 +29,74 @@ var displayeditstate = function() {
   disp.innerText = cur + "/" + (edits.length - 1);
 }
 
+var serializeInt = function(n) {
+  var str = "" + n;
+  if (str.length <= 10)
+    return (str.length - 1) + str + ".";
+  return "abcdef"[str.length - 11] + str + ".";
+}
+
+var deserializeInt = function(s, i) {
+  var c = s.charAt(i);
+  var len;
+  if (c < "a")
+    len = parseInt(s.charAt(i));
+  else
+    len = "abcdef".indexOf(c) + 10;
+  return [parseInt(s.slice(i + 1, i + len + 2)), i + len + 3];
+}
+
+var serializeString = function(s) {
+  return serializeInt(s.length) + s + ".";
+}
+
+var deserializeString = function(s, i) {
+  var len;
+  [len, i] = deserializeInt(s, i);
+  return [s.slice(i, i + len), i + len + 1];
+}
+
+var serializeEdits = function() {
+  var strs = [];
+  for (i = 0; i < edits.length; i++) {
+    var str = "";
+    var edit = edits[i];
+    var extra = ""
+    if (edit[0] == "i" || edit[0] == "d")
+      extra = serializeString(edit[4]);
+    else if (edit[0] == "s")
+      extra = serializeInt(edit[4].row) + serializeInt(edit[4].column);
+    strs.push(edit[0] + serializeInt(edit[1]) + serializeInt(edit[2]) + serializeInt(edit[3]) + extra);
+  }
+  return "v1" + strs.join(";");
+}
+
+var deserializeEdits = function(str) {
+  if (str.slice(0, 2) != "v1")
+    return [];
+
+  var edits = [];
+  var i = 2;
+  while (i < str.length) {
+    var type = str.charAt(i++);
+    var time, row, col, extra = "";
+    [time, i] = deserializeInt(str, i);
+    [row, i] = deserializeInt(str, i);
+    [col, i] = deserializeInt(str, i);
+    if (type == "i" || type == "d")
+      [extra, i] = deserializeString(str, i);
+    if (type == "s") {
+      var r, c;
+      [r, i] = deserializeInt(str, i);
+      [c, i] = deserializeInt(str, i);
+      extra = {row: r, column: c};
+    }
+    edits.push([type, time, row, col, extra]);
+    i++;
+  }
+  return edits;
+}
+
 // Log events:
 //   [m]ove
 //   [i]nsert
@@ -76,6 +144,9 @@ var logedit = function(type, position, data) {
   console.log(type, now - lastedittime, row, col, data, "/", edits.length);
   lastedittime = now;
   displayeditstate();
+  var s = serializeEdits();
+  console.log(s);
+  console.log(deserializeEdits(s));
 }
 
 

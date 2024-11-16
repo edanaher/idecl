@@ -3,13 +3,16 @@ var projectId = function() {
   p = document.URL.match(/projects\/([0-9]*)/)
   return p && parseInt(p[1]);
 }
-var localFileStore = function(filename) {
+var localFileStore = function(filename, edits) {
   var p = projectId();
+  var prefix = "files|"
+  if (edits)
+    var prefix = "edits|"
   if (p) {
     if (filename)
-      return "files|" + projectId() + "|" + filename;
+      return prefix + projectId() + "|" + filename;
     else
-      return "files|" + projectId();
+      return prefix + projectId();
   } else {
     if (filename)
       return "files." + filename;
@@ -26,6 +29,8 @@ var currenthistory = -1;
 var displayeditstate = function() {
   var disp = document.getElementById("historystate");
   var cur = currenthistory == -1 ? edits.length - 1: currenthistory;
+  if (!edits)
+    disp.innerText = "";
   disp.innerText = cur + "/" + (edits.length - 1);
 }
 
@@ -144,14 +149,10 @@ var logedit = function(type, position, data) {
   console.log(type, now - lastedittime, row, col, data, "/", edits.length);
   lastedittime = now;
   displayeditstate();
-  var s = serializeEdits();
-  console.log(s);
-  console.log(deserializeEdits(s));
 }
 
 
 var cursorupdate = function() {
-  console.log(editor.selection);
   var anchor = editor.selection.getAnchor();
   var cursor = editor.selection.getCursor();
   if (anchor.row == cursor.row && anchor.column == cursor.column)
@@ -163,23 +164,29 @@ var cursorupdate = function() {
 var editorupdate = function(delta) {
   var action = delta.action[0];
   var text = delta.lines.join("\n");
-  console.log(delta, delta.start, delta.start.row)
   var type = delta.action[0] == "r" ? "d" : delta.action[0];
   logedit(type, delta.start, text);
 }
 
 var saveFile = function() {
-  var filename = document.querySelector(".filename.open").innerText;
-  localStorage.setItem(localFileStore(filename), editor.getValue());
+  // Only save at end of history.  Eventually history should be saving, but until then...
+  if (currenthistory == -1) {
+    var filename = document.querySelector(".filename.open").innerText;
+    localStorage.setItem(localFileStore(filename), editor.getValue());
+    localStorage.setItem(localFileStore(filename, true), serializeEdits());
+  }
 }
 
 var historymove = function(adjust) {
+  if (!edits)
+    return;
   var histlen = edits.length;
   if (currenthistory == -1 && adjust > 0 || currenthistory == 0 && adjust < 0)
     return;
-  if (currenthistory == -1)
+  if (currenthistory == -1) {
+    saveFile();
     currenthistory = edits.length - 1;
-  console.log("pre:", currenthistory, "/", edits.length);
+  }
   if (adjust > 0)
     currenthistory += adjust;
   editor.setReadOnly(true);
@@ -192,10 +199,8 @@ var historymove = function(adjust) {
       editor.gotoLine(edit[2] + 1, edit[3]);
       editor.insert(edit[4]);
     } else if (edit[0] == "d") {
-      console.log("Deleting ", edit[2], ",", edit[3], "len", edit[4].length);
       editor.session.replace(new ace.Range(edit[2], edit[3], edit[2], edit[3] + edit[4].length), "");
     } else if (edit[0] == "s") {
-      console.log("Selecting...", edit[2], edit[3], edit[4]);
       editor.selection.setRange(new ace.Range(edit[2], edit[3], edit[4].row, edit[4].column));
     }
   } else {
@@ -206,9 +211,7 @@ var historymove = function(adjust) {
       editor.insert(edit[4]);
     }
     var prevedit = edits[currenthistory - 1];
-    console.log("Prevedit:", prevedit);
     if (prevedit[0] == "m") {
-      console.log("Moving to ", currenthistory - 1);
       editor.gotoLine(prevedit[2] + 1, prevedit[3]);
     } else if (prevedit[0] == "i") {
       editor.gotoLine(prevedit[2] + 1, prevedit[3] + prevedit[4].length);
@@ -266,6 +269,10 @@ var renameFile = function(elem) {
     var contents = localStorage.getItem(localFileStore(name));
     localStorage.setItem(localFileStore(newname), contents);
     localStorage.removeItem(localFileStore(name));
+
+    var edits = localStorage.getItem(localFileStore(name, true));
+    localStorage.setItem(localFileStore(newname, true), edits);
+    localStorage.removeItem(localFileStore(name, true));
     sessions[newname] = sessions[name];
     delete sessions[name]
   };
@@ -281,6 +288,8 @@ var loadFile = function() {
     return renameFile(this);
   document.querySelector(".filename.open").classList.remove("open");
   localStorage.setItem("lastfile|" + projectId(), this.innerText);
+  editor.session.currentHistory = currenthistory;
+  console.log("saving currenthistory", currenthistory);
   var sess = sessions[this.innerText]
   if (!sess) {
     sess = ace.createEditSession(localStorage.getItem(localFileStore(this.innerText)));
@@ -289,7 +298,15 @@ var loadFile = function() {
     sess.on("changeSelection", cursorupdate);
     sessions[this.innerText] = sess;
   }
+  edits = localStorage.getItem(localFileStore(this.innerText, true));
+  if (edits)
+    edits = deserializeEdits(edits);
+  else
+    edits = [["m", 0, 0, 0]];
+  currenthistory = sess.currentHistory || -1;
+  console.log("loading currenthistory", currenthistory);
   editor.setSession(sess);
+  displayeditstate();
   this.classList.add("open");
 }
 
@@ -318,7 +335,15 @@ var addFile = function() {
   document.querySelector(".filename.open").classList.remove("open");
   localStorage.setItem("lastfile|" + projectId(), div.innerText);
   editor.setValue(localStorage.getItem(localFileStore(div).innerText));
+  edits = localStorage.getItem(localFileStore(div).innerText, true)
+  if (edits)
+    edits = deserializeEdits(edits);
+  else
+    edits = [["m", 0, 0, 0]];
+  currenthistory = sess.currentHistory || -1;
+  console.log("loading currenthistory", currenthistory);
   div.classList.add("open");
+
 
   div.addEventListener("click", loadFile);
 }
@@ -337,6 +362,8 @@ var removeFile = function() {
   filelist.removeChild(div);
 
   localStorage.removeItem(localFileStore(filename));
+  // TODO: Save the history.
+  localStorage.removeItem(localFileStore(filename, true));
 
   var filenames = JSON.parse(localStorage.getItem(localFileStore()));
   filenames.splice(filenames.indexOf(filename), 1);
@@ -364,6 +391,7 @@ var saveToServer = function() {
   var filenames = JSON.parse(localStorage.getItem(localFileStore()))
   for (var i = 0; i < filenames.length; i++)
     formdata.append(filenames[i], localStorage.getItem(localFileStore(filenames[i])));
+  // TODO: save history
   xhr.send(formdata);
 }
 
@@ -388,6 +416,8 @@ var loadFromServer = function() {
     var filelist = document.getElementById("filelist");
     while (filelist.firstChild)
       filelist.removeChild(filelist.lastChild);
+
+    // TODO: load history
 
     // Do this somewhere better?
     filenames = [];
@@ -554,6 +584,13 @@ var initFiles = function() {
   sess.on("changeSelection", cursorupdate);
   editor.setSession(sess);
   sessions[lastfile] = sess;
+
+  edits = localStorage.getItem(localFileStore(lastfile, true));
+  if (edits)
+    edits = deserializeEdits(edits);
+  else
+    edits = [["m", 0, 0, 0]];
+  displayeditstate();
 
   filenames = document.getElementsByClassName("filename");
   for (var i = 0; i < filenames.length; i++)

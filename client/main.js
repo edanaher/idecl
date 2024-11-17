@@ -102,12 +102,27 @@ var deserializeEdits = function(str) {
   return edits;
 }
 
+var postinsertposition = function(edit) {
+  if (edit[0] == "i" || edit[0] == "d") {
+    var newlines = edit[4].match(/\n/g)
+    if (newlines) {
+      var col = edit[4].length - edit[4].lastIndexOf("\n") - 1;
+      return [edit[2] + newlines.length, col];
+    } else {
+      return [edit[2], edit[3] + edit[4].length];
+    }
+  }
+  return [edit[2], edit[3]];
+}
+
 // Log events:
 //   [m]ove
 //   [i]nsert
 //   [d]elete
 //   [s]elect
 var logedit = function(type, position, data) {
+  if (currenthistory != -1)
+    return;
   var now = Date.now();
   var row = null;
   var col = null;
@@ -118,13 +133,14 @@ var logedit = function(type, position, data) {
   }
   if (edits.length > 0 && type == "m") {
     var lastedit = edits[edits.length - 1];
-    if (lastedit[0] == "m" && lastedit[2] == row && lastedit[3] == col)
+    var [lastrow, lastcol] = postinsertposition(lastedit);
+    if (lastedit[0] == "m" && lastrow == row && lastcol == col)
       return;
-    if (lastedit[0] == "i" && lastedit[2] == row && lastedit[3] + lastedit[4].length == col)
+    if (lastedit[0] == "i" && lastrow == row && lastcol == col)
       return;
-    if (lastedit[0] == "d" && lastedit[2] == row && lastedit[3]== col)
+    if (lastedit[0] == "d" && lastedit[2] == row && lastedit[3] == col)
       return;
-    if (lastedit[0] == "s" && lastedit[2] == row && lastedit[3]== col && now - lastedittime < 20)
+    if (lastedit[0] == "s" && lastrow == row && lastcol == col && now - lastedittime < 20)
       overwrite = true;
   }
   if (edits.length > 0 && type == "d") {
@@ -199,13 +215,15 @@ var historymove = function(adjust) {
       editor.gotoLine(edit[2] + 1, edit[3]);
       editor.insert(edit[4]);
     } else if (edit[0] == "d") {
-      editor.session.replace(new ace.Range(edit[2], edit[3], edit[2], edit[3] + edit[4].length), "");
+      var [row, col] = postinsertposition(edit);
+      editor.session.replace(new ace.Range(edit[2], edit[3], row, col), "");
     } else if (edit[0] == "s") {
       editor.selection.setRange(new ace.Range(edit[2], edit[3], edit[4].row, edit[4].column));
     }
   } else {
     if (edit[0] == "i") {
-      editor.session.replace(new ace.Range(edit[2], edit[3], edit[2], edit[3] + edit[4].length), "");
+      var [row, col] = postinsertposition(edit);
+      editor.session.replace(new ace.Range(edit[2], edit[3], row, col), "");
     } else if (edit[0] == "d" && adjust < 0) {
       editor.gotoLine(edit[2] + 1, edit[3]);
       editor.insert(edit[4]);
@@ -289,7 +307,6 @@ var loadFile = function() {
   document.querySelector(".filename.open").classList.remove("open");
   localStorage.setItem("lastfile|" + projectId(), this.innerText);
   editor.session.currentHistory = currenthistory;
-  console.log("saving currenthistory", currenthistory);
   var sess = sessions[this.innerText]
   if (!sess) {
     sess = ace.createEditSession(localStorage.getItem(localFileStore(this.innerText)));
@@ -304,7 +321,6 @@ var loadFile = function() {
   else
     edits = [["m", 0, 0, 0]];
   currenthistory = sess.currentHistory || -1;
-  console.log("loading currenthistory", currenthistory);
   editor.setSession(sess);
   displayeditstate();
   this.classList.add("open");
@@ -341,7 +357,6 @@ var addFile = function() {
   else
     edits = [["m", 0, 0, 0]];
   currenthistory = sess.currentHistory || -1;
-  console.log("loading currenthistory", currenthistory);
   div.classList.add("open");
 
 
@@ -545,12 +560,15 @@ var resetFiles = function() {
   var filenames = JSON.parse(localStorage.getItem(localFileStore()));
   localStorage.removeItem(localFileStore(), "");
 
-  for (var i = 0; i < filenames.length; i++)
+  for (var i = 0; i < filenames.length; i++) {
     localStorage.removeItem(localFileStore(filenames[i]));
+    localStorage.removeItem(localFileStore(filenames[i], true));
+  }
 
   var filelist = document.getElementById("filelist");
   while (filelist.firstChild)
     filelist.removeChild(filelist.lastChild);
+  sessions = {};
 
   bootstrapStorage();
   initFiles();

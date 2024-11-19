@@ -193,6 +193,19 @@ var saveFile = function() {
   }
 }
 
+var checkHistoryReplay = function() {
+  var filename = document.querySelector(".filename.open").innerText;
+  var restored = editor.getValue();
+  var orig = localStorage.getItem(localFileStore(filename));
+  if (restored != orig) {
+    console.log("Difference: ", JSON.stringify(restored), JSON.stringify(orig));
+    alert("History fail");
+    editor.setValue(localStorage.getItem(localFileStore(filename)));
+
+  } else
+    console.log("hist success");
+}
+
 var historymove = function(adjust) {
   if (!edits)
     return;
@@ -245,6 +258,7 @@ var historymove = function(adjust) {
   if (adjust < 0)
     currenthistory += adjust;
   if (currenthistory >= edits.length - 1) {
+    checkHistoryReplay();
     currenthistory = -1;
     editor.setReadOnly(false);
     displayeditstate();

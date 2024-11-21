@@ -42,7 +42,9 @@ files_table = Table(
     metadata_obj,
     Column("id", Integer, primary_key=True),
     Column("project_id", Integer, ForeignKey("projects.id", name="fk_files_project_id"), nullable=False),
+    Column("file_id", Integer, nullable=True), # TODO: make not nullable after migration.
     Column("name", String),
     Column("contents", BLOB),
-    UniqueConstraint("project_id", "name", name="uniq_file_project_name")
+    UniqueConstraint("project_id", "name", name="uniq_file_project_name"),
+    UniqueConstraint("project_id", "file_id", name="uniq_file_project_file_id")
 )

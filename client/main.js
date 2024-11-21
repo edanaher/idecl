@@ -187,21 +187,20 @@ var editorupdate = function(delta) {
 var saveFile = function() {
   // Only save at end of history.  Eventually history should be saving, but until then...
   if (currenthistory == -1) {
-    var filename = document.querySelector(".filename.open").innerText;
-    localStorage.setItem(localFileStore(filename), editor.getValue());
-    localStorage.setItem(localFileStore(filename, true), serializeEdits());
+    var fileid = document.querySelector(".filename.open").getAttribute("fileid");
+    localStorage.setItem(localFileStore(fileid), editor.getValue());
+    localStorage.setItem(localFileStore(fileid, true), serializeEdits());
   }
 }
 
 var checkHistoryReplay = function() {
-  var filename = document.querySelector(".filename.open").innerText;
+  var fileid = document.querySelector(".filename.open").getAttribute("fileid");
   var restored = editor.getValue();
-  var orig = localStorage.getItem(localFileStore(filename));
+  var orig = localStorage.getItem(localFileStore(fileid));
   if (restored != orig) {
     console.log("Difference: ", JSON.stringify(restored), JSON.stringify(orig));
     alert("History fail");
-    editor.setValue(localStorage.getItem(localFileStore(filename)));
-
+    editor.setValue(localStorage.getItem(localFileStore(fileid)));
   } else
     console.log("hist success");
 }
@@ -292,21 +291,10 @@ var renameFile = function(elem) {
       return;
 
     var files = JSON.parse(localStorage.getItem(localFileStore()));
-    for (var i = 0; i < files.length; i++)
+    for (var i in files)
       if (files[i] == name)
         files[i] = newname;
     localStorage.setItem(localFileStore(), JSON.stringify(files));
-    localStorage.setItem("lastfile|" + projectId(), newname);
-
-    var contents = localStorage.getItem(localFileStore(name));
-    localStorage.setItem(localFileStore(newname), contents);
-    localStorage.removeItem(localFileStore(name));
-
-    var edits = localStorage.getItem(localFileStore(name, true));
-    localStorage.setItem(localFileStore(newname, true), edits);
-    localStorage.removeItem(localFileStore(name, true));
-    sessions[newname] = sessions[name];
-    delete sessions[name]
   };
   editbox.addEventListener("blur", finishEdit);
   editbox.addEventListener("beforeinput", function(e) {
@@ -316,20 +304,21 @@ var renameFile = function(elem) {
 }
 
 var loadFile = function() {
+  var fileid = this.getAttribute("fileid");
   if (this.classList.contains("open"))
     return renameFile(this);
   document.querySelector(".filename.open").classList.remove("open");
-  localStorage.setItem("lastfile|" + projectId(), this.innerText);
+  localStorage.setItem("lastfile|" + projectId(), fileid);
   editor.session.currentHistory = currenthistory;
-  var sess = sessions[this.innerText]
+  var sess = sessions[fileid]
   if (!sess) {
-    sess = ace.createEditSession(localStorage.getItem(localFileStore(this.innerText)));
+    sess = ace.createEditSession(localStorage.getItem(localFileStore(fileid)));
     sess.setMode("ace/mode/java");
     sess.on("change", editorupdate);
     sess.on("changeSelection", cursorupdate);
-    sessions[this.innerText] = sess;
+    sessions[fileid] = sess;
   }
-  edits = localStorage.getItem(localFileStore(this.innerText, true));
+  edits = localStorage.getItem(localFileStore(fileid, true));
   if (edits)
     edits = deserializeEdits(edits);
   else
@@ -343,42 +332,48 @@ var loadFile = function() {
 var addFile = function() {
   var filenames = JSON.parse(localStorage.getItem(localFileStore()));
   var max = -1;
+  var nextId = 0;
   for (var f in filenames) {
+    if (parseInt(f) >= nextId)
+      nextId = parseInt(f) + 1;
     if (filenames[f] == "untitled")
       max = 0;
     else if (filenames[f].slice(0, 8) == "untitled")
       max = Math.max(max, parseInt(filenames[f].slice(8)));
   }
   var newfile = max == -1 ? "untitled" : "untitled" + (max + 1);
-  filenames.push(newfile)
+  filenames[nextId] = newfile;
   localStorage.setItem(localFileStore(), JSON.stringify(filenames));
-  localStorage.setItem(localFileStore(newfile), "");
+  localStorage.setItem(localFileStore(nextId), "");
 
   // TODO: dedup this with initFiles
   var filelist = document.getElementById("filelist");
   var div = document.createElement("div");
   div.innerText = newfile;
   div.classList.add("filename");
+  div.setAttribute("fileid", nextId);
   filelist.appendChild(div);
 
   // TODO: dedup with loadFile
   document.querySelector(".filename.open").classList.remove("open");
-  localStorage.setItem("lastfile|" + projectId(), div.innerText);
-  editor.setValue(localStorage.getItem(localFileStore(div).innerText));
-  edits = localStorage.getItem(localFileStore(div).innerText, true)
-  if (edits)
-    edits = deserializeEdits(edits);
-  else
-    edits = [["m", 0, 0, 0]];
-  currenthistory = sess.currentHistory || -1;
+  localStorage.setItem("lastfile|" + projectId(), nextId);
+  edits = [["m", 0, 0, 0]];
+  currenthistory = -1;
   div.classList.add("open");
 
+  var sess = ace.createEditSession("");
+  sess.setMode("ace/mode/java");
+  sess.on("change", editorupdate);
+  sess.on("changeSelection", cursorupdate);
+  sessions[nextId] = sess;
+  editor.setSession(sess);
 
   div.addEventListener("click", loadFile);
 }
 
 var removeFile = function() {
   var div = document.querySelector(".filename.open");
+  var fileid = div.getAttribute("fileid");
   var filename = div.innerText;
 
   if (!confirm("Are you sure you want to delete " + filename + "?"))
@@ -390,12 +385,12 @@ var removeFile = function() {
   loadFile.call(filelist.children[0]);
   filelist.removeChild(div);
 
-  localStorage.removeItem(localFileStore(filename));
+  localStorage.removeItem(localFileStore(fileid));
   // TODO: Save the history.
-  localStorage.removeItem(localFileStore(filename, true));
+  localStorage.removeItem(localFileStore(fileid, true));
 
   var filenames = JSON.parse(localStorage.getItem(localFileStore()));
-  filenames.splice(filenames.indexOf(filename), 1);
+  delete filenames[fileid];
   localStorage.setItem(localFileStore(), JSON.stringify(filenames));
 
 }
@@ -406,6 +401,7 @@ var saveToServer = function() {
   savebutton.innerText = "Saving..."
   var xhr = new XMLHttpRequest();
   xhr.open("POST", baseURL() + "save", true);
+  xhr.setRequestHeader("Content-Type", "application/json");
   xhr.onprogress = function() {
     if (xhr.readyState === XMLHttpRequest.DONE || xhr.readyState === XMLHttpRequest.LOADING) {
       if(xhr.status != 200)
@@ -416,12 +412,12 @@ var saveToServer = function() {
       }
     }
   };
-  var formdata = new FormData();
+  var postdata = {}
   var filenames = JSON.parse(localStorage.getItem(localFileStore()))
-  for (var i = 0; i < filenames.length; i++)
-    formdata.append(filenames[i], localStorage.getItem(localFileStore(filenames[i])));
+  for (var i in filenames)
+    postdata[i] = {"name": filenames[i], "contents": localStorage.getItem(localFileStore(i))};
   // TODO: save history
-  xhr.send(formdata);
+  xhr.send(JSON.stringify(postdata));
 }
 
 var loadFromServer = function() {
@@ -439,8 +435,8 @@ var loadFromServer = function() {
     sessions = [];
     localStorage.removeItem(localFileStore(), "");
 
-    for (var i = 0; i < filenames.length; i++)
-      localStorage.removeItem(localFileStore(filenames[i]));
+    for (var i in filenames)
+      localStorage.removeItem(localFileStore(i));
 
     var filelist = document.getElementById("filelist");
     while (filelist.firstChild)
@@ -449,14 +445,14 @@ var loadFromServer = function() {
     // TODO: load history
 
     // Do this somewhere better?
-    filenames = [];
-    for (var i = 0; i < serverFiles.length; i++) {
-      localStorage.setItem(localFileStore(serverFiles[i].name), serverFiles[i].contents);
-      filenames = filenames.concat(serverFiles[i].name);
+    filenames = {};
+    for (var i in serverFiles) {
+      localStorage.setItem(localFileStore(i), serverFiles[i].contents);
+      filenames[i] = serverFiles[i].name;
     }
 
     localStorage.setItem(localFileStore(), JSON.stringify(filenames));
-    localStorage.setItem("lastfile|" + projectId(), serverFiles[0].name);
+    localStorage.setItem("lastfile|" + projectId(), serverFiles[0].fileid);
 
     initFiles();
     loadbutton.innerText = "load";
@@ -496,8 +492,8 @@ var runcommand = function(test) {
   }
   var formdata = new FormData();
   var filenames = JSON.parse(localStorage.getItem(localFileStore()))
-  for (var i = 0; i < filenames.length; i++)
-    formdata.append(filenames[i], localStorage.getItem(localFileStore(filenames[i])));
+  for (var i in filenames)
+    formdata.append(filenames[i], localStorage.getItem(localFileStore(i)));
   xhr.send(formdata);
   document.getElementById("sendinput").disabled = false;
 }
@@ -528,6 +524,7 @@ var sendinput = function() {
 }
 
 var bootstrapStorage = function() {
+    localStorage.setItem("version", 0);
     localStorage.setItem(localFileStore(), JSON.stringify(["Main.java", "Num.java", "TestNum.java"]));
     localStorage.setItem("lastfile|" + projectId(), "Main.java");
     localStorage.setItem(localFileStore("Main.java"), `import java.util.Scanner;
@@ -574,9 +571,9 @@ var resetFiles = function() {
   var filenames = JSON.parse(localStorage.getItem(localFileStore()));
   localStorage.removeItem(localFileStore(), "");
 
-  for (var i = 0; i < filenames.length; i++) {
-    localStorage.removeItem(localFileStore(filenames[i]));
-    localStorage.removeItem(localFileStore(filenames[i], true));
+  for (var i in filenames) {
+    localStorage.removeItem(localFileStore(i));
+    localStorage.removeItem(localFileStore(i, true));
   }
 
   var filelist = document.getElementById("filelist");
@@ -589,6 +586,38 @@ var resetFiles = function() {
 }
 
 
+var upgradestore = function() {
+  var version = localStorage.getItem("version");
+  if (!version)
+    version = "0";
+  version = parseInt(version);
+
+  if (version == 0) {
+    var files = JSON.parse(localStorage.getItem(localFileStore()));
+    var lastfile = localStorage.getItem("lastfile|" + projectId());
+    if (Array.isArray(files)) {
+      var filemap = {};
+      for (var i = 0; i < files.length; i++)
+        filemap[i] = files[i];
+      localStorage.setItem(localFileStore(), JSON.stringify(filemap));
+      files = filemap;
+    }
+    for (var i in files) {
+      var oldkey = "files|" + projectId() + "|" + files[i];
+      var oldcontents = localStorage.getItem(oldkey);
+      if (oldcontents) {
+        localStorage.setItem(localFileStore(i), oldcontents);
+        localStorage.removeItem(oldkey);
+      }
+      if (lastfile == files[i]) {
+        var lastfile = localStorage.setItem("lastfile|" + projectId(), i);
+      }
+    }
+  }
+
+  localStorage.setItem("version", 1);
+}
+
 var initFiles = function() {
   var lastfile = localStorage.getItem("lastfile|" + projectId());
   var filenames = JSON.parse(localStorage.getItem(localFileStore()));
@@ -599,6 +628,7 @@ var initFiles = function() {
     var div = document.createElement("div");
     div.innerText = filenames[f];
     div.classList.add("filename");
+    div.setAttribute("fileid", f);
     if (filenames[f] == lastfile) {
       div.classList.add("open");
       opened = true;
@@ -607,7 +637,7 @@ var initFiles = function() {
   }
   if (!opened) {
     filelist.children[0].classList.add("open")
-    lastfile = filelist.children[0].innerText
+    lastfile = filelist.children[0].getAttribute("fileid");
   }
 
   var sess = ace.createEditSession(localStorage.getItem(localFileStore(lastfile)));
@@ -637,6 +667,7 @@ var initAce = function() {
 window.onload = function() {
   if (!localStorage.getItem(localFileStore()))
     bootstrapStorage();
+  upgradestore();
   initAce();
   initFiles();
   document.getElementById("run").addEventListener("click", runcode);

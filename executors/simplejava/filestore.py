@@ -20,14 +20,15 @@ with engine.connect() as conn:
 @login_required
 @app.route("/projects/<pid>/save", methods=["POST"])
 def save_project(pid):
-    formdata = request.form
+    data = request.json
     with engine.connect() as conn:
         # TODO: turn permissions back on with RBAC
         #row = conn.execute(text("SELECT * FROM projects WHERE owner=:uid AND projects.id=:pid"), [{"pid": pid, "uid": current_user.id }]).first()
         #if not row:
         #    abort(401)
+        print("data is", repr(data));
         conn.execute(text("DELETE FROM files WHERE project_id=:pid"), [{"pid": pid}])
-        conn.execute(text("INSERT INTO files (project_id, name, contents) VALUES (:pid, :name, :contents) ON CONFLICT DO UPDATE SET contents=:contents"), [{"pid": pid, "name": k, "contents": formdata[k]} for k in formdata])
+        conn.execute(text("INSERT INTO files (project_id, file_id, name, contents) VALUES (:pid, :file_id, :name, :contents) ON CONFLICT DO UPDATE SET contents=:contents, name=:name"), [{"pid": pid, "file_id": k, "name": data[k]["name"], "contents": data[k]["contents"]} for k in data])
         conn.commit()
 
     return "Success"
@@ -35,13 +36,12 @@ def save_project(pid):
 @login_required
 @app.route("/projects/<pid>/load", methods=["GET"])
 def load_project(pid):
-    formdata = request.form
     uid = current_user.id
     with engine.connect() as conn:
         # TODO: turn permissions back on with RBAC
         #row = conn.execute(text("SELECT * FROM projects WHERE owner=:uid AND projects.id=:pid"), [{"pid": pid, "uid": uid}]).first()
         #if not row:
         #    abort(401)
-        rows = conn.execute(text("SELECT id, name, contents FROM files WHERE project_id=:pid"), [{"pid": pid}]).all()
+        rows = conn.execute(text("SELECT file_id, name, contents FROM files WHERE project_id=:pid"), [{"pid": pid}]).all()
 
-    return json.dumps([{"id": r.id, "name": r.name, "contents": r.contents} for r in rows])
+    return json.dumps({r.file_id: {"name": r.name, "contents": r.contents} for r in rows})

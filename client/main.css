@@ -17,6 +17,11 @@
   background-color: #CCFFCC;
 }
 
+#filelist .filename.histdeleted {
+  background-color: #FFDDDD;
+  color: #AAAAAA;
+}
+
 #filebottom {
   position: relative;
 }

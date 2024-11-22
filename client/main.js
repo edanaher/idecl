@@ -71,7 +71,6 @@ var serializeEdits = function() {
       extra = serializeString(edit[4]);
     if (edit[0] == "l") {
       extra = serializeInt(edit[4][0]) + serializeInt(edit[4][1]);
-      console.log(extra, "from", edit[4][0], edit[4][1]);
     }
     else if (edit[0] == "s")
       extra = serializeInt(edit[4].row) + serializeInt(edit[4].column);
@@ -131,7 +130,7 @@ var postinsertposition = function(edit) {
 //   [d]elete
 //   [s]elect
 //   [l]oad file
-//  *[a]dd file
+//   [a]dd file
 //  *[r]emove file
 //  *re[n]ame file
 //  *e[x]ecute file
@@ -249,6 +248,11 @@ var historymove = function(adjust) {
     } else if (edit[0] == "l") {
       loadFile(edit[4][1]);
       editor.gotoLine(edit[2] + 1, edit[3]);
+    } else if (edit[0] == "a") {
+      var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
+      filenamediv.classList.remove("histdeleted");
+      loadFile(edit[4][1]);
+      editor.gotoLine(edit[2] + 1, edit[3]);
     }
   } else {
     if (edit[0] == "i") {
@@ -258,6 +262,10 @@ var historymove = function(adjust) {
       editor.gotoLine(edit[2] + 1, edit[3]);
       editor.insert(edit[4]);
     } else if (edit[0] == "l") {
+      loadFile(edit[4][0]);
+    } else if (edit[0] == "a") {
+      var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
+      filenamediv.classList.add("histdeleted");
       loadFile(edit[4][0]);
     }
     var prevedit = edits[currenthistory - 1];
@@ -327,10 +335,8 @@ var renameFile = function(elem) {
 
 var loadFile = function(fileid) {
   var filenamediv;
-  if (fileid) {
-    console.log(`#filelist .filename[fileid="${fileid}"]`)
+  if (typeof(fileid) == "number") {
     filenamediv = document.querySelector("#filelist .filename[fileid=\"" + fileid + "\"]");
-    console.log(filenamediv);
   } else {
     if (this.classList.contains("open"))
       return renameFile(this);
@@ -358,6 +364,7 @@ var addFile = function() {
   var filenames = JSON.parse(localStorage.getItem(localFileStore()));
   var max = -1;
   var nextId = 0;
+  var oldfileid = document.querySelector(".filename.open").getAttribute("fileid");
   for (var f in filenames) {
     if (parseInt(f) >= nextId)
       nextId = parseInt(f) + 1;
@@ -382,7 +389,6 @@ var addFile = function() {
   // TODO: dedup with loadFile
   document.querySelector(".filename.open").classList.remove("open");
   localStorage.setItem("lastfile|" + projectId(), nextId);
-  edits = [["m", 0, 0, 0]];
   currenthistory = -1;
   div.classList.add("open");
 
@@ -392,6 +398,8 @@ var addFile = function() {
   sess.on("changeSelection", cursorupdate);
   sessions[nextId] = sess;
   editor.setSession(sess);
+
+  logedit("a", sess.selection.getCursor(), [parseInt(oldfileid), nextId]);
 
   div.addEventListener("click", loadFile);
 }

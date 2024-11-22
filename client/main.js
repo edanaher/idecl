@@ -69,6 +69,10 @@ var serializeEdits = function() {
     var extra = ""
     if (edit[0] == "i" || edit[0] == "d")
       extra = serializeString(edit[4]);
+    if (edit[0] == "l") {
+      extra = serializeInt(edit[4][0]) + serializeInt(edit[4][1]);
+      console.log(extra, "from", edit[4][0], edit[4][1]);
+    }
     else if (edit[0] == "s")
       extra = serializeInt(edit[4].row) + serializeInt(edit[4].column);
     strs.push(edit[0] + serializeInt(edit[1]) + serializeInt(edit[2]) + serializeInt(edit[3]) + extra);
@@ -90,6 +94,12 @@ var deserializeEdits = function(str) {
     [col, i] = deserializeInt(str, i);
     if (type == "i" || type == "d")
       [extra, i] = deserializeString(str, i);
+    if (type == "l") {
+      var prev, cur;
+      [prev, i] = deserializeInt(str, i);
+      [cur, i] = deserializeInt(str, i);
+      extra = [prev, cur];
+    }
     if (type == "s") {
       var r, c;
       [r, i] = deserializeInt(str, i);
@@ -120,6 +130,11 @@ var postinsertposition = function(edit) {
 //   [i]nsert
 //   [d]elete
 //   [s]elect
+//   [l]oad file
+//  *[a]dd file
+//  *[r]emove file
+//  *re[n]ame file
+//  *e[x]ecute file
 var logedit = function(type, position, data) {
   if (currenthistory != -1)
     return;
@@ -231,6 +246,9 @@ var historymove = function(adjust) {
       editor.session.replace(new ace.Range(edit[2], edit[3], row, col), "");
     } else if (edit[0] == "s") {
       editor.selection.setRange(new ace.Range(edit[2], edit[3], edit[4].row, edit[4].column));
+    } else if (edit[0] == "l") {
+      loadFile(edit[4][1]);
+      editor.gotoLine(edit[2] + 1, edit[3]);
     }
   } else {
     if (edit[0] == "i") {
@@ -239,6 +257,8 @@ var historymove = function(adjust) {
     } else if (edit[0] == "d" && adjust < 0) {
       editor.gotoLine(edit[2] + 1, edit[3]);
       editor.insert(edit[4]);
+    } else if (edit[0] == "l") {
+      loadFile(edit[4][0]);
     }
     var prevedit = edits[currenthistory - 1];
     if (prevedit[0] == "m") {
@@ -249,6 +269,8 @@ var historymove = function(adjust) {
       editor.gotoLine(prevedit[2] + 1, prevedit[3]);
     } else if (prevedit[0] == "s") {
       editor.selection.setRange(new ace.Range(prevedit[2], prevedit[3], prevedit[4].row, prevedit[4].column));
+    } else if (prevedit[0] == "l") {
+      editor.gotoLine(prevedit[2] + 1, prevedit[3]);
     }
   }
 
@@ -303,13 +325,21 @@ var renameFile = function(elem) {
   });
 }
 
-var loadFile = function() {
-  var fileid = this.getAttribute("fileid");
-  if (this.classList.contains("open"))
-    return renameFile(this);
+var loadFile = function(fileid) {
+  var filenamediv;
+  if (fileid) {
+    console.log(`#filelist .filename[fileid="${fileid}"]`)
+    filenamediv = document.querySelector("#filelist .filename[fileid=\"" + fileid + "\"]");
+    console.log(filenamediv);
+  } else {
+    if (this.classList.contains("open"))
+      return renameFile(this);
+    filenamediv = this;
+    fileid = this.getAttribute("fileid");
+  }
+  var oldfileid = document.querySelector(".filename.open").getAttribute("fileid");
   document.querySelector(".filename.open").classList.remove("open");
   localStorage.setItem("lastfile|" + projectId(), fileid);
-  editor.session.currentHistory = currenthistory;
   var sess = sessions[fileid]
   if (!sess) {
     sess = ace.createEditSession(localStorage.getItem(localFileStore(fileid)));
@@ -318,15 +348,10 @@ var loadFile = function() {
     sess.on("changeSelection", cursorupdate);
     sessions[fileid] = sess;
   }
-  edits = localStorage.getItem(localFileStore(fileid, true));
-  if (edits)
-    edits = deserializeEdits(edits);
-  else
-    edits = [["m", 0, 0, 0]];
-  currenthistory = sess.currentHistory || -1;
+  logedit("l", sess.selection.getCursor(), [parseInt(oldfileid), parseInt(fileid)]);
   editor.setSession(sess);
   displayeditstate();
-  this.classList.add("open");
+  filenamediv.classList.add("open");
 }
 
 var addFile = function() {
@@ -560,6 +585,7 @@ public class TestNum
     assertEquals("5 plus 8", 13, Num.add(5, 8));
   }
 }`);
+  upgradestore();
 }
 
 var resetFiles = function() {

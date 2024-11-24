@@ -69,11 +69,13 @@ var serializeEdits = function() {
     var extra = ""
     if (edit[0] == "i" || edit[0] == "d")
       extra = serializeString(edit[4]);
-    if (edit[0] == "l") {
+    else if (edit[0] == "l")
       extra = serializeInt(edit[4][0]) + serializeInt(edit[4][1]);
-    }
     else if (edit[0] == "s")
       extra = serializeInt(edit[4].row) + serializeInt(edit[4].column);
+    else if (edit[0] == "n")
+      extra = serializeInt(edit[4][0]) + serializeString(edit[4][1]) + serializeString(edit[4][2]);
+
     strs.push(edit[0] + serializeInt(edit[1]) + serializeInt(edit[2]) + serializeInt(edit[3]) + extra);
   }
   return "v1" + strs.join(";");
@@ -105,6 +107,13 @@ var deserializeEdits = function(str) {
       [c, i] = deserializeInt(str, i);
       extra = {row: r, column: c};
     }
+    if (type == "n") {
+      var id, old, cur;
+      [id, i] = deserializeInt(str, i);
+      [old, i] = deserializeString(str, i);
+      [cur, i] = deserializeString(str, i);
+      extra = [id, old, cur]
+    }
     edits.push([type, time, row, col, extra]);
     i++;
   }
@@ -132,7 +141,7 @@ var postinsertposition = function(edit) {
 //   [l]oad file
 //   [a]dd file
 //  *[r]emove file
-//  *re[n]ame file
+//   re[n]ame file
 //  *e[x]ecute file
 var logedit = function(type, position, data) {
   if (currenthistory != -1)
@@ -253,6 +262,9 @@ var historymove = function(adjust) {
       filenamediv.classList.remove("histdeleted");
       loadFile(edit[4][1]);
       editor.gotoLine(edit[2] + 1, edit[3]);
+    } else if (edit[0] == "n") {
+      var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
+      filenamediv.innerText = edit[4][2];
     }
   } else {
     if (edit[0] == "i") {
@@ -267,6 +279,9 @@ var historymove = function(adjust) {
       var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
       filenamediv.classList.add("histdeleted");
       loadFile(edit[4][0]);
+    } else if (edit[0] == "n") {
+      var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
+      filenamediv.innerText = edit[4][1];
     }
     var prevedit = edits[currenthistory - 1];
     if (prevedit[0] == "m") {
@@ -277,7 +292,7 @@ var historymove = function(adjust) {
       editor.gotoLine(prevedit[2] + 1, prevedit[3]);
     } else if (prevedit[0] == "s") {
       editor.selection.setRange(new ace.Range(prevedit[2], prevedit[3], prevedit[4].row, prevedit[4].column));
-    } else if (prevedit[0] == "l") {
+    } else if (prevedit[0] == "n") {
       editor.gotoLine(prevedit[2] + 1, prevedit[3]);
     }
   }
@@ -325,6 +340,8 @@ var renameFile = function(elem) {
       if (files[i] == name)
         files[i] = newname;
     localStorage.setItem(localFileStore(), JSON.stringify(files));
+
+    logedit("n", editor.session.selection.getCursor(), [elem.getAttribute("fileid"), name, newname]);
   };
   editbox.addEventListener("blur", finishEdit);
   editbox.addEventListener("beforeinput", function(e) {

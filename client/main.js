@@ -3,11 +3,9 @@ var projectId = function() {
   p = document.URL.match(/projects\/([0-9]*)/)
   return p && parseInt(p[1]);
 }
-var localFileStore = function(filename, edits) {
+var localFileStore = function(filename) {
   var p = projectId();
   var prefix = "files|"
-  if (edits)
-    var prefix = "edits|"
   if (p) {
     if (filename)
       return prefix + projectId() + "|" + filename;
@@ -19,6 +17,10 @@ var localFileStore = function(filename, edits) {
     else
       return "files"
   }
+}
+
+var localHistStore = function() {
+  return "edits|" + projectId();
 }
 
 
@@ -212,7 +214,7 @@ var saveFile = function() {
   if (currenthistory == -1) {
     var fileid = document.querySelector(".filename.open").getAttribute("fileid");
     localStorage.setItem(localFileStore(fileid), editor.getValue());
-    localStorage.setItem(localFileStore(fileid, true), serializeEdits());
+    localStorage.setItem(localHistStore(), serializeEdits());
   }
 }
 
@@ -436,8 +438,6 @@ var removeFile = function() {
   filelist.removeChild(div);
 
   localStorage.removeItem(localFileStore(fileid));
-  // TODO: Save the history.
-  localStorage.removeItem(localFileStore(fileid, true));
 
   var filenames = JSON.parse(localStorage.getItem(localFileStore()));
   delete filenames[fileid];
@@ -624,8 +624,8 @@ var resetFiles = function() {
 
   for (var i in filenames) {
     localStorage.removeItem(localFileStore(i));
-    localStorage.removeItem(localFileStore(i, true));
   }
+  localStorage.removeItem(localHistStore());
 
   var filelist = document.getElementById("filelist");
   while (filelist.firstChild)
@@ -698,7 +698,7 @@ var initFiles = function() {
   editor.setSession(sess);
   sessions[lastfile] = sess;
 
-  edits = localStorage.getItem(localFileStore(lastfile, true));
+  edits = localStorage.getItem(localHistStore());
   if (edits)
     edits = deserializeEdits(edits);
   else

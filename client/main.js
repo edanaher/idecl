@@ -527,7 +527,12 @@ var loadFromServer = function() {
     loadbutton.textContent = "Error talking to server";
   }
   xhr.onload = function() {
-    var serverFiles = JSON.parse(xhr.response); 
+    var serverFiles = JSON.parse(xhr.response);
+    if (Object.keys(serverFiles).length == 0) {
+      loadbutton.innerText = "no server save";
+      document.getElementById("savefiles").classList.remove("dirty");
+      return;
+    }
 
     // TODO: dedupe with reset
     var filenames = JSON.parse(localStorage.getItem(localFileStore()));

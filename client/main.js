@@ -69,15 +69,18 @@ var serializeEdits = function() {
     var str = "";
     var edit = edits[i];
     var extra = ""
-    if (edit[0] == "i" || edit[0] == "d")
+    if (edit[0] == "i" || edit[0] == "d") // deleted contents
       extra = serializeString(edit[4]);
-    else if (edit[0] == "l")
+    else if (edit[0] == "l") // oldfile, newfile
       extra = serializeInt(edit[4][0]) + serializeInt(edit[4][1]);
-    else if (edit[0] == "s")
+    else if (edit[0] == "s") // row/column of other end of selection
       extra = serializeInt(edit[4].row) + serializeInt(edit[4].column);
-    else if (edit[0] == "n")
+    else if (edit[0] == "n") // id, oldname, newname
       extra = serializeInt(edit[4][0]) + serializeString(edit[4][1]) + serializeString(edit[4][2]);
-
+    else if (edit[0] == "a") // lastid, id, newfilename
+      extra = serializeInt(edit[4][0]) + serializeInt(edit[4][1]) + serializeString(edit[4][2]);
+    else if (edit[0] == "r") // id, name, contents
+      extra = serializeInt(edit[4][0]) + serializeString(edit[4][1]) + serializeString(edit[4][2]);
     strs.push(edit[0] + serializeInt(edit[1]) + serializeInt(edit[2]) + serializeInt(edit[3]) + extra);
   }
   return "v1" + strs.join(";");
@@ -116,6 +119,20 @@ var deserializeEdits = function(str) {
       [cur, i] = deserializeString(str, i);
       extra = [id, old, cur]
     }
+    if (type == "a") {
+      var oldid, newid, filename;
+      [oldid, i] = deserializeInt(str, i);
+      [newid, i] = deserializeInt(str, i);
+      [filename, i] = deserializeString(str, i);
+      extra = [oldid, newid, filename]
+    }
+    if (type == "r") {
+      var id, name, contents;
+      [id, i] = deserializeInt(str, i);
+      [name, i] = deserializeString(str, i);
+      [contents, i] = deserializeString(str, i);
+      extra = [id, name, contents]
+    }
     edits.push([type, time, row, col, extra]);
     i++;
   }
@@ -142,7 +159,7 @@ var postinsertposition = function(edit) {
 //   [s]elect
 //   [l]oad file
 //   [a]dd file
-//  *[r]emove file
+//   [r]emove file
 //   re[n]ame file
 //  *e[x]ecute file
 var logedit = function(type, position, data) {
@@ -181,6 +198,11 @@ var logedit = function(type, position, data) {
         (lastedit[4].row == data.row && lastedit[4].column == data.column)) &&
         now - lastedittime < 20)
       overwrite = true;
+  }
+  if (edits.length > 0 && type == "l") {
+    var lastedit = edits[edits.length - 1];
+    if (lastedit[0] == "r" && now - lastedittime < 20)
+      return;
   }
   if (overwrite) {
     lastedittime -= edits[edits.length -1][1];
@@ -267,6 +289,11 @@ var historymove = function(adjust) {
     } else if (edit[0] == "n") {
       var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
       filenamediv.innerText = edit[4][2];
+    } else if (edit[0] == "r") {
+      var filelist = document.getElementById("filelist");
+      var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
+      loadFile.call(filelist.children[0]);
+      filelist.removeChild(filenamediv);
     }
   } else {
     if (edit[0] == "i") {
@@ -278,12 +305,30 @@ var historymove = function(adjust) {
     } else if (edit[0] == "l") {
       loadFile(edit[4][0]);
     } else if (edit[0] == "a") {
+      console.log(edit);
       var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
       filenamediv.classList.add("histdeleted");
       loadFile(edit[4][0]);
     } else if (edit[0] == "n") {
       var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
       filenamediv.innerText = edit[4][1];
+    } else if (edit[0] == "r") {
+      var filelist = document.getElementById("filelist");
+      var div = document.createElement("div");
+      console.log(edit[4])
+      div.innerText = edit[4][1];
+      div.classList.add("filename");
+      div.setAttribute("fileid", edit[4][0]);
+      div.addEventListener("click", loadFile);
+      filelist.appendChild(div);
+      div.classList.add("histundeleted");
+
+      // TODO: dedup with addfile/loadFile
+      //document.querySelector(".filename.open").classList.remove("open");
+      //div.classList.add("open");
+
+      console.log(edit[4][2]);
+      loadFile(edit[4][0], edit[4][2]);
     }
     var prevedit = edits[currenthistory - 1];
     if (prevedit[0] == "m") {
@@ -352,7 +397,7 @@ var renameFile = function(elem) {
   });
 }
 
-var loadFile = function(fileid) {
+var loadFile = function(fileid, contents) {
   var filenamediv;
   if (typeof(fileid) == "number") {
     filenamediv = document.querySelector("#filelist .filename[fileid=\"" + fileid + "\"]");
@@ -367,13 +412,18 @@ var loadFile = function(fileid) {
   localStorage.setItem("lastfile|" + projectId(), fileid);
   var sess = sessions[fileid]
   if (!sess) {
-    sess = ace.createEditSession(localStorage.getItem(localFileStore(fileid)));
+    console.log(contents);
+    if (contents)
+      sess = ace.createEditSession(contents);
+    else
+      sess = ace.createEditSession(localStorage.getItem(localFileStore(fileid)));
     sess.setMode("ace/mode/java");
     sess.on("change", editorupdate);
     sess.on("changeSelection", cursorupdate);
     sessions[fileid] = sess;
   }
-  logedit("l", sess.selection.getCursor(), [parseInt(oldfileid), parseInt(fileid)]);
+  if (!contents)
+    logedit("l", sess.selection.getCursor(), [parseInt(oldfileid), parseInt(fileid)]);
   editor.setSession(sess);
   displayeditstate();
   filenamediv.classList.add("open");
@@ -408,7 +458,6 @@ var addFile = function() {
   // TODO: dedup with loadFile
   document.querySelector(".filename.open").classList.remove("open");
   localStorage.setItem("lastfile|" + projectId(), nextId);
-  currenthistory = -1;
   div.classList.add("open");
 
   var sess = ace.createEditSession("");
@@ -418,7 +467,7 @@ var addFile = function() {
   sessions[nextId] = sess;
   editor.setSession(sess);
 
-  logedit("a", sess.selection.getCursor(), [parseInt(oldfileid), nextId]);
+  logedit("a", sess.selection.getCursor(), [parseInt(oldfileid), nextId, newfile]);
 
   div.addEventListener("click", loadFile);
 }
@@ -431,6 +480,7 @@ var removeFile = function() {
   if (!confirm("Are you sure you want to delete " + filename + "?"))
     return;
 
+  logedit("r", editor.session.selection.getCursor(), [fileid, filename, localStorage.getItem(localFileStore(fileid))]);
   var filelist = document.getElementById("filelist");
 
   // TODO: handle deleting first file.
@@ -442,7 +492,6 @@ var removeFile = function() {
   var filenames = JSON.parse(localStorage.getItem(localFileStore()));
   delete filenames[fileid];
   localStorage.setItem(localFileStore(), JSON.stringify(filenames));
-
 }
 
 var saveToServer = function() {

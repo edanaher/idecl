@@ -19,7 +19,22 @@
 
 #filelist .filename.histdeleted {
   background-color: #FFDDDD;
-  color: #AAAAAA;
+  color: #666666;
+}
+
+#filelist .filename.histdeleted.open {
+  background-color: #FFFFDD;
+  color: #333333;
+}
+
+#filelist .filename.histundeleted {
+  background-color: #FFDDDD;
+  color: #666666;
+}
+
+#filelist .filename.histundeleted.open {
+  background-color: #EEFFDD;
+  color: #333333;
 }
 
 #filebottom {

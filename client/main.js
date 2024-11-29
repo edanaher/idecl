@@ -305,7 +305,6 @@ var historymove = function(adjust) {
     } else if (edit[0] == "l") {
       loadFile(edit[4][0]);
     } else if (edit[0] == "a") {
-      console.log(edit);
       var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
       filenamediv.classList.add("histdeleted");
       loadFile(edit[4][0]);
@@ -315,7 +314,6 @@ var historymove = function(adjust) {
     } else if (edit[0] == "r") {
       var filelist = document.getElementById("filelist");
       var div = document.createElement("div");
-      console.log(edit[4])
       div.innerText = edit[4][1];
       div.classList.add("filename");
       div.setAttribute("fileid", edit[4][0]);
@@ -327,7 +325,6 @@ var historymove = function(adjust) {
       //document.querySelector(".filename.open").classList.remove("open");
       //div.classList.add("open");
 
-      console.log(edit[4][2]);
       loadFile(edit[4][0], edit[4][2]);
     }
     var prevedit = edits[currenthistory - 1];
@@ -412,7 +409,6 @@ var loadFile = function(fileid, contents) {
   localStorage.setItem("lastfile|" + projectId(), fileid);
   var sess = sessions[fileid]
   if (!sess) {
-    console.log(contents);
     if (contents)
       sess = ace.createEditSession(contents);
     else
@@ -474,7 +470,7 @@ var addFile = function() {
 
 var removeFile = function() {
   var div = document.querySelector(".filename.open");
-  var fileid = div.getAttribute("fileid");
+  var fileid = parseInt(div.getAttribute("fileid"));
   var filename = div.innerText;
 
   if (!confirm("Are you sure you want to delete " + filename + "?"))

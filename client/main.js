@@ -27,6 +27,7 @@ var localHistStore = function() {
 var lastedittime = 0;
 var edits = [["m", 0, 0, 0]];
 var currenthistory = -1;
+var currenthistoryfile = -1;
 
 var displayeditstate = function() {
   var disp = document.getElementById("historystate");
@@ -283,6 +284,9 @@ var historymove = function(adjust) {
   if (currenthistory == -1) {
     saveFile();
     currenthistory = edits.length - 1;
+    currenthistoryfile = parseInt(document.querySelector(".filename.open").getAttribute("fileid"));
+  } else {
+    loadFile(currenthistoryfile, true);
   }
   if (adjust > 0)
     currenthistory += adjust;
@@ -306,7 +310,7 @@ var historymove = function(adjust) {
     } else if (edit[0] == "a") {
       var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
       filenamediv.classList.remove("histdeleted");
-      loadFile(edit[4][1]);
+      loadFile(edit[4][1], true);
       editor.gotoLine(edit[2] + 1, edit[3]);
     } else if (edit[0] == "n") {
       var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
@@ -314,7 +318,7 @@ var historymove = function(adjust) {
     } else if (edit[0] == "r") {
       var filelist = document.getElementById("filelist");
       var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
-      loadFile.call(filelist.children[0]);
+      loadFile(parseInt(filelist.children[0].getAttribute("fileid")), true);
       filelist.removeChild(filenamediv);
     }
   } else {
@@ -325,11 +329,11 @@ var historymove = function(adjust) {
       editor.gotoLine(edit[2] + 1, edit[3]);
       editor.insert(edit[4]);
     } else if (edit[0] == "l") {
-      loadFile(edit[4][0]);
+      loadFile(edit[4][0], true);
     } else if (edit[0] == "a") {
       var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
       filenamediv.classList.add("histdeleted");
-      loadFile(edit[4][0]);
+      loadFile(edit[4][0], true);
     } else if (edit[0] == "n") {
       var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
       filenamediv.innerText = edit[4][1];
@@ -343,11 +347,7 @@ var historymove = function(adjust) {
       filelist.appendChild(div);
       div.classList.add("histundeleted");
 
-      // TODO: dedup with addfile/loadFile
-      //document.querySelector(".filename.open").classList.remove("open");
-      //div.classList.add("open");
-
-      loadFile(edit[4][0], edit[4][2]);
+      loadFile(edit[4][0], edit[4][2], true);
     }
     var prevedit = edits[currenthistory - 1];
     if (prevedit[0] == "m") {
@@ -416,7 +416,7 @@ var renameFile = function(elem) {
   });
 }
 
-var loadFile = function(fileid, contents) {
+var loadFile = function(fileid, contents, savehistoryfile) {
   var filenamediv;
   if (typeof(fileid) == "number") {
     filenamediv = document.querySelector("#filelist .filename[fileid=\"" + fileid + "\"]");
@@ -445,6 +445,8 @@ var loadFile = function(fileid, contents) {
   editor.setSession(sess);
   displayeditstate();
   filenamediv.classList.add("open");
+  if (currenthistory != -1 && (contents === true || savehistoryfile == true))
+    currenthistoryfile = parseInt(fileid);
 }
 
 var addFile = function() {

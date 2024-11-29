@@ -241,15 +241,37 @@ var saveFile = function() {
 }
 
 var checkHistoryReplay = function() {
-  var fileid = document.querySelector(".filename.open").getAttribute("fileid");
-  var restored = editor.getValue();
-  var orig = localStorage.getItem(localFileStore(fileid));
-  if (restored != orig) {
-    console.log("Difference: ", JSON.stringify(restored), JSON.stringify(orig));
-    alert("History fail");
-    editor.setValue(localStorage.getItem(localFileStore(fileid)));
-  } else
+  var filelistdiv = document.getElementById("filelist");
+  var uifiles = filelistdiv.children;
+  var localfiles = JSON.parse(localStorage.getItem(localFileStore()));
+  var valid = true;
+  if (uifiles.length != Object.keys(localfiles).length) {
+    console.log("Filelists different lengths: ", uifiles.length, Object.keys(localfiles));
+    valid = false;
+  }
+  for (var i = 0; i < uifiles.length; i++) {
+    var filediv = uifiles[i];
+    var fileid = filediv.getAttribute("fileid");
+    var sess = sessions[fileid];
+    if (filediv.innerText != localfiles[fileid]) {
+      console.log("Difference in file name", fileid, filediv.innerText, localfiles[fileid]);
+      filediv.innerText = localfiles[fileid];
+      valid = false;
+    }
+    if (!sess)
+      continue;
+    var restored = sess.getValue();
+    var orig = localStorage.getItem(localFileStore(fileid));
+    if (restored != orig) {
+      console.log("Difference in file contents", fileid, filediv.innerText, [JSON.stringify(restored), JSON.stringify(orig)]);
+      sess.setValue(localStorage.getItem(localFileStore(fileid)));
+      valid = false;
+    }
+  }
+  if (valid)
     console.log("hist success");
+  else
+    alert("History fail");
 }
 
 var historymove = function(adjust) {

@@ -7,7 +7,11 @@
     <script src="/static/main.js"></script>
   </head>
   <body>
-    <div id="projectname">{{ project_name }}</div>
+    <div id="topbar">
+      <div id="classroomname">{{ classroom_name }}</div> &gt;
+      <div id="projectname">{{ project_name }}</div>
+      <button id="cloneproject">clone</button>
+    </div>
     <div id="maincontent">
       <div id="filecontainer">
         <div id="filelist">

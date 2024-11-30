@@ -152,3 +152,22 @@
 #projectlist button.delete-project {
   margin-left: 10px;
 }
+
+#topbar {
+  padding-bottom: 8px;
+}
+
+#classroomname {
+  display: inline-block;
+  font-size: larger;
+}
+
+#projectname {
+  display: inline-block;
+  font-size: larger;
+}
+
+#cloneproject {
+  display: inline-block;
+  margin-left: 4px;
+}

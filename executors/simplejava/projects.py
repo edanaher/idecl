@@ -47,11 +47,11 @@ def newproject(classroom):
 def project(pid):
     # TODO: check permissions on classroom
     with engine.connect() as conn:
-        row  = conn.execute(text("SELECT projects.name FROM projects WHERE projects.id=:pid"), [{"pid": pid}]).first()
+        row  = conn.execute(text("SELECT projects.name, classrooms.name AS classroom FROM projects JOIN classrooms ON classrooms.id=projects.classroom_id WHERE projects.id=:pid"), [{"pid": pid}]).first()
 
     if row == None:
         return redirect(f"/classrooms/{classroom}/projects")
-    return render_template("editor.html", project_name=row.name)
+    return render_template("editor.html", classroom_name=row.classroom, project_name=row.name)
 
 @app.route("/projects/<pid>", methods = ["DELETE"])
 @login_required

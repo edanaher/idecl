@@ -148,3 +148,7 @@
   height: 90vh;
   overflow: auto;
 }
+
+#projectlist button.delete-project {
+  margin-left: 10px;
+}

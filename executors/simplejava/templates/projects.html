@@ -1,16 +1,44 @@
 <html>
+  <link rel="stylesheet" href="/static/main.css"></script>
   <script>
+    var deleteProject = function() {
+      var deleteButton = this;
+      var id = this.getAttribute("project-id");
+      var name = this.getAttribute("project-name");
+      if (confirm("Really delete project " + name) &&
+        !confirm("Click cancel to really delete " + name)) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("DELETE", "/projects/" + id, true);
+        xhr.onload = function() {
+          var row = deleteButton.parentNode;
+          row.parentNode.removeChild(row);
+        };
+        xhr.send();
+      }
+    }
     window.onload = function() {
+      var deletes = document.getElementsByClassName("delete-project");
+      for (var i = 0; i < deletes.length; i++) {
+        deletes[i].addEventListener("click", deleteProject);
+      }
       document.getElementById("addproject").addEventListener("click", function() {
         var name = prompt("What is the new project called?");
         var xhr = new XMLHttpRequest();
         xhr.open("POST", document.location, true);
         xhr.onload = function() {
+          var pid = xhr.response;
           var a = document.createElement("a");
-          a.href = "/projects/" + xhr.response;
+          a.href = "/projects/" + pid;
           a.innerText = name;
+          var b = document.createElement("button");
+          b.classList.add("delete-project");
+          b.setAttribute("project-id", pid);
+          b.setAttribute("project-name", name);
+          b.addEventListener("click", deleteProject);
+          b.innerText = "-";
           var li = document.createElement("li");
           li.appendChild(a);
+          li.appendChild(b);
           var ul = document.getElementById("projectlist");
           ul.appendChild(li);
         };
@@ -23,7 +51,7 @@
   </script>
   <ul id="projectlist">
     {% for project in projects %}
-    <li><a href="/projects/{{ project.id }}">{{ project.name }}</a></li>
+    <li><a href="/projects/{{ project.id }}">{{ project.name }}</a><button class="delete-project" project-id="{{ project.id }}" project-name="{{ project.name }}">-</div></li>
     {% endfor %}
   </ul>
   <button id="addproject">New project</button>

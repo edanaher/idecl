@@ -52,3 +52,14 @@ def project(pid):
     if row == None:
         return redirect(f"/classrooms/{classroom}/projects")
     return render_template("editor.html", project_name=row.name)
+
+@app.route("/projects/<pid>", methods = ["DELETE"])
+@login_required
+def delete_project(pid):
+    # TODO: check permissions on classroom
+    with engine.connect() as conn:
+        conn.execute(text("DELETE FROM projects WHERE id=:pid"), [{"pid": pid}])
+        conn.execute(text("DELETE FROM files WHERE project_id=:pid"), [{"pid": pid}])
+        conn.commit()
+
+    return "Success";

@@ -710,6 +710,32 @@ var resetFiles = function() {
   initFiles();
 }
 
+var cloneProject = function(from, to) {
+  var files = localStorage.getItem("files|" + from);
+  localStorage.setItem("files|" + to, files);
+  for (var f in JSON.parse(files)) {
+    var contents = localStorage.getItem("files|" + from + "|" + f);
+    localStorage.setItem("files|" + to + "|" + f, contents);
+  }
+  // TODO: Link to specific history number to track pre-clone history
+  localStorage.setItem("cloned|" + to, from + "|" + 0);
+}
+
+var cloneProjectInit = function() {
+  var name = prompt("What is the new project name?");
+
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "/classrooms/" + classroom_id + "/projects", true);
+  xhr.onload = function() {
+    var pid = xhr.response;
+    cloneProject(projectId(), pid);
+    alert("Cloned to project " + name);
+  };
+  var formdata = new FormData();
+  formdata.append("name", name);
+  xhr.send(formdata);
+}
+
 
 var upgradestore = function() {
   var version = localStorage.getItem("version");
@@ -800,6 +826,7 @@ window.onload = function() {
   document.getElementById("sendinput").addEventListener("click", sendinput);
   editor.on("blur", saveFile);
   editor.on("change", markDirty);
+  document.getElementById("cloneproject").addEventListener("click", cloneProjectInit);
   document.getElementById("addfile").addEventListener("click", addFile);
   document.getElementById("removefile").addEventListener("click", removeFile);
   document.getElementById("savefiles").addEventListener("click", saveToServer);

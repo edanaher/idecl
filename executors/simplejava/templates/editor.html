@@ -5,10 +5,11 @@
     <link rel="stylesheet" href="/static/main.css"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.36.3/ace.min.js"></script>
     <script src="/static/main.js"></script>
+    <script type="text/javascript">var classroom_id = {{ classroom_id }};</script>
   </head>
   <body>
     <div id="topbar">
-      <div id="classroomname">{{ classroom_name }}</div> &gt;
+      <div id="classroomname"><a href="/classrooms/{{ classroom_id }}/projects">{{ classroom_name }}</a></div> &gt;
       <div id="projectname">{{ project_name }}</div>
       <button id="cloneproject">clone</button>
     </div>

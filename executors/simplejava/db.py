@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, BLOB, ForeignKey, UniqueConstraint
+from sqlalchemy import create_engine, MetaData, Table, Column, Boolean, Integer, String, BLOB, ForeignKey, UniqueConstraint
 import os
 
 engine = create_engine("sqlite+pysqlite:///" + os.environ.get("HOME") + "/idecl.db")
@@ -34,6 +34,7 @@ projects_table = Table(
     Column("classroom_id", Integer, ForeignKey("classrooms.id", name="fk_projects_classroom_if"), nullable=False),
     Column("owner", Integer, ForeignKey("users.id", name="fk_projects_owner"), nullable=False),
     Column("name", String),
+    Column("parent_id", Integer, ForeignKey("projects.id", name="fk_projects_parent_id")),
     UniqueConstraint("classroom_id", "name", name="uniq_project_classroom_name")
 )
 
@@ -45,6 +46,10 @@ files_table = Table(
     Column("file_id", Integer, nullable=True), # TODO: make not nullable after migration.
     Column("name", String),
     Column("contents", BLOB),
+    Column("parent_file_id", Integer, ForeignKey("files.id", name="fk_files_parent_file_id")),
+    Column("readonly", Boolean),
+    Column("inherited", Boolean),
+    Column("hidden", Boolean),
     UniqueConstraint("project_id", "name", name="uniq_file_project_name"),
     UniqueConstraint("project_id", "file_id", name="uniq_file_project_file_id")
 )

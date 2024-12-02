@@ -710,25 +710,29 @@ var resetFiles = function() {
   initFiles();
 }
 
-var cloneProject = function(from, to) {
-  var files = localStorage.getItem("files|" + from);
-  localStorage.setItem("files|" + to, files);
-  for (var f in JSON.parse(files)) {
+var cloneProject = function(from, to, assignment) {
+  var files = JSON.parse(localStorage.getItem("files|" + from));
+  localStorage.setItem("files|" + to, JSON.stringify(files));
+  for (var f in files) {
     var contents = localStorage.getItem("files|" + from + "|" + f);
     localStorage.setItem("files|" + to + "|" + f, contents);
+    if (assignment) {
+      if (files[f].startsWith("Test") || files[f].endsWith("Test.java") || files[f].endsWith("Tests.java"))
+        localStorage.setItem("attrs|" + to + "|" + f, "h");
+    }
   }
   // TODO: Link to specific history number to track pre-clone history
   localStorage.setItem("cloned|" + to, from + "|" + 0);
 }
 
-var cloneProjectInit = function() {
+var cloneProjectInit = function(assignment) {
   var name = prompt("What is the new project name?");
 
   var xhr = new XMLHttpRequest();
   xhr.open("POST", "/classrooms/" + classroom_id + "/projects", true);
   xhr.onload = function() {
     var pid = xhr.response;
-    cloneProject(projectId(), pid);
+    cloneProject(projectId(), pid, assignment);
     alert("Cloned to project " + name);
   };
   var formdata = new FormData();
@@ -776,6 +780,10 @@ var initFiles = function() {
 
   var opened = false;
   for(f in filenames) {
+    var attrs = localStorage.getItem("attrs|" + projectId() + "|" + f);
+    console.log(("attrs|" + projectId() + "|" + f), attrs);
+    if (attrs && attrs.indexOf("h") != -1)
+      continue;
     var div = document.createElement("div");
     div.innerText = filenames[f];
     div.classList.add("filename");
@@ -827,6 +835,7 @@ window.onload = function() {
   editor.on("blur", saveFile);
   editor.on("change", markDirty);
   document.getElementById("cloneproject").addEventListener("click", cloneProjectInit);
+  document.getElementById("cloneassignment").addEventListener("click", function() { cloneProjectInit(true) });
   document.getElementById("addfile").addEventListener("click", addFile);
   document.getElementById("removefile").addEventListener("click", removeFile);
   document.getElementById("savefiles").addEventListener("click", saveToServer);

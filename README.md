@@ -106,3 +106,5 @@ Bonus:
 - [ ] Figure out why Docker is slow and fix or replace it.
   - [ ] Looks like it's container startup; execing in an existing one is fast.  So a container pool, or container per student...  Or not docker.
 - [ ] Run transforms on code before running tests (e.g., use sed to modify a class constant)
+- [ ] Grading with inline comemnts like Github PRs.
+  - [ ] Auto-template similar comments, and assign consistent scores.

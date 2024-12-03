@@ -234,6 +234,9 @@ var editorupdate = function(delta) {
 
 var saveFile = function() {
   // Only save at end of history.  Eventually history should be saving, but until then...
+  var attrs = localStorage.getItem("attrs|" + projectId() + "|" + fileid);
+  if (attrs && attrs.indexOf("h") != -1)
+    return;
   if (currenthistory == -1) {
     var fileid = document.querySelector(".filename.open").getAttribute("fileid");
     localStorage.setItem(localFileStore(fileid), editor.getValue());
@@ -416,6 +419,20 @@ var renameFile = function(elem) {
   });
 }
 
+var fileContents = function(projectid, fileid) {
+  var attrs = localStorage.getItem("attrs|" + projectid + "|" + fileid);
+  console.log(attrs);
+  if (attrs && attrs.indexOf("i") != -1) {
+    var par = localStorage.getItem("parent|" + projectid);
+    var parfile = localStorage.getItem("files|" + projectid + "|" + fileid);
+    console.log(par, parfile);
+    return fileContents(par, parfile);
+    //sess.setReadOnly(true);
+  } else {
+    return localStorage.getItem("files|" + projectid + "|" + fileid);
+  }
+}
+
 var loadFile = function(fileid, contents, savehistoryfile) {
   var filenamediv;
   if (typeof(fileid) == "number") {
@@ -434,7 +451,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
     if (contents)
       sess = ace.createEditSession(contents);
     else
-      sess = ace.createEditSession(localStorage.getItem(localFileStore(fileid)));
+      sess = ace.createEditSession(fileContents(projectId(), fileid));
     sess.setMode("ace/mode/java");
     sess.on("change", editorupdate);
     sess.on("changeSelection", cursorupdate);
@@ -508,6 +525,7 @@ var removeFile = function() {
   filelist.removeChild(div);
 
   localStorage.removeItem(localFileStore(fileid));
+  localStorage.removeItem("attrs|" + projectId() + "|" + fileid);
 
   var filenames = JSON.parse(localStorage.getItem(localFileStore()));
   delete filenames[fileid];
@@ -617,7 +635,7 @@ var runcommand = function(test) {
   var formdata = new FormData();
   var filenames = JSON.parse(localStorage.getItem(localFileStore()))
   for (var i in filenames)
-    formdata.append(filenames[i], localStorage.getItem(localFileStore(i)));
+    formdata.append(filenames[i], fileContents(projectId(), i));
   xhr.send(formdata);
   document.getElementById("sendinput").disabled = false;
 }
@@ -713,12 +731,15 @@ var resetFiles = function() {
 var cloneProject = function(from, to, assignment) {
   var files = JSON.parse(localStorage.getItem("files|" + from));
   localStorage.setItem("files|" + to, JSON.stringify(files));
+  localStorage.setItem("parent|" + to, from);
   for (var f in files) {
     var contents = localStorage.getItem("files|" + from + "|" + f);
     localStorage.setItem("files|" + to + "|" + f, contents);
     if (assignment) {
-      if (files[f].startsWith("Test") || files[f].endsWith("Test.java") || files[f].endsWith("Tests.java"))
-        localStorage.setItem("attrs|" + to + "|" + f, "h");
+      if (files[f].startsWith("Test") || files[f].endsWith("Test.java") || files[f].endsWith("Tests.java")) {
+        localStorage.setItem("attrs|" + to + "|" + f, "hi");
+        localStorage.setItem("files|" + to + "|" + f, f);
+      }
     }
   }
   // TODO: Link to specific history number to track pre-clone history

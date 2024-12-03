@@ -13,8 +13,10 @@
           var row = deleteButton.parentNode;
           row.parentNode.removeChild(row);
           var files = JSON.parse(localStorage.getItem("files|" + id));
-          for (var f in files)
+          for (var f in files) {
             localStorage.removeItem("files|" + id + "|" + f);
+            localStorage.removeItem("attrs|" + id + "|" + f);
+          }
           localStorage.removeItem("files|" + id);
           localStorage.removeItem("edits|" + id);
           localStorage.removeItem("lastfile|" + id);

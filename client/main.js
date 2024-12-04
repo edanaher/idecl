@@ -563,7 +563,11 @@ var saveToServer = function() {
   var postdata = {}
   var filenames = JSON.parse(localStorage.getItem(localFileStore()))
   for (var i in filenames)
-    postdata[i] = {"name": filenames[i], "contents": localStorage.getItem(localFileStore(i))};
+    postdata[i] = {
+      "name": filenames[i],
+      "contents": localStorage.getItem(localFileStore(i)),
+      "attrs": localStorage.getItem("attrs|" + projectId() + "|" + i) || ""
+  };
   // TODO: save history
   xhr.send(JSON.stringify(postdata));
 }
@@ -601,6 +605,8 @@ var loadFromServer = function() {
     filenames = {};
     for (var i in serverFiles) {
       localStorage.setItem(localFileStore(i), serverFiles[i].contents);
+      if (serverFiles[i].attrs)
+        localStorage.setItem("attrs|" + projectId() + "|" + i, serverFiles[i].attrs);
       filenames[i] = serverFiles[i].name;
     }
 

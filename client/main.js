@@ -233,12 +233,13 @@ var editorupdate = function(delta) {
 }
 
 var saveFile = function() {
-  // Only save at end of history.  Eventually history should be saving, but until then...
+  // Don't save inherited files
+  var fileid = document.querySelector(".filename.open").getAttribute("fileid");
   var attrs = localStorage.getItem("attrs|" + projectId() + "|" + fileid);
-  if (attrs && attrs.indexOf("h") != -1)
+  if (attrs && (attrs.indexOf("i") != -1 || attrs.indexOf("r") != -1))
     return;
+  // Only save at end of history.  Eventually history should be saving, but until then...
   if (currenthistory == -1) {
-    var fileid = document.querySelector(".filename.open").getAttribute("fileid");
     localStorage.setItem(localFileStore(fileid), editor.getValue());
     localStorage.setItem(localHistStore(), serializeEdits());
   }
@@ -388,6 +389,10 @@ var markDirty = function() {
 var renameFile = function(elem) {
   if (elem.classList.contains("editing"))
     return
+  var attrs = localStorage.getItem("attrs|" + projectId() + "|" + elem.getAttribute("fileid"));
+  if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
+    return;
+
   elem.classList.add("editing");
   var name = elem.innerText;
   elem.innerText = ""
@@ -395,6 +400,7 @@ var renameFile = function(elem) {
   editbox.value = name;
   elem.appendChild(editbox);
   editbox.focus();
+
   var finishEdit = function() {
     var newname = editbox.value;
     elem.removeChild(editbox);
@@ -405,6 +411,7 @@ var renameFile = function(elem) {
       return;
 
     var files = JSON.parse(localStorage.getItem(localFileStore()));
+    // TODO: we now store the id on the fildid attr.  Use it.
     for (var i in files)
       if (files[i] == name)
         files[i] = newname;
@@ -421,13 +428,10 @@ var renameFile = function(elem) {
 
 var fileContents = function(projectid, fileid) {
   var attrs = localStorage.getItem("attrs|" + projectid + "|" + fileid);
-  console.log(attrs);
   if (attrs && attrs.indexOf("i") != -1) {
     var par = localStorage.getItem("parent|" + projectid);
     var parfile = localStorage.getItem("files|" + projectid + "|" + fileid);
-    console.log(par, parfile);
-    return fileContents(par, parfile);
-    //sess.setReadOnly(true);
+    return fileContents(par.split("|")[0], parfile);
   } else {
     return localStorage.getItem("files|" + projectid + "|" + fileid);
   }
@@ -464,6 +468,13 @@ var loadFile = function(fileid, contents, savehistoryfile) {
   filenamediv.classList.add("open");
   if (currenthistory != -1 && (contents === true || savehistoryfile == true))
     currenthistoryfile = parseInt(fileid);
+  if (currenthistory == -1) {
+    var attrs = localStorage.getItem("attrs|" + projectId() + "|" + fileid);
+    if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
+      editor.setReadOnly(true);
+    else
+      editor.setReadOnly(false);
+  }
 }
 
 var addFile = function() {
@@ -731,7 +742,8 @@ var resetFiles = function() {
 var cloneProject = function(from, to, assignment) {
   var files = JSON.parse(localStorage.getItem("files|" + from));
   localStorage.setItem("files|" + to, JSON.stringify(files));
-  localStorage.setItem("parent|" + to, from);
+  // TODO: Link to specific history number to track pre-clone history
+  localStorage.setItem("parent|" + to, from + "|" + 0);
   for (var f in files) {
     var contents = localStorage.getItem("files|" + from + "|" + f);
     localStorage.setItem("files|" + to + "|" + f, contents);
@@ -740,10 +752,11 @@ var cloneProject = function(from, to, assignment) {
         localStorage.setItem("attrs|" + to + "|" + f, "hi");
         localStorage.setItem("files|" + to + "|" + f, f);
       }
+      if (files[f].startsWith("Ro")) {
+        localStorage.setItem("attrs|" + to + "|" + f, "r");
+      }
     }
   }
-  // TODO: Link to specific history number to track pre-clone history
-  localStorage.setItem("cloned|" + to, from + "|" + 0);
 }
 
 var cloneProjectInit = function(assignment) {
@@ -802,7 +815,6 @@ var initFiles = function() {
   var opened = false;
   for(f in filenames) {
     var attrs = localStorage.getItem("attrs|" + projectId() + "|" + f);
-    console.log(("attrs|" + projectId() + "|" + f), attrs);
     if (attrs && attrs.indexOf("h") != -1)
       continue;
     var div = document.createElement("div");
@@ -813,6 +825,8 @@ var initFiles = function() {
       div.classList.add("open");
       opened = true;
     }
+    if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
+      div.classList.add("readonly");
     filelist.appendChild(div);
   }
   if (!opened) {

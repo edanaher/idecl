@@ -13,6 +13,14 @@
   margin: 2px;
 }
 
+#filelist .filename.readonly {
+  background-color: #CCCCCC;
+}
+
+#filelist .filename.readonly.open {
+  background-color: #BBDDBB;
+}
+
 #filelist .filename.open {
   background-color: #CCFFCC;
 }

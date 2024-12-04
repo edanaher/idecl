@@ -741,20 +741,38 @@ var resetFiles = function() {
 
 var cloneProject = function(from, to, assignment) {
   var files = JSON.parse(localStorage.getItem("files|" + from));
-  localStorage.setItem("files|" + to, JSON.stringify(files));
+  var filenames = {}
+  for (f in files)
+    filenames[files[f]] = true;
+  var newfiles = {}
+  var templated = {};
+  for (f in files) {
+    if ("template/" + files[f] in filenames)
+      continue;
+    var newname = files[f];
+    if (newname.startsWith("template/")) {
+      newname = newname.replace("template/", "");
+      templated[f] = true;
+    }
+    newfiles[f] = newname;
+  }
+  localStorage.setItem("files|" + to, JSON.stringify(newfiles));
   // TODO: Link to specific history number to track pre-clone history
   localStorage.setItem("parent|" + to, from + "|" + 0);
-  for (var f in files) {
+  for (var f in newfiles) {
     var contents = localStorage.getItem("files|" + from + "|" + f);
     localStorage.setItem("files|" + to + "|" + f, contents);
     if (assignment) {
+      var attrs = "";
       if (files[f].startsWith("Test") || files[f].endsWith("Test.java") || files[f].endsWith("Tests.java")) {
-        localStorage.setItem("attrs|" + to + "|" + f, "hi");
         localStorage.setItem("files|" + to + "|" + f, f);
+        attrs = attrs.concat("hi");
       }
-      if (files[f].startsWith("Ro")) {
-        localStorage.setItem("attrs|" + to + "|" + f, "r");
-      }
+      if (!templated[f])
+        attrs = attrs.concat("r");
+
+      if (attrs != "")
+        localStorage.setItem("attrs|" + to + "|" + f, attrs);
     }
   }
 }

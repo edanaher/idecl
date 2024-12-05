@@ -452,7 +452,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
   localStorage.setItem("lastfile|" + projectId(), fileid);
   var sess = sessions[fileid]
   if (!sess) {
-    if (contents)
+    if (contents && contents != true)
       sess = ace.createEditSession(contents);
     else
       sess = ace.createEditSession(fileContents(projectId(), fileid));

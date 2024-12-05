@@ -560,8 +560,11 @@ var saveToServer = function() {
       }
     }
   };
-  var postdata = {}
-  var filenames = JSON.parse(localStorage.getItem(localFileStore()))
+  var postdata = {};
+  var filenames = JSON.parse(localStorage.getItem(localFileStore()));
+  var par= localStorage.getItem("parent|" + projectId());
+  if (par)
+    postdata["parent"] = par;
   for (var i in filenames)
     postdata[i] = {
       "name": filenames[i],
@@ -580,7 +583,8 @@ var loadFromServer = function() {
     loadbutton.textContent = "Error talking to server";
   }
   xhr.onload = function() {
-    var serverFiles = JSON.parse(xhr.response);
+    var serverResponse = JSON.parse(xhr.response);
+    var serverFiles = serverResponse.files
     if (Object.keys(serverFiles).length == 0) {
       loadbutton.innerText = "no server save";
       document.getElementById("savefiles").classList.remove("dirty");
@@ -612,6 +616,7 @@ var loadFromServer = function() {
 
     localStorage.setItem(localFileStore(), JSON.stringify(filenames));
     localStorage.setItem("lastfile|" + projectId(), serverFiles[0].fileid);
+    localStorage.setItem("parent|" + projectId(), serverResponse.parent);
 
     initFiles();
     loadbutton.innerText = "load";
@@ -795,6 +800,7 @@ var cloneProjectInit = function(assignment) {
   };
   var formdata = new FormData();
   formdata.append("name", name);
+  formdata.append("parent", projectId());
   xhr.send(formdata);
 }
 

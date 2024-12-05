@@ -37,7 +37,10 @@ def newproject(classroom):
     formdata = request.form
     with engine.connect() as conn:
         # TODO: check permissions on classroom
-        project = conn.execute(text("INSERT INTO projects (name, classroom_id, owner) VALUES (:name, :classroom, :uid) RETURNING id"), [{"uid": current_user.id, "classroom": classroom, "name": formdata["name"]}]).first()
+        if "parent" in formdata:
+            project = conn.execute(text("INSERT INTO projects (name, classroom_id, owner, parent_id) VALUES (:name, :classroom, :uid, :parent_id) RETURNING id"), [{"uid": current_user.id, "classroom": classroom, "name": formdata["name"], "parent_id": int(formdata["parent"])}]).first()
+        else:
+            project = conn.execute(text("INSERT INTO projects (name, classroom_id, owner) VALUES (:name, :classroom, :uid) RETURNING id"), [{"uid": current_user.id, "classroom": classroom, "name": formdata["name"]}]).first()
         conn.commit()
     return str(project.id)
 

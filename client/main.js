@@ -19,10 +19,34 @@ var localFileStore = function(filename) {
   }
 }
 
-var localHistStore = function() {
-  return "edits|" + projectId();
+var loadLS = function(type, project, file) {
+  var key = type + "|" + project + (file === undefined ? "" : "|" + file);
+  return localStorage.getItem(key);
 }
 
+var loadLSc = function(type, file) {
+  return loadLS(type, projectId(), file);
+}
+
+var saveLS = function(type, project, file, contents) {
+  if (contents === undefined)
+    contents = file;
+  var key = type + "|" + project + (contents === undefined ? "" : "|" + file);
+  return localStorage.setItem(key, contents);
+}
+
+var saveLSc = function(type, file, contents) {
+  return saveLS(type, projectId(), file);
+}
+
+var rmLS = function(type, project, file) {
+  var key = type + "|" + project + (file === undefined ? "" : "|" + file);
+  return localStorage.removeItem(key);
+}
+
+var rmLSc = function(type, file) {
+  return rmLS(type, projectId(), file);
+}
 
 var lastedittime = 0;
 var edits = [["m", 0, 0, 0]];
@@ -241,7 +265,7 @@ var saveFile = function() {
   // Only save at end of history.  Eventually history should be saving, but until then...
   if (currenthistory == -1) {
     localStorage.setItem(localFileStore(fileid), editor.getValue());
-    localStorage.setItem(localHistStore(), serializeEdits());
+    saveLSc("edits", serializeEdits());
   }
 }
 
@@ -739,7 +763,7 @@ var resetFiles = function() {
   for (var i in filenames) {
     localStorage.removeItem(localFileStore(i));
   }
-  localStorage.removeItem(localHistStore());
+  rmLSc("edits");
 
   var filelist = document.getElementById("filelist");
   while (filelist.firstChild)
@@ -871,7 +895,7 @@ var initFiles = function() {
   editor.setSession(sess);
   sessions[lastfile] = sess;
 
-  edits = localStorage.getItem(localHistStore());
+  edits = loadLSc("edits");
   if (edits)
     edits = deserializeEdits(edits);
   else

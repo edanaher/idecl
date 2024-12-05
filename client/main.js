@@ -29,9 +29,11 @@ var loadLSc = function(type, file) {
 }
 
 var saveLS = function(type, project, file, contents) {
-  if (contents === undefined)
+  if (contents === undefined) {
     contents = file;
-  var key = type + "|" + project + (contents === undefined ? "" : "|" + file);
+    file = undefined
+  }
+  var key = type + "|" + project + (file === undefined ? "" : "|" + file);
   return localStorage.setItem(key, contents);
 }
 
@@ -599,10 +601,12 @@ var saveToServer = function() {
   xhr.send(JSON.stringify(postdata));
 }
 
-var loadFromServer = function() {
+var loadFromServer = function(pid) {
+  if (pid === undefined)
+    pid = projectId();
   var loadbutton = document.getElementById("loadfiles");
   var xhr = new XMLHttpRequest();
-  xhr.open("GET", baseURL() + "load", true);
+  xhr.open("GET", "/projects/" + pid + "/load", true);
   xhr.onerror = function() {
     loadbutton.textContent = "Error talking to server";
   }
@@ -616,35 +620,46 @@ var loadFromServer = function() {
     }
 
     // TODO: dedupe with reset
-    var filenames = JSON.parse(localStorage.getItem(localFileStore()));
-    sessions = [];
-    localStorage.removeItem(localFileStore(), "");
+    var filenames = loadLS("files", pid);
+    rmLS("files", pid);
 
     for (var i in filenames)
-      localStorage.removeItem(localFileStore(i));
+      rmLS("files", pid, i);
 
-    var filelist = document.getElementById("filelist");
-    while (filelist.firstChild)
-      filelist.removeChild(filelist.lastChild);
+    if (pid == projectId()) {
+      var filelist = document.getElementById("filelist");
+      while (filelist.firstChild)
+        filelist.removeChild(filelist.lastChild);
+      sessions = [];
+    }
 
     // TODO: load history
 
     // Do this somewhere better?
     filenames = {};
     for (var i in serverFiles) {
-      localStorage.setItem(localFileStore(i), serverFiles[i].contents);
+      saveLS("files", pid, i, serverFiles[i].contents);
       if (serverFiles[i].attrs)
-        localStorage.setItem("attrs|" + projectId() + "|" + i, serverFiles[i].attrs);
+        saveLS("attrs", pid, i, serverFiles[i].attrs);
       filenames[i] = serverFiles[i].name;
     }
 
-    localStorage.setItem(localFileStore(), JSON.stringify(filenames));
-    localStorage.setItem("lastfile|" + projectId(), serverFiles[0].fileid);
-    localStorage.setItem("parent|" + projectId(), serverResponse.parent);
-
-    initFiles();
-    loadbutton.innerText = "load";
-    document.getElementById("savefiles").classList.remove("dirty");
+    saveLS("files", pid, JSON.stringify(filenames));
+    saveLS("lastfiles", pid, serverFiles[0].fileid); // TODO: load from history
+    console.log("on", pid, "parent is", serverResponse.parent);
+    if (serverResponse.parent) {
+      saveLS("parent", pid, serverResponse.parent);
+      // TODO: Incidate this is in progress. Or don't do it, and load the files server-side.
+      if (!loadLS("files", serverResponse.parent)) {
+        console.log("Loading parent project");
+        loadFromServer(serverResponse.parent);
+      }
+    }
+    if (pid == projectId()) {
+      initFiles();
+      loadbutton.innerText = "load";
+      document.getElementById("savefiles").classList.remove("dirty");
+    }
   }
   xhr.send();
   loadbutton.innerText = "loading";
@@ -928,7 +943,7 @@ window.onload = function() {
   document.getElementById("addfile").addEventListener("click", addFile);
   document.getElementById("removefile").addEventListener("click", removeFile);
   document.getElementById("savefiles").addEventListener("click", saveToServer);
-  document.getElementById("loadfiles").addEventListener("click", loadFromServer);
+  document.getElementById("loadfiles").addEventListener("click", function() { loadFromServer() });
   document.getElementById("resetfiles").addEventListener("click", resetFiles);
   document.getElementById("historyback").addEventListener("click", function() { historymove(-1); });
   document.getElementById("historyforward").addEventListener("click", function() { historymove(1); });

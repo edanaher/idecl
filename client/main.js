@@ -483,6 +483,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
     else
       sess = ace.createEditSession(fileContents(projectId(), fileid));
     sess.setMode("ace/mode/java");
+    sess.setUseWrapMode(true);
     sess.on("change", editorupdate);
     sess.on("changeSelection", cursorupdate);
     sessions[fileid] = sess;
@@ -536,6 +537,7 @@ var addFile = function() {
 
   var sess = ace.createEditSession("");
   sess.setMode("ace/mode/java");
+  sess.setUseWrapMode(true);
   sess.on("change", editorupdate);
   sess.on("changeSelection", cursorupdate);
   sessions[nextId] = sess;
@@ -910,6 +912,7 @@ var initFiles = function() {
 
   var sess = ace.createEditSession(localStorage.getItem(localFileStore(lastfile)));
   sess.setMode("ace/mode/java");
+  sess.setUseWrapMode(true);
   sess.on("change", editorupdate);
   sess.on("changeSelection", cursorupdate);
   editor.setSession(sess);

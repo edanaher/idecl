@@ -612,9 +612,14 @@ var loadFromServer = function(pid) {
   }
   xhr.onload = function() {
     var serverResponse = JSON.parse(xhr.response);
-    var serverFiles = serverResponse.files
+    var serverFiles = serverResponse.files || {}
     if (Object.keys(serverFiles).length == 0) {
-      loadbutton.innerText = "no server save";
+      // this is a bit hacky, but makes some sense.  If there's no server save
+      // or local save, bootstrap it.
+      if (!localStorage.getItem(localFileStore()))
+        bootstrapStorage();
+      else
+        loadbutton.innerText = "no server save";
       document.getElementById("savefiles").classList.remove("dirty");
       return;
     }
@@ -645,7 +650,7 @@ var loadFromServer = function(pid) {
     }
 
     saveLS("files", pid, JSON.stringify(filenames));
-    saveLS("lastfiles", pid, serverFiles[0].fileid); // TODO: load from history
+    saveLS("lastfile", pid, serverFiles[0].fileid); // TODO: load from history
     console.log("on", pid, "parent is", serverResponse.parent);
     if (serverResponse.parent) {
       saveLS("parent", pid, serverResponse.parent);
@@ -898,7 +903,7 @@ var initFiles = function() {
       div.classList.add("readonly");
     filelist.appendChild(div);
   }
-  if (!opened) {
+  if (!opened && filelist.children.length > 0) {
     filelist.children[0].classList.add("open")
     lastfile = filelist.children[0].getAttribute("fileid");
   }
@@ -928,11 +933,13 @@ var initAce = function() {
 }
 
 window.onload = function() {
-  if (!localStorage.getItem(localFileStore()))
-    bootstrapStorage();
-  upgradestore();
   initAce();
-  initFiles();
+  if (!localStorage.getItem(localFileStore()))
+    loadFromServer(projectId(), true);
+  else {
+    upgradestore();
+    initFiles();
+  }
   document.getElementById("run").addEventListener("click", runcode);
   document.getElementById("runtests").addEventListener("click", runtests);
   document.getElementById("sendinput").addEventListener("click", sendinput);

@@ -64,6 +64,9 @@ def load_project(pid):
         #if not row:
         #    abort(401)
         rows = conn.execute(text("SELECT file_id, name, contents, hidden, inherited, readonly FROM files WHERE project_id=:pid"), [{"pid": pid}]).all()
+        if (len(rows) == 0):
+            return "{}"
+
         parent = conn.execute(text("SELECT parent_id FROM projects WHERE id=:pid"), [{"pid": pid}]).first()
 
     return json.dumps({"files": {r.file_id: {"name": r.name, "contents": r.contents, "attrs": attrsToString(r)} for r in rows}, "parent": parent.parent_id})

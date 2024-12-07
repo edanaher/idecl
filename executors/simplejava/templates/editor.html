@@ -11,10 +11,11 @@
     <div id="topbar">
       <div id="classroomname"><a href="/classrooms/{{ classroom_id }}/projects">{{ classroom_name }}</a></div> &gt;
       <div id="projectname">{{ project_name }}</div>
+      <button id="switchlayout">switch layout</button>
       <button id="cloneproject">clone</button>
       <button id="cloneassignment">clone as assignment</button>
     </div>
-    <div id="maincontent">
+    <div id="maincontent" layout="split">
       <div id="filecontainer">
         <div id="filelist">
         </div>

@@ -134,6 +134,20 @@
   display: inline-block;
 }
 
+#maincontent[layout="fullscreencode"] #code {
+  width: 80vw;
+}
+#maincontent[layout="fullscreencode"] #rightcontent {
+  display: none;
+}
+
+#maincontent[layout="fullscreenconsole"] #leftcontent {
+  display: none;
+}
+#maincontent[layout="fullscreenconsole"] #leftcontent {
+  width: 80vw;
+}
+
 #leftcontent > * {
   display: block;
 }

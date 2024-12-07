@@ -938,6 +938,16 @@ var initAce = function() {
   sessions = {}
 }
 
+var switchlayout = function() {
+  var layouts = ["split", "fullscreencode", "fullscreenconsole"];
+  var maincontent = document.getElementById("maincontent")
+
+  var cur = maincontent.getAttribute("layout");
+  var i = layouts.indexOf(cur);
+  var next = (i + 1) % layouts.length;
+  maincontent.setAttribute("layout", layouts[next]);
+}
+
 window.onload = function() {
   initAce();
   upgradestore();
@@ -960,4 +970,5 @@ window.onload = function() {
   document.getElementById("resetfiles").addEventListener("click", resetFiles);
   document.getElementById("historyback").addEventListener("click", function() { historymove(-1); });
   document.getElementById("historyforward").addEventListener("click", function() { historymove(1); });
+  document.getElementById("switchlayout").addEventListener("click", switchlayout);
 }

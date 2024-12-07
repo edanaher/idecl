@@ -618,8 +618,10 @@ var loadFromServer = function(pid) {
     if (Object.keys(serverFiles).length == 0) {
       // this is a bit hacky, but makes some sense.  If there's no server save
       // or local save, bootstrap it.
-      if (!loadLSc("files"))
+      if (!loadLSc("files")) {
         bootstrapStorage();
+        initFiles();
+      }
       else
         loadbutton.innerText = "no server save";
       document.getElementById("savefiles").classList.remove("dirty");

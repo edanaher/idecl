@@ -940,10 +940,10 @@ var initAce = function() {
 
 window.onload = function() {
   initAce();
+  upgradestore();
   if (!loadLSc("files"))
     loadFromServer(projectId(), true);
   else {
-    upgradestore();
     initFiles();
   }
   document.getElementById("run").addEventListener("click", runcode);
@@ -951,7 +951,7 @@ window.onload = function() {
   document.getElementById("sendinput").addEventListener("click", sendinput);
   editor.on("blur", saveFile);
   editor.on("change", markDirty);
-  document.getElementById("cloneproject").addEventListener("click", cloneProjectInit);
+  document.getElementById("cloneproject").addEventListener("click", function() { cloneProjectInit(false); });
   document.getElementById("cloneassignment").addEventListener("click", function() { cloneProjectInit(true) });
   document.getElementById("addfile").addEventListener("click", addFile);
   document.getElementById("removefile").addEventListener("click", removeFile);

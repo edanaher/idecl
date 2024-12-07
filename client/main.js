@@ -799,19 +799,21 @@ var resetFiles = function() {
 }
 
 var cloneProject = function(from, to, assignment) {
-  var files = JSON.parse(loadLSc("files", from));
+  var files = JSON.parse(loadLS("files", from));
   var filenames = {}
   for (f in files)
     filenames[files[f]] = true;
   var newfiles = {}
   var templated = {};
   for (f in files) {
-    if ("template/" + files[f] in filenames)
-      continue;
     var newname = files[f];
-    if (newname.startsWith("template/")) {
-      newname = newname.replace("template/", "");
-      templated[f] = true;
+    if (assignment) {
+      if ("template/" + files[f] in filenames)
+        continue;
+      if (newname.startsWith("template/")) {
+        newname = newname.replace("template/", "");
+        templated[f] = true;
+      }
     }
     newfiles[f] = newname;
   }

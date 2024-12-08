@@ -58,7 +58,10 @@
       })
     }
   </script>
-  <ul id="projectlist">
+  <div id="logo" style="display:inline-block; font-size:larger; font-style: italic; font-color: #330000;"><a href="/">idecl</a></div>
+  <a href="/users">Manage users</a>
+  <h4 style="margin-bottom: 0px;">Projects:</h4>
+  <ul id="projectlist" style="margin-top: 4px;">
     {% for project in projects %}
     <li><a href="/projects/{{ project.id }}">{{ project.name }}</a><button class="delete-project" project-id="{{ project.id }}" project-name="{{ project.name }}">-</div></li>
     {% endfor %}

@@ -104,3 +104,4 @@ def stdin(containerid):
 import oauth
 import filestore
 import projects
+import users

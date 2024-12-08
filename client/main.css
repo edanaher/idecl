@@ -179,6 +179,14 @@
   padding-bottom: 8px;
 }
 
+#logo {
+  display: inline-block;
+  font-size: larger;
+  font-style: italic;
+  padding-right: 8px;
+  font-color: #330000;
+}
+
 #classroomname {
   display: inline-block;
   font-size: larger;

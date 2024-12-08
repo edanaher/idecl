@@ -1,0 +1,15 @@
+<html>
+  <link rel="stylesheet" href="/static/main.css"></script>
+  <script>
+  </script>
+  <div id="logo" style="display:inline-block; font-size:larger; font-style: italic; font-color: #330000;"><a href="/">idecl</a></div>
+  <a href="/classrooms">Back to classrooms</a>
+  <h4 style="margin-bottom: 0px;">Users:</h4>
+  <ul id="projectlist" style="margin-top: 4px;">
+    {% for user in users %}
+    <li><a href="/users/{{ user.id }}">{{ user.email + (" (" + user.name + ")" if user.name else "") }}</a><button class="delete-user" user-id="{{ user.id }}" user-name="{{ user.name }}">-</div></li>
+    {% endfor %}
+  </ul>
+  <button id="adduser">New User</button><br>
+</html>
+

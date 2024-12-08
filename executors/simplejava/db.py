@@ -24,7 +24,8 @@ user_table = Table(
     metadata_obj,
     Column("id", Integer, primary_key=True),
     Column("email", String, unique=True, nullable=False),
-    Column("name", String)
+    Column("name", String),
+    Column("deactivated", String)
 )
 
 projects_table = Table(

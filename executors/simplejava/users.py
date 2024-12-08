@@ -10,8 +10,9 @@ from db import engine
 def users():
     with engine.connect() as conn:
         # TODO: require admin permissions
-        users = conn.execute(text("SELECT id, email, name FROM users")).all()
-    return render_template("users.html", users=users)
+        users = conn.execute(text("SELECT id, email, name FROM users WHERE deactivated <> 1 OR deactivated IS NULL")).all()
+        inactive_users = conn.execute(text("SELECT id, email, name FROM users WHERE deactivated = 1")).all()
+    return render_template("users.html", users=users, inactive_users=inactive_users)
 
 @app.route("/users", methods=["POST"])
 @login_required
@@ -19,26 +20,26 @@ def new_user():
     formdata = request.form
     with engine.connect() as conn:
         # TODO: require admin permissions
-        users = conn.execute(text("INSERT INTO users (email, name) VALUES (:email, :name) RETURNING id"), [{"email": formdata["email"], "name": formdata["name"]}]).first()
-        conn.commit()
-    return str(user.id)
-
-@app.route("/users", methods=["POST"])
-@login_required
-def new_user():
-    formdata = request.form
-    with engine.connect() as conn:
-        # TODO: require admin permissions
-        users = conn.execute(text("INSERT INTO users (email, name) VALUES (:email, :name) RETURNING id"), [{"email": formdata["email"], "name": formdata["name"]}]).first()
+        user = conn.execute(text("INSERT INTO users (email, name) VALUES (:email, :name) RETURNING id"), [{"email": formdata["email"], "name": formdata["name"]}]).first()
         conn.commit()
     return str(user.id)
 
 @app.route("/users/<uid>", methods=["DELETE"])
 @login_required
-def delete_user():
+def deactivate_user(uid):
     formdata = request.form
     with engine.connect() as conn:
         # TODO: require admin permissions
-        users = conn.execute(text("INSERT INTO users (email, name) VALUES (:email, :name) RETURNING id"), [{"email": formdata["email"], "name": formdata["name"]}]).first()
+        conn.execute(text("UPDATE users SET deactivated=1 WHERE id=:id"), [{"id": uid}])
         conn.commit()
-    return str(user.id)
+    return ""
+
+@app.route("/users/<uid>", methods=["PUT"])
+@login_required
+def reactivate_user(uid):
+    formdata = request.form
+    with engine.connect() as conn:
+        # TODO: require admin permissions
+        conn.execute(text("UPDATE users SET deactivated=0 WHERE id=:id"), [{"id": uid}])
+        conn.commit()
+    return ""

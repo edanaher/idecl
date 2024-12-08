@@ -1,34 +1,58 @@
 <html>
   <link rel="stylesheet" href="/static/main.css"></script>
   <script>
+    var activateUser = function() {
+      var undeleteButton = this;
+      var id = this.getAttribute("user-id");
+      var name = this.getAttribute("user-name");
+      var xhr = new XMLHttpRequest();
+      xhr.open("PUT", "/users/" + id, true);
+      xhr.onload = function() {
+        var row = undeleteButton.parentNode;
+        var b = document.createElement("button");
+        b.classList.add("delete-user");
+        b.setAttribute("user-id", undeleteButton.getAttribute("user-id"));
+        b.setAttribute("user-email", undeleteButton.getAttribute("user-email"));
+        b.setAttribute("user-name", undeleteButton.getAttribute("user-name"));
+        b.addEventListener("click", deactivateUser);
+        b.innerText = "+";
+        row.parentNode.removeChild(row);
+        row.removeChild(undeleteButton);
+        row.appendChild(b);
+        document.getElementById("inactive-userlist").appendChild(row);
+      };
+      xhr.send();
+    }
     var deactivateUser = function() {
       var deleteButton = this;
       var id = this.getAttribute("user-id");
       var name = this.getAttribute("user-name");
-      if (confirm("Really delete user " + name) &&
-        !confirm("Click cancel to really delete " + name)) {
-        var xhr = new XMLHttpRequest();
-        xhr.open("DELETE", "/users/" + id, true);
-        xhr.onload = function() {
-          var row = deleteButton.parentNode;
-          row.parentNode.removeChild(row);
-          var files = JSON.parse(localStorage.getItem("files|" + id));
-          for (var f in files) {
-            localStorage.removeItem("files|" + id + "|" + f);
-            localStorage.removeItem("attrs|" + id + "|" + f);
-          }
-          localStorage.removeItem("files|" + id);
-          localStorage.removeItem("edits|" + id);
-          localStorage.removeItem("lastfile|" + id);
-          localStorage.removeItem("parent|" + id);
-        };
-        xhr.send();
-      }
+      var xhr = new XMLHttpRequest();
+      xhr.open("DELETE", "/users/" + id, true);
+      xhr.onload = function() {
+        var row = deleteButton.parentNode;
+        var b = document.createElement("button");
+        b.classList.add("activate-user");
+        b.setAttribute("user-id", deleteButton.getAttribute("user-id"));
+        b.setAttribute("user-email", deleteButton.getAttribute("user-email"));
+        b.setAttribute("user-name", deleteButton.getAttribute("user-name"));
+        b.addEventListener("click", activateUser);
+        b.innerText = "+";
+        row.parentNode.removeChild(row);
+        row.removeChild(deleteButton);
+        row.appendChild(b);
+        document.getElementById("inactive-userlist").appendChild(row);
+      };
+      xhr.send();
     }
     window.onload = function() {
-      var deletes = document.getElementsByClassName("delete");
+      var deletes = document.getElementsByClassName("delete-user");
       for (var i = 0; i < deletes.length; i++) {
         deletes[i].addEventListener("click", deactivateUser);
+      }
+      var undeletes = document.getElementsByClassName("activate-user");
+      for (var i = 0; i < undeletes.length; i++) {
+        undeletes[i].addEventListener("click", activateUser);
       }
       document.getElementById("adduser").addEventListener("click", function() {
         var email = document.getElementById("addemail").value;
@@ -43,7 +67,7 @@
           var uid = xhr.response;
           var a = document.createElement("a");
           a.href = "/users/" + uid;
-          a.innerText = email + " (" + name + ")";
+          a.innerText = email + " (" + namne + ")";
           var b = document.createElement("button");
           b.classList.add("delete-user");
           b.setAttribute("user-id", uid);
@@ -72,7 +96,13 @@
   <h4 style="margin-bottom: 0px;">Users:</h4>
   <ul id="userlist" style="margin-top: 4px;">
     {% for user in users %}
-    <li><a href="/users/{{ user.id }}">{{ user.email + (" (" + user.name + ")" if user.name else "") }}</a><button class="delete-user" user-id="{{ user.id }}" user-name="{{ user.name }}" user-email="{{ user.email }}">-</div></li>
+    <li><a href="/users/{{ user.id }}">{{ user.email + (" (" + user.name + ")" if user.name else "") }}</a><button class="delete-user" user-id="{{ user.id }}" user-name="{{ user.name }}" user-email="{{ user.email }}">-</button></li>
+    {% endfor %}
+  </ul>
+  <h4 style="margin-bottom: 0px;">Deactivated users:</h4>
+  <ul id="inactive-userlist" style="margin-top: 4px;">
+    {% for user in inactive_users %}
+      <li><a href="/users/{{ user.id }}">{{ user.email + (" (" + user.name + ")" if user.name else "") }}</a><button class="activate-user" user-id="{{ user.id }}" user-name="{{ user.name }}" user-email="{{ user.email }}">+</button></li>
     {% endfor %}
   </ul>
   <h4  style="margin-bottom: 4px">Add user:</h4>

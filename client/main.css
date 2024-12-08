@@ -179,6 +179,10 @@
   margin-left: 10px;
 }
 
+#inactive-userlist button.activate-user {
+  margin-left: 10px;
+}
+
 #topbar {
   padding-bottom: 8px;
 }

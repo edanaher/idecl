@@ -175,6 +175,10 @@
   margin-left: 10px;
 }
 
+#userlist button.delete-user {
+  margin-left: 10px;
+}
+
 #topbar {
   padding-bottom: 8px;
 }

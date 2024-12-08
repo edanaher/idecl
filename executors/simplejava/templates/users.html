@@ -1,15 +1,83 @@
 <html>
   <link rel="stylesheet" href="/static/main.css"></script>
   <script>
+    var deactivateUser = function() {
+      var deleteButton = this;
+      var id = this.getAttribute("user-id");
+      var name = this.getAttribute("user-name");
+      if (confirm("Really delete user " + name) &&
+        !confirm("Click cancel to really delete " + name)) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("DELETE", "/users/" + id, true);
+        xhr.onload = function() {
+          var row = deleteButton.parentNode;
+          row.parentNode.removeChild(row);
+          var files = JSON.parse(localStorage.getItem("files|" + id));
+          for (var f in files) {
+            localStorage.removeItem("files|" + id + "|" + f);
+            localStorage.removeItem("attrs|" + id + "|" + f);
+          }
+          localStorage.removeItem("files|" + id);
+          localStorage.removeItem("edits|" + id);
+          localStorage.removeItem("lastfile|" + id);
+          localStorage.removeItem("parent|" + id);
+        };
+        xhr.send();
+      }
+    }
+    window.onload = function() {
+      var deletes = document.getElementsByClassName("delete");
+      for (var i = 0; i < deletes.length; i++) {
+        deletes[i].addEventListener("click", deactivateUser);
+      }
+      document.getElementById("adduser").addEventListener("click", function() {
+        var email = document.getElementById("addemail").value;
+        var name = document.getElementById("addname").value;
+        if (!email || !name) {
+          alert("Email and name must be provided.");
+          return;
+        }
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", document.location, true);
+        xhr.onload = function() {
+          var uid = xhr.response;
+          var a = document.createElement("a");
+          a.href = "/users/" + uid;
+          a.innerText = email + " (" + name + ")";
+          var b = document.createElement("button");
+          b.classList.add("delete-user");
+          b.setAttribute("user-id", uid);
+          b.setAttribute("user-email", email);
+          b.setAttribute("user-name", name);
+          b.addEventListener("click", deactivateUser);
+          b.innerText = "-";
+          var li = document.createElement("li");
+          li.appendChild(a);
+          li.appendChild(b);
+          var ul = document.getElementById("userlist");
+          ul.appendChild(li);
+        };
+        var formdata = new FormData();
+        formdata.append("email", email);
+        formdata.append("name", name);
+        xhr.send(formdata);
+        document.getElementById("addemail").value = "";
+        document.getElementById("addname").value = "";
+
+      })
+    }
   </script>
   <div id="logo" style="display:inline-block; font-size:larger; font-style: italic; font-color: #330000;"><a href="/">idecl</a></div>
   <a href="/classrooms">Back to classrooms</a>
   <h4 style="margin-bottom: 0px;">Users:</h4>
-  <ul id="projectlist" style="margin-top: 4px;">
+  <ul id="userlist" style="margin-top: 4px;">
     {% for user in users %}
-    <li><a href="/users/{{ user.id }}">{{ user.email + (" (" + user.name + ")" if user.name else "") }}</a><button class="delete-user" user-id="{{ user.id }}" user-name="{{ user.name }}">-</div></li>
+    <li><a href="/users/{{ user.id }}">{{ user.email + (" (" + user.name + ")" if user.name else "") }}</a><button class="delete-user" user-id="{{ user.id }}" user-name="{{ user.name }}" user-email="{{ user.email }}">-</div></li>
     {% endfor %}
   </ul>
-  <button id="adduser">New User</button><br>
+  <h4  style="margin-bottom: 4px">Add user:</h4>
+  <label>Email: <input id="addemail"></input></label><br>
+  <label>Name: <input id="addname"></input></label><br>
+  <button id="adduser">Add user</button><br>
 </html>
 

@@ -15,11 +15,11 @@
         b.setAttribute("user-email", undeleteButton.getAttribute("user-email"));
         b.setAttribute("user-name", undeleteButton.getAttribute("user-name"));
         b.addEventListener("click", deactivateUser);
-        b.innerText = "+";
+        b.innerText = "-";
         row.parentNode.removeChild(row);
         row.removeChild(undeleteButton);
         row.appendChild(b);
-        document.getElementById("inactive-userlist").appendChild(row);
+        document.getElementById("userlist").appendChild(row);
       };
       xhr.send();
     }

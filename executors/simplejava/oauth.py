@@ -15,7 +15,6 @@ login_manager = LoginManager(app)
 login_manager.init_app(app)
 login_manager.login_view="login"
 
-valid_users = os.environ.get("USERS").split(",")
 oauth_config = {
     # Google OAuth 2.0 documentation:
     # https://developers.google.com/identity/protocols/oauth2/web-server#httprest
@@ -38,9 +37,11 @@ class User:
     def __init__(self, email):
         with engine.connect() as conn:
             if isinstance(email, int):
-                self.id = conn.execute(text("SELECT id FROM users WHERE id=:id"), [{"id": email}]).first().id
+                row = conn.execute(text("SELECT id FROM users WHERE id=:id AND (deactivated IS NULL OR deactivated <> 1)"), [{"id": email}]).first()
             else:
-                self.id = conn.execute(text("SELECT id FROM users WHERE email=:email"), [{"email": email}]).first().id
+                row = conn.execute(text("SELECT id FROM users WHERE email=:email AND (deactivated IS NULL OR deactivated <> 1)"), [{"email": email}]).first()
+        if row:
+            self.id = row.id
 
     def is_authenticated(self):
         return True
@@ -121,7 +122,12 @@ def oauth2_callback(provider):
     if response.status_code != 200:
         abort(401)
     email = provider_data["userinfo"]["email"](response.json())
-    if email in valid_users:
+
+    with engine.connect() as conn:
+        row = conn.execute(text("SELECT id FROM users WHERE email=:email AND (deactivated IS NULL OR deactivated <> 1)"), [{"email": email}]).first()
+        print("row is " + repr(row) + " from " + email)
+
+    if row:
         login_user(User(email))
         return redirect("/")
 

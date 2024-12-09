@@ -57,6 +57,7 @@
       document.getElementById("adduser").addEventListener("click", function() {
         var email = document.getElementById("addemail").value;
         var name = document.getElementById("addname").value;
+        var role = document.getElementById("addrole").value;
         if (!email || !name) {
           alert("Email and name must be provided.");
           return;
@@ -67,7 +68,7 @@
           var uid = xhr.response;
           var a = document.createElement("a");
           a.href = "/users/" + uid;
-          a.innerText = email + " (" + namne + ")";
+          a.innerText = email + " (" + name + ")";
           var b = document.createElement("button");
           b.classList.add("delete-user");
           b.setAttribute("user-id", uid);
@@ -84,6 +85,7 @@
         var formdata = new FormData();
         formdata.append("email", email);
         formdata.append("name", name);
+        formdata.append("role", role);
         xhr.send(formdata);
         document.getElementById("addemail").value = "";
         document.getElementById("addname").value = "";
@@ -108,6 +110,7 @@
   <h4  style="margin-bottom: 4px">Add user:</h4>
   <label>Email: <input id="addemail"></input></label><br>
   <label>Name: <input id="addname"></input></label><br>
+  <label>Role: <select id="addrole"><option value="student">Student</option><option value="teacher">Teacher</option></label></select><br>
   <button id="adduser">Add user</button><br>
 </html>
 

@@ -28,7 +28,11 @@ def new_user():
     formdata = request.form
     with engine.connect() as conn:
         # TODO: require admin permissions
-        user = conn.execute(text("INSERT INTO users (email, name) VALUES (:email, :name) RETURNING id"), [{"email": formdata["email"], "name": formdata["name"]}]).first()
+        role = conn.execute(text("SELECT id FROM roles WHERE name=:role"), [{"role": formdata["role"]}]).first()
+        if not role:
+            role = conn.execute(text("SELECT id FROM roles WHERE name='student'")).first()
+        user = conn.execute(text("INSERT INTO users (email, name) VALUES (:email, :name) RETURNING id"), [{"email": formdata["email"], "name": formdata["name"], "role": role}]).first()
+        conn.execute(text("INSERT INTO users_roles (user_id, role_id) VALUES (:user, :role)"), [{"user": user.id, "role": role.id}])
         conn.commit()
     return str(user.id)
 

@@ -5,6 +5,14 @@ from sqlalchemy import text
 from app import app
 from db import engine
 
+# Bootstrap roles
+# TODO: general roles.
+with engine.connect() as conn:
+    count = conn.execute(text("SELECT COUNT(*) FROM roles")).first()[0]
+    if count == 0:
+        conn.execute(text("INSERT INTO roles (name) VALUES (:name)"), [{"name": n} for n in ["teacher", "student"]])
+        conn.commit()
+
 @app.route("/users")
 @login_required
 def users():

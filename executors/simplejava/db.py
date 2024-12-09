@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, MetaData, Table, Column, Boolean, Integer, String, BLOB, ForeignKey, UniqueConstraint
+from sqlalchemy import create_engine, MetaData, Table, Column, Boolean, Integer, String, BLOB, CheckConstraint, ForeignKey, UniqueConstraint
 import os
 
 engine = create_engine("sqlite+pysqlite:///" + os.environ.get("HOME") + "/idecl.db")
@@ -11,12 +11,23 @@ classrooms_table = Table(
     Column("name", String, unique=True, nullable=False)
 )
 
-classrooms_users_join_table = Table(
-    "classrooms_users",
+users_roles_table = Table(
+    "users_roles",
     metadata_obj,
-    Column("classroom_id", Integer, ForeignKey("classrooms.id", name="fk_classroom_users_classroom_id"), nullable=False),
-    Column("user_id", Integer, ForeignKey("users.id", name="fk_classrooms_users_user_id"), nullable=False),
-    UniqueConstraint("classroom_id", "user_id", name="uniq_classrooms_users")
+    Column("id", Integer, primary_key=True),
+    Column("user_id", Integer, ForeignKey("users.id", name="fk_users_roles_user_id"), nullable=False),
+    Column("classroom_id", Integer, ForeignKey("classrooms.id", name="fk_users_roles_classroom_id"), nullable=True),
+    Column("project_id", Integer, ForeignKey("classrooms.id", name="fk_users_roles_classroom_id"), nullable=True),
+    Column("role_id", Integer, ForeignKey("roles.id", name="fk_users_roles_role_id"), nullable=False),
+    UniqueConstraint("user_id", "classroom_id", "project_id", "role_id", name="uniq_users_roles_user_classroom_project_role"),
+    CheckConstraint("classroom_id IS NULL OR project_id IS NULL", name="check_user_roles_classroom_nand_project")
+)
+
+roles_table = Table(
+    "roles",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("name", String, unique=True, nullable=False)
 )
 
 user_table = Table(

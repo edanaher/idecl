@@ -1,9 +1,29 @@
-from flask import redirect, render_template, request, send_file, session
+from flask import abort, redirect, render_template, request, send_file, session, current_app
 from flask_login import login_required, current_user
+from functools import wraps
 from sqlalchemy import text
 
 from app import app
 from db import engine
+
+def requires_permissions(func):
+    @wraps(func)
+    def decorate_view(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return current_app.login_manager.unauthorized()
+
+        with engine.connect() as conn:
+            teacher = conn.execute(text("SELECT role_id, classroom_id FROM users_roles WHERE user_id=:uid AND role_id = 1"), [{"uid": current_user.id}]).first()
+
+        if not teacher:
+            abort(401, "You are not authorized to view this page.")
+
+        return func(*args, **kwargs)
+
+    return decorate_view
+
+
+
 
 # Bootstrap roles
 # TODO: general roles.

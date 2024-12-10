@@ -4,9 +4,11 @@ from sqlalchemy import text
 
 from app import app
 from db import engine
+from users import requires_permissions
 
 @app.route("/classrooms")
 @login_required
+@requires_permissions
 def classrooms():
     with engine.connect() as conn:
         # TODO: add user management for classrooms.  Probably when students/RBAC show up.
@@ -15,7 +17,6 @@ def classrooms():
     return render_template("classrooms.html", classrooms=classrooms)
 
 @app.route("/classrooms", methods=["POST"])
-@login_required
 def newclassroom():
     formdata = request.form
     with engine.connect() as conn:

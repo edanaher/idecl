@@ -19,8 +19,9 @@ def users():
     with engine.connect() as conn:
         # TODO: require admin permissions
         users = conn.execute(text("SELECT id, email, name FROM users WHERE deactivated <> 1 OR deactivated IS NULL")).all()
+        classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms"), [{"uid": current_user.id}]).all()
         inactive_users = conn.execute(text("SELECT id, email, name FROM users WHERE deactivated = 1")).all()
-    return render_template("users.html", users=users, inactive_users=inactive_users)
+    return render_template("users.html", users=users, inactive_users=inactive_users, classrooms=classrooms)
 
 @app.route("/users", methods=["POST"])
 @login_required
@@ -32,7 +33,10 @@ def new_user():
         if not role:
             role = conn.execute(text("SELECT id FROM roles WHERE name='student'")).first()
         user = conn.execute(text("INSERT INTO users (email, name) VALUES (:email, :name) RETURNING id"), [{"email": formdata["email"], "name": formdata["name"], "role": role}]).first()
-        conn.execute(text("INSERT INTO users_roles (user_id, role_id) VALUES (:user, :role)"), [{"user": user.id, "role": role.id}])
+        classroom = None;
+        if formdata["classroom"]:
+            classroom = formdata["classroom"]
+        conn.execute(text("INSERT INTO users_roles (user_id, role_id, classroom_id) VALUES (:user, :role, :classroom)"), [{"user": user.id, "role": role.id, "classroom": classroom}])
         conn.commit()
     return str(user.id)
 

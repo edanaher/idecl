@@ -58,6 +58,7 @@
         var email = document.getElementById("addemail").value;
         var name = document.getElementById("addname").value;
         var role = document.getElementById("addrole").value;
+        var classroom = document.getElementById("addroleclassroom").value;
         if (!email || !name) {
           alert("Email and name must be provided.");
           return;
@@ -86,6 +87,7 @@
         formdata.append("email", email);
         formdata.append("name", name);
         formdata.append("role", role);
+        formdata.append("classroom", classroom);
         xhr.send(formdata);
         document.getElementById("addemail").value = "";
         document.getElementById("addname").value = "";
@@ -110,7 +112,11 @@
   <h4  style="margin-bottom: 4px">Add user:</h4>
   <label>Email: <input id="addemail"></input></label><br>
   <label>Name: <input id="addname"></input></label><br>
-  <label>Role: <select id="addrole"><option value="student">Student</option><option value="teacher">Teacher</option></label></select><br>
+  <label>Role: <select id="addrole"><option value="student">Student</option><option value="teacher">Teacher</option></select></label> on <select id="addroleclassroom"><option value="">all classrooms</option>
+    {% for classroom in classrooms %}
+    <option value="{{ classroom.id }}">{{ classroom.name }}</option>
+    {% endfor %}
+  </select><br>
   <button id="adduser">Add user</button><br>
 </html>
 

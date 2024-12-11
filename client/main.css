@@ -144,7 +144,7 @@
 #maincontent[layout="fullscreenconsole"] #leftcontent {
   display: none;
 }
-#maincontent[layout="fullscreenconsole"] #leftcontent {
+#maincontent[layout="fullscreenconsole"] #rightcontent #output {
   width: 80vw;
 }
 

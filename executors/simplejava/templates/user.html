@@ -1,36 +1,21 @@
 <html>
   <link rel="stylesheet" href="/static/main.css"></script>
   <script>
-    var deactivateUser = function() {
+    var deleteUserRole = function() {
       var deleteButton = this;
-      var id = this.getAttribute("user-id");
-      var name = this.getAttribute("user-name");
+      var id = this.getAttribute("user-role-id");
       var xhr = new XMLHttpRequest();
-      xhr.open("DELETE", "/users/" + id, true);
+      xhr.open("DELETE", document.location + "/roles/" + + id, true);
       xhr.onload = function() {
         var row = deleteButton.parentNode;
-        var b = document.createElement("button");
-        b.classList.add("activate-user");
-        b.setAttribute("user-id", deleteButton.getAttribute("user-id"));
-        b.setAttribute("user-email", deleteButton.getAttribute("user-email"));
-        b.setAttribute("user-name", deleteButton.getAttribute("user-name"));
-        b.addEventListener("click", activateUser);
-        b.innerText = "+";
         row.parentNode.removeChild(row);
-        row.removeChild(deleteButton);
-        row.appendChild(b);
-        document.getElementById("inactive-userlist").appendChild(row);
       };
       xhr.send();
     }
     window.onload = function() {
-      var deletes = document.getElementsByClassName("delete-user");
+      var deletes = document.getElementsByClassName("delete-user-role");
       for (var i = 0; i < deletes.length; i++) {
-        deletes[i].addEventListener("click", deactivateUser);
-      }
-      var undeletes = document.getElementsByClassName("activate-user");
-      for (var i = 0; i < undeletes.length; i++) {
-        undeletes[i].addEventListener("click", activateUser);
+        deletes[i].addEventListener("click", deleteUserRole);
       }
       document.getElementById("addrole").addEventListener("click", function() {
         var role = document.getElementById("newrole").value;
@@ -42,17 +27,14 @@
         xhr.onload = function() {
           var rid = xhr.response;
           var t = document.createTextNode(role + " on " + (classroomname || "all classrooms"));
-          /*var b = document.createElement("button");
-          b.classList.add("delete-role");
-          b.setAttribute("user-id", uid);
-          b.setAttribute("user-email", email);
-          b.setAttribute("user-name", name);
-          b.addEventListener("click", deactivateUser);
+          var b = document.createElement("button");
+          b.classList.add("delete-user-role");
+          b.setAttribute("user-role-id", rid);
+          b.addEventListener("click", deleteUserRole);
           b.innerText = "-";
-          */
           var li = document.createElement("li");
           li.appendChild(t);
-          //li.appendChild(b);
+          li.appendChild(b);
           var ul = document.getElementById("rolelist");
           ul.appendChild(li);
         };
@@ -76,7 +58,7 @@
   {% endif %}
   <ul id="rolelist">
   {% for r in roles %}
-  <li>{{ r.role }} on {{ r.classroom or "all classrooms" }}</li>
+  <li>{{ r.role }} on {{ r.classroom or "all classrooms" }}<button class="delete-user-role" user-role-id="{{ r.id }}">-</button></li>
   {% endfor %}
   </ul>
   <h4  style="margin-bottom: 4px">Add role:</h4>

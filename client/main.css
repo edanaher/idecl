@@ -179,6 +179,10 @@
   margin-left: 10px;
 }
 
+#rolelist button.delete-user-role {
+  margin-left: 10px;
+}
+
 #inactive-userlist button.activate-user {
   margin-left: 10px;
 }

@@ -47,7 +47,8 @@ def view_user(uid):
         # TODO: require admin permissions
         user = conn.execute(text("SELECT email, name, deactivated FROM users WHERE id=:id"), [{"id": uid}]).first()
         roles = conn.execute(text("SELECT classrooms.name AS classroom, roles.name AS role FROM users_roles LEFT JOIN classrooms ON classroom_id = classrooms.id JOIN roles ON roles.id=role_id WHERE user_id=:id"), [{"id": uid}]).all()
-    return render_template("user.html", user=user, roles=roles)
+        classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms"), [{"uid": current_user.id}]).all()
+    return render_template("user.html", user=user, roles=roles, classrooms=classrooms)
 
 @app.route("/users/<uid>", methods=["DELETE"])
 @login_required
@@ -56,6 +57,22 @@ def deactivate_user(uid):
     with engine.connect() as conn:
         # TODO: require admin permissions
         conn.execute(text("UPDATE users SET deactivated=1 WHERE id=:id"), [{"id": uid}])
+        conn.commit()
+    return ""
+
+@app.route("/users/<uid>/roles", methods=["POST"])
+@login_required
+def add_role_to_user(uid):
+    formdata = request.form
+    with engine.connect() as conn:
+        # TODO: require admin permissions
+        role = conn.execute(text("SELECT id FROM roles WHERE name=:role"), [{"role": formdata["role"]}]).first()
+        if not role:
+            role = conn.execute(text("SELECT id FROM roles WHERE name='student'")).first()
+        classroom = None;
+        if formdata["classroom"]:
+            classroom = formdata["classroom"]
+        conn.execute(text("INSERT INTO users_roles (user_id, role_id, classroom_id) VALUES (:user, :role, :classroom)"), [{"user": uid, "role": role.id, "classroom": classroom}])
         conn.commit()
     return ""
 

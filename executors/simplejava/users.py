@@ -47,7 +47,7 @@ def view_user(uid):
         # TODO: require admin permissions
         user = conn.execute(text("SELECT email, name, deactivated FROM users WHERE id=:id"), [{"id": uid}]).first()
         roles = conn.execute(text("SELECT classrooms.name AS classroom, roles.name AS role FROM users_roles LEFT JOIN classrooms ON classroom_id = classrooms.id JOIN roles ON roles.id=role_id WHERE user_id=:id"), [{"id": uid}]).all()
-    return f"<h4>{user.email} ({user.name})</h4>{'<i>deactivated</i><br>' if user.deactivated == "1" else ""}{'<br>'.join([f'{r.role} on {r.classroom or 'all classrooms'}' for r in roles])}"
+    return render_template("user.html", user=user, roles=roles)
 
 @app.route("/users/<uid>", methods=["DELETE"])
 @login_required

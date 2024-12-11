@@ -1,0 +1,115 @@
+<html>
+  <link rel="stylesheet" href="/static/main.css"></script>
+  <script>
+    var activateUser = function() {
+      var undeleteButton = this;
+      var id = this.getAttribute("user-id");
+      var name = this.getAttribute("user-name");
+      var xhr = new XMLHttpRequest();
+      xhr.open("PUT", "/users/" + id, true);
+      xhr.onload = function() {
+        var row = undeleteButton.parentNode;
+        var b = document.createElement("button");
+        b.classList.add("delete-user");
+        b.setAttribute("user-id", undeleteButton.getAttribute("user-id"));
+        b.setAttribute("user-email", undeleteButton.getAttribute("user-email"));
+        b.setAttribute("user-name", undeleteButton.getAttribute("user-name"));
+        b.addEventListener("click", deactivateUser);
+        b.innerText = "-";
+        row.parentNode.removeChild(row);
+        row.removeChild(undeleteButton);
+        row.appendChild(b);
+        document.getElementById("userlist").appendChild(row);
+      };
+      xhr.send();
+    }
+    var deactivateUser = function() {
+      var deleteButton = this;
+      var id = this.getAttribute("user-id");
+      var name = this.getAttribute("user-name");
+      var xhr = new XMLHttpRequest();
+      xhr.open("DELETE", "/users/" + id, true);
+      xhr.onload = function() {
+        var row = deleteButton.parentNode;
+        var b = document.createElement("button");
+        b.classList.add("activate-user");
+        b.setAttribute("user-id", deleteButton.getAttribute("user-id"));
+        b.setAttribute("user-email", deleteButton.getAttribute("user-email"));
+        b.setAttribute("user-name", deleteButton.getAttribute("user-name"));
+        b.addEventListener("click", activateUser);
+        b.innerText = "+";
+        row.parentNode.removeChild(row);
+        row.removeChild(deleteButton);
+        row.appendChild(b);
+        document.getElementById("inactive-userlist").appendChild(row);
+      };
+      xhr.send();
+    }
+    window.onload = function() {
+      var deletes = document.getElementsByClassName("delete-user");
+      for (var i = 0; i < deletes.length; i++) {
+        deletes[i].addEventListener("click", deactivateUser);
+      }
+      var undeletes = document.getElementsByClassName("activate-user");
+      for (var i = 0; i < undeletes.length; i++) {
+        undeletes[i].addEventListener("click", activateUser);
+      }
+      document.getElementById("adduser").addEventListener("click", function() {
+        var email = document.getElementById("addemail").value;
+        var name = document.getElementById("addname").value;
+        var role = document.getElementById("addrole").value;
+        var classroom = document.getElementById("addroleclassroom").value;
+        if (!email || !name) {
+          alert("Email and name must be provided.");
+          return;
+        }
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", document.location, true);
+        xhr.onload = function() {
+          var uid = xhr.response;
+          var a = document.createElement("a");
+          a.href = "/users/" + uid;
+          a.innerText = email + " (" + name + ")";
+          var b = document.createElement("button");
+          b.classList.add("delete-user");
+          b.setAttribute("user-id", uid);
+          b.setAttribute("user-email", email);
+          b.setAttribute("user-name", name);
+          b.addEventListener("click", deactivateUser);
+          b.innerText = "-";
+          var li = document.createElement("li");
+          li.appendChild(a);
+          li.appendChild(b);
+          var ul = document.getElementById("userlist");
+          ul.appendChild(li);
+        };
+        var formdata = new FormData();
+        formdata.append("email", email);
+        formdata.append("name", name);
+        formdata.append("role", role);
+        formdata.append("classroom", classroom);
+        xhr.send(formdata);
+        document.getElementById("addemail").value = "";
+        document.getElementById("addname").value = "";
+
+      })
+    }
+  </script>
+  <div id="logo" style="display:inline-block; font-size:larger; font-style: italic; font-color: #330000;"><a href="/">idecl</a></div>
+  <a href="/users">Back to users</a>
+
+  <h3>{{ user.email }} ({{ user.name }})</h4>
+  {% if user.deactivated == "1" %}
+  <i style="font-size: larger">DEACTIVATED</i><br>
+  {% endif %}
+  <h4>Roles</h4>
+  {% if roles == [] %}
+  <i>None</i>
+  {% endif %}
+  <ul>
+  {% for r in roles %}
+  <li>{{ r.role }} on {{ r.classroom or "all classrooms" }}</li>
+  {% endfor %}
+  </ul>
+</html>
+

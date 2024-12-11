@@ -44,7 +44,7 @@ Milestone 4: Projects
 - [ ] UI for managing all of this
 
 Milestone 5: MVP Classroom
-- [ ] Student management/invites
+- [X] Student management/invites
   - [ ] Basic RBAC
 - [ ] Better security
   - [ ] enforced timeouts (time for compile, CPU for program)

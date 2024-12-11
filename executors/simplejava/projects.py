@@ -4,16 +4,15 @@ from sqlalchemy import text
 
 from app import app
 from db import engine
-from users import requires_permissions
+from permissions import requires_permission, Permissions as P
 
 @app.route("/classrooms")
 @login_required
-@requires_permissions
 def classrooms():
     with engine.connect() as conn:
         # TODO: add user management for classrooms.  Probably when students/RBAC show up.
         #classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms JOIN classrooms_users ON classroom_id=classrooms.id WHERE user_id=:uid"), [{"uid": current_user.id}]).all()
-        classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms"), [{"uid": current_user.id}]).all()
+        classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms JOIN users_roles ON (classrooms.id=users_roles.classroom_id OR users_roles.classroom_id IS NULL) JOIN roles_permissions USING (role_id) WHERE permission_id=:perm AND user_id=:uid"), [{"uid": current_user.id, "perm": P.GETCLASSROOM.value}]).all()
     return render_template("classrooms.html", classrooms=classrooms)
 
 @app.route("/classrooms", methods=["POST"])
@@ -26,7 +25,7 @@ def newclassroom():
     return str(classroom.id)
 
 @app.route("/classrooms/<classroom>/projects")
-@login_required
+@requires_permission(P.LISTPROJECT, "classroom")
 def projects(classroom):
     with engine.connect() as conn:
         projects = conn.execute(text("SELECT projects.id, projects.name FROM projects WHERE classroom_id=:classroom"), [{"classroom": classroom}]).all()

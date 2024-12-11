@@ -2,6 +2,12 @@ from sqlalchemy import create_engine, MetaData, Table, Column, Boolean, Integer,
 import os
 
 engine = create_engine("sqlite+pysqlite:///" + os.environ.get("HOME") + "/idecl.db")
+def _fk_pragma_on_connect(dbapi_con, con_record):
+    dbapi_con.execute('pragma foreign_keys=ON')
+
+from sqlalchemy import event
+event.listen(engine, 'connect', _fk_pragma_on_connect)
+
 metadata_obj = MetaData()
 
 classrooms_table = Table(
@@ -17,7 +23,7 @@ users_roles_table = Table(
     Column("id", Integer, primary_key=True),
     Column("user_id", Integer, ForeignKey("users.id", name="fk_users_roles_user_id"), nullable=False),
     Column("classroom_id", Integer, ForeignKey("classrooms.id", name="fk_users_roles_classroom_id"), nullable=True),
-    Column("project_id", Integer, ForeignKey("classrooms.id", name="fk_users_roles_classroom_id"), nullable=True),
+    Column("project_id", Integer, ForeignKey("projects.id", name="fk_users_roles_project_id"), nullable=True),
     Column("role_id", Integer, ForeignKey("roles.id", name="fk_users_roles_role_id"), nullable=False),
     UniqueConstraint("user_id", "classroom_id", "project_id", "role_id", name="uniq_users_roles_user_classroom_project_role"),
     CheckConstraint("classroom_id IS NULL OR project_id IS NULL", name="check_user_roles_classroom_nand_project")
@@ -29,6 +35,16 @@ roles_table = Table(
     Column("id", Integer, primary_key=True),
     Column("name", String, unique=True, nullable=False)
 )
+
+roles_permissions = Table(
+    "roles_permissions",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("role_id", Integer, ForeignKey("roles.id", name="fk_roles_permissions_role_id"), nullable=False),
+    Column("permission_id", Integer, nullable=False), # Implicit "table" in app
+    UniqueConstraint("role_id", "permission_id", name="uniq_roles_permissions_role_id_permission_id")
+)
+
 
 user_table = Table(
     "users",

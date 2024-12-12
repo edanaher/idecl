@@ -9,6 +9,7 @@ from db import engine
 @unique
 class Permissions(Enum):
     GETCLASSROOM = 1
+    ADDCLASSROOM = 7
     LISTPROJECT = 2
     ADDPROJECT = 3
     DELETEPROJECT = 4

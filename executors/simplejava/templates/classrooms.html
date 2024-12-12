@@ -41,6 +41,8 @@
     <li><a href="/classrooms/{{ classroom.id }}/projects">{{ classroom.name }}</a></li>
     {% endfor %}
   </ul>
+  {% if canaddclassroom %}
   <button id="addclassroom">New classroom</button>
+  {% endif %}
 </html>
 

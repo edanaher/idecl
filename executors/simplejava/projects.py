@@ -4,7 +4,7 @@ from sqlalchemy import text
 
 from app import app
 from db import engine
-from permissions import requires_permission, Permissions as P
+from permissions import requires_permission, has_permission, Permissions as P
 
 @app.route("/classrooms")
 @login_required
@@ -13,14 +13,15 @@ def classrooms():
         # TODO: add user management for classrooms.  Probably when students/RBAC show up.
         #classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms JOIN classrooms_users ON classroom_id=classrooms.id WHERE user_id=:uid"), [{"uid": current_user.id}]).all()
         classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms JOIN users_roles ON (classrooms.id=users_roles.classroom_id OR users_roles.classroom_id IS NULL) JOIN roles_permissions USING (role_id) WHERE permission_id=:perm AND user_id=:uid"), [{"uid": current_user.euid, "perm": P.GETCLASSROOM.value}]).all()
-    return render_template("classrooms.html", classrooms=classrooms, loggedinas=current_user)
+    return render_template("classrooms.html", classrooms=classrooms, loggedinas=current_user, canaddclassroom=has_permission(P.ADDCLASSROOM))
 
 @app.route("/classrooms", methods=["POST"])
+@requires_permission(P.ADDCLASSROOM)
 def newclassroom():
     formdata = request.form
     with engine.connect() as conn:
         classroom = conn.execute(text("INSERT INTO classrooms (name) VALUES (:name) RETURNING id"), [{"name": formdata["name"]}]).first()
-        conn.execute(text("INSERT INTO classrooms_users (classroom_id, user_id) VALUES (:classroom, :user)"), [{"classroom": classroom.id, "user": current_user.id}])
+        conn.execute(text("INSERT INTO users_roles (user_id, role_id, classroom_id) VALUES (:user, (SELECT id FROM roles WHERE name='teacher'), :classroom)"), [{"classroom": classroom.id, "user": current_user.id}])
         conn.commit()
     return str(classroom.id)
 

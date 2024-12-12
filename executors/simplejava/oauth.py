@@ -37,11 +37,19 @@ class User:
     def __init__(self, email):
         with engine.connect() as conn:
             if isinstance(email, int):
-                row = conn.execute(text("SELECT id FROM users WHERE id=:id AND (deactivated IS NULL OR deactivated <> 1)"), [{"id": email}]).first()
+                row = conn.execute(text("SELECT id, email FROM users WHERE id=:id AND (deactivated IS NULL OR deactivated <> 1)"), [{"id": email}]).first()
             else:
-                row = conn.execute(text("SELECT id FROM users WHERE email=:email AND (deactivated IS NULL OR deactivated <> 1)"), [{"email": email}]).first()
+                row = conn.execute(text("SELECT id, email FROM users WHERE email=:email AND (deactivated IS NULL OR deactivated <> 1)"), [{"email": email}]).first()
+            erow = None
+            if "sudo" in request.cookies and request.cookies["sudo"]:
+                erow = conn.execute(text("SELECT id, email FROM users WHERE id=:id"), [{"id": request.cookies["sudo"]}]).first()
+            print(f"erow is {erow}")
         if row:
             self.id = row.id
+            self.email = row.email
+            self.euid = erow.id if erow else row.id
+            self.eemail = erow.email if erow else row.email
+
 
     def is_authenticated(self):
         return True
@@ -54,6 +62,17 @@ class User:
 
     def get_id(self):
         return self.id
+
+    def get_eid(self):
+        return self.id
+
+    def get_email(self):
+        return self.email
+
+    def desc(self):
+        if self.id == self.euid:
+            return self.email
+        return self.email + " viewing as " + self.eemail
 
 @login_manager.user_loader
 def load_user(id):

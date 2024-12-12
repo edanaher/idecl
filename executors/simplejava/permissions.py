@@ -13,6 +13,7 @@ class Permissions(Enum):
     ADDPROJECT = 3
     DELETEPROJECT = 4
     VIEWPROJECT = 5
+    SUDO = 6
 
 STUDENT_PERMISSIONS = [
     Permissions.GETCLASSROOM,
@@ -30,7 +31,7 @@ def has_permission(perm, classroom_id = None, project_id = None):
     with engine.connect() as conn:
         classroom_constraint = "users_roles.classroom_id = " + classroom_id if classroom_id else "FALSE"
         project_constraint = "users_roles.project_id = " + project_id if project_id else "FALSE"
-        valid = conn.execute(text(f"SELECT roles_permissions.id FROM roles_permissions JOIN users_roles USING (role_id) WHERE user_id=:uid AND permission_id = :perm AND (users_roles.classroom_id IS NULL OR {classroom_constraint}) AND (users_roles.project_id IS NULL OR {project_constraint})"), [{"uid": current_user.id, "perm": perm.value, }]).first()
+        valid = conn.execute(text(f"SELECT roles_permissions.id FROM roles_permissions JOIN users_roles USING (role_id) WHERE user_id=:uid AND permission_id = :perm AND (users_roles.classroom_id IS NULL OR {classroom_constraint}) AND (users_roles.project_id IS NULL OR {project_constraint})"), [{"uid": current_user.euid, "perm": perm.value, }]).first()
     return valid is not None
 
 def requires_permission(perm, checktype = None):

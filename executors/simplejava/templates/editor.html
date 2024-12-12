@@ -15,6 +15,12 @@
       <button id="switchlayout">switch layout</button>
       <button id="cloneproject">clone</button>
       <button id="cloneassignment">clone as assignment</button>
+      <div id="loggedinas">{{ current_user.email }}
+        {% if current_user.id != current_user.euid %}
+        viewing as {{ current_user.eemail }}
+        <button id="view-as-self">X</button>
+        {% endif %}
+      </div>
     </div>
     <div id="maincontent" layout="split">
       <div id="filecontainer">

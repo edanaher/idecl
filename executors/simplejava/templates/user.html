@@ -13,10 +13,20 @@
       xhr.send();
     }
     window.onload = function() {
+      var selfview = document.getElementById("view-as-self");
+      if (selfview)
+        selfview.addEventListener("click", function() {
+          document.cookie = "sudo=; path=/; expoires=Thu, 01 Jan 1970 00:00:01 GMT";
+          window.location.replace("/");
+        });
       var deletes = document.getElementsByClassName("delete-user-role");
       for (var i = 0; i < deletes.length; i++) {
         deletes[i].addEventListener("click", deleteUserRole);
       }
+      document.getElementById("sudo").addEventListener("click", function() {
+        document.cookie = "sudo=" + this.getAttribute("uid") + "; path=/";
+        window.location.replace("/");
+      });
       document.getElementById("addrole").addEventListener("click", function() {
         var role = document.getElementById("newrole").value;
         var classroomelem = document.getElementById("newclassroom");
@@ -47,11 +57,20 @@
   </script>
   <div id="logo" style="display:inline-block; font-size:larger; font-style: italic; font-color: #330000;"><a href="/">idecl</a></div>
   <a href="/users">Back to users</a>
+  <div id="loggedinas">{{ current_user.email }}
+    {% if current_user.id != current_user.euid %}
+    viewing as {{ current_user.eemail }}
+    <button id="view-as-self">X</button>
+    {% endif %}
+  </div>
 
   <h3>{{ user.email }} ({{ user.name }})</h4>
   {% if user.deactivated == "1" %}
   <i style="font-size: larger">DEACTIVATED</i><br>
   {% endif %}
+  {% if can_sudo %}
+  <button id="sudo" uid="{{ user.id }}">View as user</button>
+  {% endif  %}
   <h4>Roles</h4>
   {% if roles == [] %}
   <i>None</i>

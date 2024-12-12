@@ -4,6 +4,7 @@ from sqlalchemy import text
 
 from app import app
 from db import engine
+from permissions import Permissions as P, has_permission
 
 # Bootstrap roles
 # TODO: general roles.
@@ -21,7 +22,7 @@ def users():
         users = conn.execute(text("SELECT id, email, name FROM users WHERE deactivated <> 1 OR deactivated IS NULL")).all()
         classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms"), [{"uid": current_user.id}]).all()
         inactive_users = conn.execute(text("SELECT id, email, name FROM users WHERE deactivated = 1")).all()
-    return render_template("users.html", users=users, inactive_users=inactive_users, classrooms=classrooms)
+    return render_template("users.html", users=users, inactive_users=inactive_users, classrooms=classrooms, current_user=current_user)
 
 @app.route("/users", methods=["POST"])
 @login_required
@@ -45,10 +46,11 @@ def new_user():
 def view_user(uid):
     with engine.connect() as conn:
         # TODO: require admin permissions
-        user = conn.execute(text("SELECT email, name, deactivated FROM users WHERE id=:id"), [{"id": uid}]).first()
+        user = conn.execute(text("SELECT id, email, name, deactivated FROM users WHERE id=:id"), [{"id": uid}]).first()
         roles = conn.execute(text("SELECT users_roles.id, classrooms.name AS classroom, roles.name AS role FROM users_roles LEFT JOIN classrooms ON classroom_id = classrooms.id JOIN roles ON roles.id=role_id WHERE user_id=:id"), [{"id": uid}]).all()
         classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms"), [{"uid": current_user.id}]).all()
-    return render_template("user.html", user=user, roles=roles, classrooms=classrooms)
+    can_sudo = has_permission(P.SUDO)
+    return render_template("user.html", user=user, roles=roles, classrooms=classrooms, can_sudo=can_sudo)
 
 @app.route("/users/<uid>", methods=["DELETE"])
 @login_required

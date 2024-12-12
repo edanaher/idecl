@@ -171,6 +171,12 @@
   overflow: auto;
 }
 
+#loggedinas {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
 #projectlist button.delete-project {
   margin-left: 10px;
 }

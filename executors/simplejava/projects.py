@@ -10,8 +10,6 @@ from permissions import requires_permission, has_permission, Permissions as P
 @login_required
 def classrooms():
     with engine.connect() as conn:
-        # TODO: add user management for classrooms.  Probably when students/RBAC show up.
-        #classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms JOIN classrooms_users ON classroom_id=classrooms.id WHERE user_id=:uid"), [{"uid": current_user.id}]).all()
         classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms JOIN users_roles ON (classrooms.id=users_roles.classroom_id OR users_roles.classroom_id IS NULL) JOIN roles_permissions USING (role_id) WHERE permission_id=:perm AND user_id=:uid"), [{"uid": current_user.euid, "perm": P.GETCLASSROOM.value}]).all()
     return render_template("classrooms.html", classrooms=classrooms, loggedinas=current_user, canaddclassroom=has_permission(P.ADDCLASSROOM), canmanageusers=has_permission(P.LISTUSERS))
 

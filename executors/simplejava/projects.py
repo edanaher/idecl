@@ -59,8 +59,8 @@ def project(pid):
 @requires_permission(P.DELETEPROJECT, "classroom")
 def delete_project(pid):
     with engine.connect() as conn:
-        conn.execute(text("DELETE FROM projects WHERE id=:pid"), [{"pid": pid}])
         conn.execute(text("DELETE FROM files WHERE project_id=:pid"), [{"pid": pid}])
+        conn.execute(text("DELETE FROM projects WHERE id=:pid"), [{"pid": pid}])
         conn.commit()
 
     return "Success";

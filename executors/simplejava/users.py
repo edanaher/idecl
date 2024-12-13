@@ -4,7 +4,7 @@ from sqlalchemy import text
 
 from app import app
 from db import engine
-from permissions import Permissions as P, has_permission
+from permissions import Permissions as P, has_permission, requires_permission
 
 # Bootstrap roles
 # TODO: general roles.
@@ -15,17 +15,17 @@ with engine.connect() as conn:
         conn.commit()
 
 @app.route("/users")
-@login_required
+@requires_permission(P.LISTUSERS)
 def users():
     with engine.connect() as conn:
         # TODO: require admin permissions
         users = conn.execute(text("SELECT id, email, name FROM users WHERE deactivated <> 1 OR deactivated IS NULL")).all()
         classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms"), [{"uid": current_user.id}]).all()
         inactive_users = conn.execute(text("SELECT id, email, name FROM users WHERE deactivated = 1")).all()
-    return render_template("users.html", users=users, inactive_users=inactive_users, classrooms=classrooms, current_user=current_user)
+    return render_template("users.html", users=users, inactive_users=inactive_users, classrooms=classrooms, current_user=current_user, canaddusers=has_permission(P.ADDUSER), candeactivateusers=has_permission(P.DEACTIVATEUSER), canreactivateusers=has_permission(P.REACTIVATEUSER))
 
 @app.route("/users", methods=["POST"])
-@login_required
+@requires_permission(P.ADDUSER)
 def new_user():
     formdata = request.form
     with engine.connect() as conn:
@@ -42,7 +42,7 @@ def new_user():
     return str(user.id)
 
 @app.route("/users/<uid>")
-@login_required
+@requires_permission(P.VIEWUSER)
 def view_user(uid):
     with engine.connect() as conn:
         # TODO: require admin permissions
@@ -53,7 +53,7 @@ def view_user(uid):
     return render_template("user.html", user=user, roles=roles, classrooms=classrooms, can_sudo=can_sudo)
 
 @app.route("/users/<uid>", methods=["DELETE"])
-@login_required
+@requires_permission(P.DEACTIVATEUSER)
 def deactivate_user(uid):
     formdata = request.form
     with engine.connect() as conn:
@@ -63,7 +63,7 @@ def deactivate_user(uid):
     return ""
 
 @app.route("/users/<uid>/roles", methods=["POST"])
-@login_required
+@requires_permission(P.ADDUSERROLE)
 def add_role_to_user(uid):
     formdata = request.form
     with engine.connect() as conn:
@@ -79,7 +79,7 @@ def add_role_to_user(uid):
     return str(row.id)
 
 @app.route("/users/<uid>/roles/<rid>", methods=["DELETE"])
-@login_required
+@requires_permission(P.DELETEUSERROLE)
 def delete_role_from_user(uid, rid):
     formdata = request.form
     with engine.connect() as conn:
@@ -89,7 +89,7 @@ def delete_role_from_user(uid, rid):
     return ""
 
 @app.route("/users/<uid>", methods=["PUT"])
-@login_required
+@requires_permission(P.REACTIVATEUSER)
 def reactivate_user(uid):
     formdata = request.form
     with engine.connect() as conn:

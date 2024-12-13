@@ -29,7 +29,9 @@
     }
   </script>
   <div id="logo" style="display:inline-block; font-size:larger; font-style: italic; font-color: #330000;"><a href="/">idecl</a></div>
+  {% if canmanageusers %}
   <a href="/users">Manage users</a>
+  {% endif %}
   <div id="loggedinas">{{ current_user.email }}
     {% if current_user.id != current_user.euid %}
     viewing as {{ current_user.eemail }}

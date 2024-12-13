@@ -23,10 +23,12 @@
       for (var i = 0; i < deletes.length; i++) {
         deletes[i].addEventListener("click", deleteUserRole);
       }
-      document.getElementById("sudo").addEventListener("click", function() {
-        document.cookie = "sudo=" + this.getAttribute("uid") + "; path=/";
-        window.location.replace("/");
-      });
+      var sudoelem = document.getElementById("sudo");
+      if (sudoelem)
+        sudoelem.addEventListener("click", function() {
+          document.cookie = "sudo=" + this.getAttribute("uid") + "; path=/";
+          window.location.replace("/");
+        });
       document.getElementById("addrole").addEventListener("click", function() {
         var role = document.getElementById("newrole").value;
         var classroomelem = document.getElementById("newclassroom");

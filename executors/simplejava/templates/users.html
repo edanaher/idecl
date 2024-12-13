@@ -18,7 +18,9 @@
         b.innerText = "-";
         row.parentNode.removeChild(row);
         row.removeChild(undeleteButton);
+        {% if candeactivateusers %}
         row.appendChild(b);
+        {% endif %}
         document.getElementById("userlist").appendChild(row);
       };
       xhr.send();
@@ -40,7 +42,9 @@
         b.innerText = "+";
         row.parentNode.removeChild(row);
         row.removeChild(deleteButton);
+        {% if canreactivateusers %}
         row.appendChild(b);
+        {% endif %}
         document.getElementById("inactive-userlist").appendChild(row);
       };
       xhr.send();
@@ -112,15 +116,24 @@
   <h4 style="margin-bottom: 0px;">Users:</h4>
   <ul id="userlist" style="margin-top: 4px;">
     {% for user in users %}
-    <li><a href="/users/{{ user.id }}">{{ user.email + (" (" + user.name + ")" if user.name else "") }}</a><button class="delete-user" user-id="{{ user.id }}" user-name="{{ user.name }}" user-email="{{ user.email }}">-</button></li>
+    <li><a href="/users/{{ user.id }}">{{ user.email + (" (" + user.name + ")" if user.name else "") }}</a>
+      {% if candeactivateusers %}
+      <button class="delete-user" user-id="{{ user.id }}" user-name="{{ user.name }}" user-email="{{ user.email }}">-</button>
+      {% endif %}
+    </li>
     {% endfor %}
   </ul>
   <h4 style="margin-bottom: 0px;">Deactivated users:</h4>
   <ul id="inactive-userlist" style="margin-top: 4px;">
     {% for user in inactive_users %}
-      <li><a href="/users/{{ user.id }}">{{ user.email + (" (" + user.name + ")" if user.name else "") }}</a><button class="activate-user" user-id="{{ user.id }}" user-name="{{ user.name }}" user-email="{{ user.email }}">+</button></li>
+      <li><a href="/users/{{ user.id }}">{{ user.email + (" (" + user.name + ")" if user.name else "") }}</a>
+        {% if canreactivateusers %}
+        <button class="activate-user" user-id="{{ user.id }}" user-name="{{ user.name }}" user-email="{{ user.email }}">+</button>
+        {% endif %}
+      </li>
     {% endfor %}
   </ul>
+  {% if canaddusers %}
   <h4  style="margin-bottom: 4px">Add user:</h4>
   <label>Email: <input id="addemail"></input></label><br>
   <label>Name: <input id="addname"></input></label><br>
@@ -130,5 +143,6 @@
     {% endfor %}
   </select><br>
   <button id="adduser">Add user</button><br>
+  {% endif %}
 </html>
 

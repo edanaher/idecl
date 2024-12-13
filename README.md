@@ -70,6 +70,10 @@ Milestone 6: Full classroom
   - [ ] With shared cursors (https://github.com/convergencelabs/ace-collab-ext)
 - [ ] Comments on code/chat on project
 - [ ] Emails for invites, assignments?
+- [ ] Solution for updating published projects
+  - [ ] Overwrite student code
+    - [ ] Only if student hasn't updated it (e.g., better starter code)
+    - [ ] Give student option (or note that history saved old copy)
 
 Milestone 6b: Deployable
 - [ ] "One button" deploy on Digital Ocean or other cheap cloud
@@ -109,3 +113,6 @@ Bonus:
 - [ ] Run transforms on code before running tests (e.g., use sed to modify a class constant)
 - [ ] Grading with inline comemnts like Github PRs.
   - [ ] Auto-template similar comments, and assign consistent scores.
+- [ ] Merging multiple streams of changes (including post-publish project changes)
+  - [ ] Automatically for unmodified pieces of code (e.g., a method the student hasn't touched)
+  - [ ] Allow student to choose which side to keep.

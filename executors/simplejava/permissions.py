@@ -38,7 +38,7 @@ with engine.connect() as conn:
 
 def has_permission(perm, classroom_id = None, project_id = None):
     with engine.connect() as conn:
-        classroom_constraint = "users_roles.classroom_id = " + classroom_id if classroom_id else "FALSE"
+        classroom_constraint = "users_roles.classroom_id = " + str(classroom_id) if classroom_id else "FALSE"
         project_constraint = "users_roles.project_id = " + project_id if project_id else "FALSE"
         valid = conn.execute(text(f"SELECT roles_permissions.id FROM roles_permissions JOIN users_roles USING (role_id) WHERE user_id=:uid AND permission_id = :perm AND (users_roles.classroom_id IS NULL OR {classroom_constraint}) AND (users_roles.project_id IS NULL OR {project_constraint})"), [{"uid": current_user.euid, "perm": perm.value, }]).first()
     return valid is not None
@@ -51,7 +51,14 @@ def requires_permission(perm, checktype = None):
                 return current_app.login_manager.unauthorized()
 
             # Is this reliable?
-            classroom = kwargs["classroom"] if checktype == "classroom" else None
+            classroom = None
+            if checktype == "classroom":
+                if "classroom" in kwargs:
+                    classroom = kwargs["classroom"]
+                if "pid" in kwargs:
+                    with engine.connect() as conn:
+                        classroom = conn.execute(text("SELECT classroom_id FROM projects WHERE id=:pid"), [{"pid": kwargs["pid"]}]).first().classroom_id
+
             if not has_permission(perm, classroom):
                 abort(401, "You are not authorized to view this page.")
 

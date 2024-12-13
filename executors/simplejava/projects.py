@@ -28,10 +28,10 @@ def newclassroom():
 def projects(classroom):
     with engine.connect() as conn:
         projects = conn.execute(text("SELECT projects.id, projects.name FROM projects WHERE classroom_id=:classroom"), [{"classroom": classroom}]).all()
-    return render_template("projects.html", projects=projects, canmanageusers=has_permission(P.LISTUSERS))
+    return render_template("projects.html", projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT))
 
 @app.route("/classrooms/<classroom>/projects", methods=["POST"])
-@login_required
+@requires_permission(P.ADDPROJECT, "classroom")
 def newproject(classroom):
     formdata = request.form
     with engine.connect() as conn:
@@ -56,9 +56,8 @@ def project(pid):
     return render_template("editor.html", classroom_name=row.classroom, project_name=row.name, classroom_id = row.classroom_id)
 
 @app.route("/projects/<pid>", methods = ["DELETE"])
-@login_required
+@requires_permission(P.DELETEPROJECT, "classroom")
 def delete_project(pid):
-    # TODO: check permissions on classroom
     with engine.connect() as conn:
         conn.execute(text("DELETE FROM projects WHERE id=:pid"), [{"pid": pid}])
         conn.execute(text("DELETE FROM files WHERE project_id=:pid"), [{"pid": pid}])

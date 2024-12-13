@@ -53,7 +53,9 @@
           b.innerText = "-";
           var li = document.createElement("li");
           li.appendChild(a);
+          {% if candeleteproject %}
           li.appendChild(b);
+          {% endif %}
           var ul = document.getElementById("projectlist");
           ul.appendChild(li);
         };
@@ -77,9 +79,15 @@
   <h4 style="margin-bottom: 0px;">Projects:</h4>
   <ul id="projectlist" style="margin-top: 4px;">
     {% for project in projects %}
-    <li><a href="/projects/{{ project.id }}">{{ project.name }}</a><button class="delete-project" project-id="{{ project.id }}" project-name="{{ project.name }}">-</div></li>
+    <li><a href="/projects/{{ project.id }}">{{ project.name }}</a>
+      {% if candeleteproject %}
+      <button class="delete-project" project-id="{{ project.id }}" project-name="{{ project.name }}">-</div>
+      {% endif %}
+    </li>
     {% endfor %}
   </ul>
+  {% if canaddproject %}
   <button id="addproject">New project</button>
+  {% endif %}
 </html>
 

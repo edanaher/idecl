@@ -24,7 +24,7 @@ def newclassroom():
     return str(classroom.id)
 
 @app.route("/classrooms/<classroom>/projects")
-@requires_permission(P.LISTPROJECT, "classroom")
+@requires_permission(P.GETCLASSROOM, "classroom")
 def projects(classroom):
     with engine.connect() as conn:
         projects = conn.execute(text("SELECT projects.id, projects.name FROM projects WHERE classroom_id=:classroom"), [{"classroom": classroom}]).all()

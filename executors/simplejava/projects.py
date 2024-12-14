@@ -45,7 +45,7 @@ def newproject(classroom):
 
 
 @app.route("/projects/<pid>")
-@login_required
+@requires_permission(P.VIEWPROJECT, "project")
 def project(pid):
     # TODO: check permissions on classroom
     with engine.connect() as conn:
@@ -56,7 +56,7 @@ def project(pid):
     return render_template("editor.html", classroom_name=row.classroom, project_name=row.name, classroom_id = row.classroom_id)
 
 @app.route("/projects/<pid>", methods = ["DELETE"])
-@requires_permission(P.DELETEPROJECT, "classroom")
+@requires_permission(P.DELETEPROJECT, "project")
 def delete_project(pid):
     with engine.connect() as conn:
         conn.execute(text("DELETE FROM files WHERE project_id=:pid"), [{"pid": pid}])

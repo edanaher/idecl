@@ -50,8 +50,8 @@ def requires_permission(perm, checktype = None):
             if not current_user.is_authenticated:
                 return current_app.login_manager.unauthorized()
 
-            # Is this reliable?
             classroom = None
+            project = None
             if checktype == "classroom":
                 if "classroom" in kwargs:
                     classroom = kwargs["classroom"]
@@ -59,9 +59,14 @@ def requires_permission(perm, checktype = None):
                     with engine.connect() as conn:
                         classroom = conn.execute(text("SELECT classroom_id FROM projects WHERE id=:pid"), [{"pid": kwargs["pid"]}]).first().classroom_id
 
-            if not has_permission(perm, classroom):
-                abort(401, "You are not authorized to view this page.")
+            if checktype == "project":
+                if "pid" in kwargs:
+                    project = kwargs["pid"]
+                    with engine.connect() as conn:
+                        classroom = conn.execute(text("SELECT classroom_id FROM projects WHERE id=:pid"), [{"pid": kwargs["pid"]}]).first().classroom_id
 
+            if not has_permission(perm, classroom, project):
+                abort(401, "You are not authorized to view this page.")
             return func(*args, **kwargs)
 
         return decorate_view

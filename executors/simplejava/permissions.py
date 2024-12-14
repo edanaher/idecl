@@ -14,6 +14,7 @@ class Permissions(Enum):
     ADDPROJECT = 3
     DELETEPROJECT = 4
     VIEWPROJECT = 5
+    EDITPROJECT = 15
     SUDO = 6
     LISTUSERS = 8
     ADDUSER = 9

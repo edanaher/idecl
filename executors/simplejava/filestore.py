@@ -5,6 +5,7 @@ import json
 import os
 
 from app import app
+from permissions import Permissions as P, has_permission, requires_permission
 
 from db import engine
 
@@ -16,8 +17,8 @@ with engine.connect() as conn:
         conn.commit()
 
 
-@login_required
 @app.route("/projects/<pid>/save", methods=["POST"])
+@requires_permission(P.EDITPROJECT, "project")
 def save_project(pid):
     data = request.json
     with engine.connect() as conn:
@@ -54,8 +55,8 @@ def attrsToString(row):
         result += "r"
     return result
 
-@login_required
 @app.route("/projects/<pid>/load", methods=["GET"])
+@requires_permission(P.VIEWPROJECT, "project")
 def load_project(pid):
     uid = current_user.id
     with engine.connect() as conn:

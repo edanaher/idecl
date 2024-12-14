@@ -10,7 +10,8 @@ from permissions import requires_permission, has_permission, Permissions as P
 @login_required
 def classrooms():
     with engine.connect() as conn:
-        classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms JOIN users_roles ON (classrooms.id=users_roles.classroom_id OR users_roles.classroom_id IS NULL) JOIN roles_permissions USING (role_id) WHERE permission_id=:perm AND user_id=:uid"), [{"uid": current_user.euid, "perm": P.GETCLASSROOM.value}]).all()
+        # TODO: Is the distinct really necessary?  The problem is a user can have multiple roles with access to a classroom.
+        classrooms = conn.execute(text("SELECT DISTINCT(classrooms.id), classrooms.name FROM classrooms JOIN users_roles ON (classrooms.id=users_roles.classroom_id OR users_roles.classroom_id IS NULL) JOIN roles_permissions USING (role_id) WHERE permission_id=:perm AND user_id=:uid"), [{"uid": current_user.euid, "perm": P.GETCLASSROOM.value}]).all()
     return render_template("classrooms.html", classrooms=classrooms, loggedinas=current_user, canaddclassroom=has_permission(P.ADDCLASSROOM), canmanageusers=has_permission(P.LISTUSERS))
 
 @app.route("/classrooms", methods=["POST"])
@@ -27,7 +28,7 @@ def newclassroom():
 @requires_permission(P.GETCLASSROOM, "classroom")
 def projects(classroom):
     with engine.connect() as conn:
-        projects = conn.execute(text("SELECT projects.id, projects.name FROM projects WHERE classroom_id=:classroom"), [{"classroom": classroom}]).all()
+        projects = conn.execute(text("SELECT DISTINCT(projects.id), projects.name FROM projects WHERE classroom_id=:classroom"), [{"classroom": classroom}]).all()
     return render_template("projects.html", projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT))
 
 @app.route("/classrooms/<classroom>/projects", methods=["POST"])

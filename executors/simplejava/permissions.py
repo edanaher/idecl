@@ -26,22 +26,40 @@ class Permissions(Enum):
 
 
 STUDENT_PERMISSIONS = [
-    Permissions.GETCLASSROOM,
-    Permissions.LISTPROJECT,
-    Permissions.VIEWPROJECT
+    (Permissions.GETCLASSROOM, None),
+    (Permissions.LISTPROJECT, "published"),
+    (Permissions.VIEWPROJECT, "published")
 ]
 
 with engine.connect() as conn:
+    conn.execute(text("DELETE FROM roles_permissions"))
     conn.execute(text("INSERT INTO roles_permissions (role_id, permission_id) VALUES ((SELECT id FROM roles WHERE name='teacher'), :permission) ON CONFLICT DO NOTHING"), [{"permission": p.value} for _, p in Permissions.__members__.items()])
-    conn.execute(text("INSERT INTO roles_permissions (role_id, permission_id) VALUES ((SELECT id FROM roles WHERE name='student'), :permission) ON CONFLICT DO NOTHING"), [{"permission": p.value} for p in STUDENT_PERMISSIONS])
+    conn.execute(text("INSERT INTO tags (name) VALUES (:name) ON CONFLICT DO NOTHING"), [{"name": t} for (p, t) in STUDENT_PERMISSIONS if t])
+    conn.execute(text("INSERT INTO roles_permissions (role_id, permission_id, tag_id) VALUES ((SELECT id FROM roles WHERE name='student'), :permission, (SELECT id FROM tags WHERE name=:tag)) ON CONFLICT DO NOTHING"), [{"permission": p.value, "tag": t} for (p, t) in STUDENT_PERMISSIONS])
     conn.commit()
 
-
+# TODO: Right now, a tag on a role means the project or class in question has
+# to have the tag.  Should it be more precise?  And what about requiring
+# multiple tags?
 def has_permission(perm, classroom_id = None, project_id = None):
     with engine.connect() as conn:
         classroom_constraint = "users_roles.classroom_id = " + str(classroom_id) if classroom_id else "FALSE"
         project_constraint = "users_roles.project_id = " + project_id if project_id else "FALSE"
-        valid = conn.execute(text(f"SELECT roles_permissions.id FROM roles_permissions JOIN users_roles USING (role_id) WHERE user_id=:uid AND permission_id = :perm AND (users_roles.classroom_id IS NULL OR {classroom_constraint}) AND (users_roles.project_id IS NULL OR {project_constraint})"), [{"uid": current_user.euid, "perm": perm.value, }]).first()
+        valid = conn.execute(text(f"""
+            SELECT *
+            FROM roles_permissions
+            JOIN users_roles USING (role_id)
+            LEFT JOIN projects_tags ON (roles_permissions.tag_id = projects_tags.tag_id AND projects_tags.project_id=:project)
+            LEFT JOIN classrooms_tags ON (roles_permissions.tag_id = projects_tags.tag_id AND classrooms_tags.classroom_id=:classroom)
+            WHERE user_id=:uid AND permission_id = :perm
+            AND (users_roles.classroom_id IS NULL OR users_roles.classroom_id=:classroom)
+            AND (users_roles.project_id IS NULL OR users_roles.project_id=:project)
+            AND (roles_permissions.tag_id IS NULL OR
+                 classrooms_tags.id IS NOT NULL OR
+                 projects_tags.id IS NOT NULL);
+        """), [{"uid": current_user.euid, "perm": perm.value, "classroom":classroom_id, "project":project_id}]).first()
+        print(valid)
+        print(classroom_id)
     return valid is not None
 
 def requires_permission(perm, checktype = None):

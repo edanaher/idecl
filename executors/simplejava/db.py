@@ -42,7 +42,8 @@ roles_permissions = Table(
     Column("id", Integer, primary_key=True),
     Column("role_id", Integer, ForeignKey("roles.id", name="fk_roles_permissions_role_id"), nullable=False),
     Column("permission_id", Integer, nullable=False), # Implicit "table" in app
-    UniqueConstraint("role_id", "permission_id", name="uniq_roles_permissions_role_id_permission_id")
+    Column("tag_id", Integer, ForeignKey("tags.id", name="fk_users_roles_tag_id"), nullable=True),
+    UniqueConstraint("role_id", "permission_id", "tag_id", name="uniq_roles_permissions_role_id_permission_id_tag_id")
 )
 
 
@@ -64,6 +65,32 @@ projects_table = Table(
     Column("name", String),
     Column("parent_id", Integer, ForeignKey("projects.id", name="fk_projects_parent_id")),
     UniqueConstraint("classroom_id", "name", name="uniq_project_classroom_name")
+)
+
+tags_table = Table(
+    "tags",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("name", String, nullable=False),
+    UniqueConstraint("name", name="uniq_tags_name")
+)
+
+classrooms_tags = Table(
+    "classrooms_tags",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("classroom_id", Integer, ForeignKey("classrooms.id", name="fk_classrooms_tags_classroom_id"), nullable=False),
+    Column("tag_id", Integer, ForeignKey("tags.id", name="fk_classrooms_tags_tag_id"), nullable=False),
+    UniqueConstraint("classroom_id", "tag_id", name="uniq_classroomclassroomss_tago_classroom_id_tag_id")
+)
+
+projects_tags = Table(
+    "projects_tags",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("project_id", Integer, ForeignKey("projects.id", name="fk_projects_tags_project_id"), nullable=False),
+    Column("tag_id", Integer, ForeignKey("tags.id", name="fk_projects_tags_tag_id"), nullable=False),
+    UniqueConstraint("project_id", "tag_id", name="uniq_projects_tags_project_id_tag_id")
 )
 
 files_table = Table(

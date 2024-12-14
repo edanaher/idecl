@@ -28,7 +28,20 @@ def newclassroom():
 @requires_permission(P.GETCLASSROOM, "classroom")
 def projects(classroom):
     with engine.connect() as conn:
-        projects = conn.execute(text("SELECT DISTINCT(projects.id), projects.name FROM projects WHERE classroom_id=:classroom"), [{"classroom": classroom}]).all()
+        projects = conn.execute(text("""
+            SELECT DISTINCT(projects.id), projects.name FROM projects
+            LEFT JOIN users_roles ON ((projects.id = users_roles.project_id OR users_roles.project_id IS NULL)
+                                      AND (users_roles.classroom_id IS NULL or users_roles.classroom_id=:classroom))
+            LEFT JOIN roles_permissions ON (users_roles.role_id = roles_permissions.role_id)
+            LEFT JOIN projects_tags ON (roles_permissions.tag_id = projects_tags.tag_id AND projects_tags.project_id=projects.id)
+            LEFT JOIN classrooms_tags ON (roles_permissions.tag_id = projects_tags.tag_id AND classrooms_tags.classroom_id=:classroom)
+            WHERE projects.classroom_id=:classroom
+            AND users_roles.user_id=:user
+            AND roles_permissions.permission_id=:perm
+            AND (roles_permissions.tag_id IS NULL
+                 OR classrooms_tags.id IS NOT NULL
+                 OR projects_tags.id IS NOT NULL);
+        """), [{"classroom": classroom, "perm": P.LISTPROJECT.value, "user": current_user.id}]).all()
     return render_template("projects.html", projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT))
 
 @app.route("/classrooms/<classroom>/projects", methods=["POST"])

@@ -84,9 +84,26 @@ def clone_project_as_assignment(pid):
         alreadcloned = conn.execute(text("SELECT * FROM projects WHERE owner=:uid AND parent_id=:pid AND cloned_as_assignment=:t"), [{"uid": current_user.id, "pid": int(pid), "t": True}]).first()
         if alreadcloned:
             abort(400, "User alread cloned project")
+
         projectrow = conn.execute(text("SELECT name, classroom_id FROM projects WHERE id=:pid"), [{"pid": int(pid)}]).first()
         newname = projectrow.name + " - " + current_user.get_email()
-        clone_id = conn.execute(text("INSERT INTO projects (name, classroom_id, owner, parent_id, cloned_as_assignment) VALUES (:name, :classroom, :uid, :parent_id, :t) RETURNING id"), [{"uid": current_user.id, "classroom": projectrow.classroom_id, "name": newname, "parent_id": int(pid), "t": True}]).first()
+        clone_id = conn.execute(text("INSERT INTO projects (name, classroom_id, owner, parent_id, cloned_as_assignment) VALUES (:name, :classroom, :uid, :parent_id, :t) RETURNING id"), [{"uid": current_user.id, "classroom": projectrow.classroom_id, "name": newname, "parent_id": int(pid), "t": True}]).first().id
+
+        clone_files = conn.execute(text("SELECT files.id, files.name, files.contents, files.file_id FROM files LEFT JOIN files AS elim_templates ON (files.project_id = elim_templates.project_id AND 'template/' || files.name = elim_templates.name) WHERE files.project_id=:pid AND elim_templates.id IS NULL"), [{"pid": int(pid)}]).all()
+        for fileinfo in clone_files:
+            filename = fileinfo.name
+            hidden = False
+            inherited = False
+            readonly = True
+            if filename.startswith("Test") or filename.endswith("Test.java") or filename.endswith("Tests.java"):
+                hidden = True
+                inherited = True
+            if filename.startswith("template/"):
+                filename = filename.removeprefix("template/")
+                readonly = False
+            conn.execute(text("INSERT INTO files (project_id, file_id, name, contents, hidden, inherited, readonly, parent_file_id) VALUES (:pid, :file_id, :name, :contents, :hidden, :inherited, :readonly, :parent_file)"), [{"pid": clone_id, "file_id": fileinfo.file_id, "name": filename, "contents": fileinfo.contents, "hidden": hidden, "inherited": inherited, "readonly": readonly, "parent_file": fileinfo.id if inherited else None}])
+
+
         conn.commit()
     return "Success"
 

@@ -29,22 +29,24 @@ def newclassroom():
 def projects(classroom):
     with engine.connect() as conn:
         projects = conn.execute(text("""
-            SELECT projects.id, projects.name, GROUP_CONCAT(rp_cloneassignment.id) AS cancloneassignment FROM projects
-            LEFT JOIN users_roles ON ((projects.id = users_roles.project_id OR users_roles.project_id IS NULL)
-                                      AND (users_roles.classroom_id IS NULL or users_roles.classroom_id=:classroom))
-            LEFT JOIN roles_permissions ON (users_roles.role_id = roles_permissions.role_id)
-            LEFT JOIN projects_tags ON (roles_permissions.tag_id = projects_tags.tag_id AND projects_tags.project_id=projects.id)
-            LEFT JOIN classrooms_tags ON (roles_permissions.tag_id = projects_tags.tag_id AND classrooms_tags.classroom_id=:classroom)
-            LEFT JOIN roles_permissions AS rp_cloneassignment ON (users_roles.role_id = rp_cloneassignment.role_id AND rp_cloneassignment.permission_id=:perm_cloneassignment)
-            WHERE projects.classroom_id=:classroom
-            AND users_roles.user_id=:user
-            AND roles_permissions.permission_id=:perm
-            AND (roles_permissions.tag_id IS NULL
-                 OR classrooms_tags.id IS NOT NULL
-                 OR projects_tags.id IS NOT NULL)
-            GROUP BY projects.id
-            UNION
-            SELECT projects.id, projects.name, NULL FROM projects WHERE owner=:user AND projects.classroom_id=:classroom;
+            SELECT id, name, GROUP_CONCAT(cancloneassignment) AS cancloneassignment FROM (
+                SELECT projects.id, projects.name, GROUP_CONCAT(rp_cloneassignment.id) AS cancloneassignment FROM projects
+                LEFT JOIN users_roles ON ((projects.id = users_roles.project_id OR users_roles.project_id IS NULL)
+                                          AND (users_roles.classroom_id IS NULL or users_roles.classroom_id=:classroom))
+                LEFT JOIN roles_permissions ON (users_roles.role_id = roles_permissions.role_id)
+                LEFT JOIN projects_tags ON (roles_permissions.tag_id = projects_tags.tag_id AND projects_tags.project_id=projects.id)
+                LEFT JOIN classrooms_tags ON (roles_permissions.tag_id = projects_tags.tag_id AND classrooms_tags.classroom_id=:classroom)
+                LEFT JOIN roles_permissions AS rp_cloneassignment ON (users_roles.role_id = rp_cloneassignment.role_id AND rp_cloneassignment.permission_id=:perm_cloneassignment)
+                WHERE projects.classroom_id=:classroom
+                AND users_roles.user_id=:user
+                AND roles_permissions.permission_id=:perm
+                AND (roles_permissions.tag_id IS NULL
+                     OR classrooms_tags.id IS NOT NULL
+                     OR projects_tags.id IS NOT NULL)
+                GROUP BY projects.id
+                UNION
+                SELECT projects.id, projects.name, NULL FROM projects WHERE owner=:user AND projects.classroom_id=:classroom
+            ) GROUP BY id;
         """), [{"classroom": classroom, "perm": P.LISTPROJECT.value, "user": current_user.id, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value}]).all()
     return render_template("projects.html", projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT))
 

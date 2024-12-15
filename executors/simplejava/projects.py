@@ -42,7 +42,9 @@ def projects(classroom):
             AND (roles_permissions.tag_id IS NULL
                  OR classrooms_tags.id IS NOT NULL
                  OR projects_tags.id IS NOT NULL)
-            GROUP BY projects.id;
+            GROUP BY projects.id
+            UNION
+            SELECT projects.id, projects.name, NULL FROM projects WHERE owner=:user AND projects.classroom_id=:classroom;
         """), [{"classroom": classroom, "perm": P.LISTPROJECT.value, "user": current_user.id, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value}]).all()
     return render_template("projects.html", projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT))
 

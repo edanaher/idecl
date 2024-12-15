@@ -80,6 +80,9 @@
   <ul id="projectlist" style="margin-top: 4px;">
     {% for project in projects %}
     <li><a href="/projects/{{ project.id }}">{{ project.name }}</a>
+      {% if project.cancloneassignment %}
+        <button class="cloneassignment" project-id="{{ project.id }}" project-name="{{ project.name }}">Clone project as asssignment</div>
+      {% endif %}
       {% if candeleteproject %}
       <button class="delete-project" project-id="{{ project.id }}" project-name="{{ project.name }}">-</div>
       {% endif %}

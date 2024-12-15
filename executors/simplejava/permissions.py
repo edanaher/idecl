@@ -16,6 +16,9 @@ class Permissions(Enum):
     DELETEPROJECT = 4
     VIEWPROJECT = 5
     EDITPROJECT = 15
+    # This is hacky... possibly CLONEPROJECT with a parameter indicating type
+    # of clone once generalized cloning is available?
+    CLONEPROJECTASASSIGNMENT = 18
 
     LISTUSERS = 8
     VIEWUSER = 12
@@ -33,8 +36,9 @@ class Permissions(Enum):
 STUDENT_PERMISSIONS = [
     (Permissions.GETCLASSROOM, None),
     (Permissions.LISTPROJECT, "published"),
-    (Permissions.VIEWPROJECT, "published")
+    (Permissions.CLONEPROJECTASASSIGNMENT, "published")
 ]
+
 
 with engine.connect() as conn:
     conn.execute(text("DELETE FROM roles_permissions"))

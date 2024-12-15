@@ -989,7 +989,9 @@ window.onload = function() {
   editor.on("change", markDirty);
   document.getElementById("cloneproject").addEventListener("click", function() { cloneProjectInit(false); });
   document.getElementById("cloneassignment").addEventListener("click", function() { cloneProjectInit(true) });
-  document.getElementById("publish").addEventListener("click", publish);
+  var publishbutton = document.getElementById("publish");
+  if (publishbutton)
+    publishbutton.addEventListener("click", publish);
   document.getElementById("addfile").addEventListener("click", addFile);
   document.getElementById("removefile").addEventListener("click", removeFile);
   document.getElementById("savefiles").addEventListener("click", saveToServer);

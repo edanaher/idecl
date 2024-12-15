@@ -63,11 +63,26 @@ def newproject(classroom):
 def project(pid):
     # TODO: check permissions on classroom
     with engine.connect() as conn:
-        row  = conn.execute(text("SELECT projects.name, classrooms.name AS classroom, classrooms.id AS classroom_id FROM projects JOIN classrooms ON classrooms.id=projects.classroom_id WHERE projects.id=:pid"), [{"pid": pid}]).first()
-
+        row  = conn.execute(text("SELECT projects.name, classrooms.name AS classroom, classrooms.id AS classroom_id, tags.id AS tag_id FROM projects JOIN classrooms ON classrooms.id=projects.classroom_id LEFT JOIN projects_tags ON projects_tags.project_id=projects.id LEFT JOIN tags ON projects_tags.tag_id=tags.id WHERE projects.id=:pid AND (tags.name='published' OR tags.name IS NULL)"), [{"pid": pid}]).first()
     if row == None:
         return redirect(f"/classrooms/{classroom}/projects")
-    return render_template("editor.html", classroom_name=row.classroom, project_name=row.name, classroom_id = row.classroom_id)
+    return render_template("editor.html", classroom_name=row.classroom, project_name=row.name, classroom_id = row.classroom_id, canpublish=has_permission(P.ADDPROJECTTAG), canunpublish=has_permission(P.DELETEPROJECTTAG), published=not not row.tag_id )
+
+@app.route("/projects/<pid>/tags/<tid>", methods = ["PUT"])
+@requires_permission(P.ADDPROJECTTAG, "project")
+def add_project_tag(pid, tid):
+    with engine.connect() as conn:
+        row  = conn.execute(text("INSERT INTO projects_tags (project_id, tag_id) VALUES (:pid, :tid)"), [{"pid": pid, "tid": tid}])
+        conn.commit()
+    return "Success"
+
+@app.route("/projects/<pid>/tags/<tid>", methods = ["DELETE"])
+@requires_permission(P.ADDPROJECTTAG, "project")
+def delete_project_tag(pid, tid):
+    with engine.connect() as conn:
+        row  = conn.execute(text("DELETE FROM projects_tags WHERE project_id=:pid AND tag_id=:tid"), [{"pid": pid, "tid": tid}])
+        conn.commit()
+    return "Success"
 
 @app.route("/projects/<pid>", methods = ["DELETE"])
 @requires_permission(P.DELETEPROJECT, "project")

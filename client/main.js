@@ -854,6 +854,32 @@ var cloneProjectInit = function(assignment) {
   xhr.send(formdata);
 }
 
+var publish = function() {
+  var publish_button = this;
+  if (this.hasAttribute("published")) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("DELETE", "/projects/" + projectId() + "/tags/1", true);
+    xhr.onload = function() {
+      publish_button.disabled = false;
+      publish_button.innerText = "publish project";
+      publish_button.removeAttribute("published");
+    };
+    this.innerText = "unpublishing..."
+    this.disabled = true;
+    xhr.send();
+  } else {
+    var xhr = new XMLHttpRequest();
+    xhr.open("PUT", "/projects/" + projectId() + "/tags/1", true);
+    xhr.onload = function() {
+      publish_button.disabled = false;
+      publish_button.innerText = "unpublish project";
+      publish_button.setAttribute("published", "");
+    };
+    this.innerText = "publishing..."
+    this.disabled = true;
+    xhr.send();
+  }
+}
 
 var upgradestore = function() {
   var version = localStorage.getItem("version");
@@ -963,6 +989,7 @@ window.onload = function() {
   editor.on("change", markDirty);
   document.getElementById("cloneproject").addEventListener("click", function() { cloneProjectInit(false); });
   document.getElementById("cloneassignment").addEventListener("click", function() { cloneProjectInit(true) });
+  document.getElementById("publish").addEventListener("click", publish);
   document.getElementById("addfile").addEventListener("click", addFile);
   document.getElementById("removefile").addEventListener("click", removeFile);
   document.getElementById("savefiles").addEventListener("click", saveToServer);

@@ -67,8 +67,10 @@ def has_permission(perm, classroom_id = None, project_id = None):
                  classrooms_tags.id IS NOT NULL OR
                  projects_tags.id IS NOT NULL);
         """), [{"uid": current_user.euid, "perm": perm.value, "classroom":classroom_id, "project":project_id}]).first()
-        print(valid)
-        print(classroom_id)
+        if project_id:
+            owner = conn.execute(text(f"SELECT owner FROM projects WHERE id=:project"), [{"project": project_id}]).first().owner
+            if owner and owner == current_user.id:
+                return True
     return valid is not None
 
 def requires_permission(perm, checktype = None):

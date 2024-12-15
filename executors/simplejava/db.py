@@ -64,6 +64,7 @@ projects_table = Table(
     Column("owner", Integer, ForeignKey("users.id", name="fk_projects_owner"), nullable=False),
     Column("name", String),
     Column("parent_id", Integer, ForeignKey("projects.id", name="fk_projects_parent_id")),
+    Column("cloned_as_assignment", Boolean), # TODO: There should be a cleaner and more generic way to handle this.
     UniqueConstraint("classroom_id", "name", name="uniq_project_classroom_name")
 )
 

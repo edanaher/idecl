@@ -1,4 +1,4 @@
-from flask import redirect, render_template, request, send_file, session
+from flask import abort, redirect, render_template, request, send_file, session
 from flask_login import login_required, current_user
 from sqlalchemy import text
 
@@ -69,6 +69,19 @@ def project(pid):
     if row == None:
         return redirect(f"/classrooms/{classroom}/projects")
     return render_template("editor.html", classroom_name=row.classroom, project_name=row.name, classroom_id = row.classroom_id, canpublish=has_permission(P.ADDPROJECTTAG), canunpublish=has_permission(P.DELETEPROJECTTAG), published=not not row.tag_id )
+
+@app.route("/projects/<pid>/assignment", methods = ["POST"])
+@requires_permission(P.CLONEPROJECTASASSIGNMENT, "project")
+def clone_project_as_assignment(pid):
+    with engine.connect() as conn:
+        alreadcloned = conn.execute(text("SELECT * FROM projects WHERE owner=:uid AND parent_id=:pid AND cloned_as_assignment=:t"), [{"uid": current_user.id, "pid": int(pid), "t": True}]).first()
+        if alreadcloned:
+            abort(400, "User alread cloned project")
+        projectrow = conn.execute(text("SELECT name, classroom_id FROM projects WHERE id=:pid"), [{"pid": int(pid)}]).first()
+        newname = projectrow.name + " - " + current_user.get_email()
+        clone_id = conn.execute(text("INSERT INTO projects (name, classroom_id, owner, parent_id, cloned_as_assignment) VALUES (:name, :classroom, :uid, :parent_id, :t) RETURNING id"), [{"uid": current_user.id, "classroom": projectrow.classroom_id, "name": newname, "parent_id": int(pid), "t": True}]).first()
+        conn.commit()
+    return "Success"
 
 @app.route("/projects/<pid>/tags/<tid>", methods = ["PUT"])
 @requires_permission(P.ADDPROJECTTAG, "project")

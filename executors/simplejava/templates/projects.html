@@ -36,6 +36,7 @@
       for (var i = 0; i < deletes.length; i++) {
         deletes[i].addEventListener("click", deleteProject);
       }
+      {% if canaddproject %}
       document.getElementById("addproject").addEventListener("click", function() {
         var name = prompt("What is the new project called?");
         var xhr = new XMLHttpRequest();
@@ -64,6 +65,21 @@
         xhr.send(formdata);
 
       })
+      {% endif %}
+      cloneelemes = document.getElementsByClassName("cloneassignment")
+      for (var i = 0; i < cloneelemes.length; i++) {
+        var elem = cloneelemes[i];
+        elem.addEventListener("click", function() {
+          var id = this.getAttribute("project-id");
+          var xhr = new XMLHttpRequest();
+          var cloneelem = this;
+          xhr.open("POST", "/projects/" + id + "/assignment", true);
+          xhr.onload = function() {
+            cloneelem.parentNode.removeChild(cloneelem);
+          };
+          xhr.send();
+        });
+      }
     }
   </script>
   <div id="logo" style="display:inline-block; font-size:larger; font-style: italic; font-color: #330000;"><a href="/">idecl</a></div>
@@ -81,7 +97,7 @@
     {% for project in projects %}
     <li><a href="/projects/{{ project.id }}">{{ project.name }}</a>
       {% if project.cancloneassignment %}
-        <button class="cloneassignment" project-id="{{ project.id }}" project-name="{{ project.name }}">Clone project as asssignment</div>
+        <button class="cloneassignment" project-id="{{ project.id }}">Clone project as asssignment</div>
       {% endif %}
       {% if candeleteproject %}
       <button class="delete-project" project-id="{{ project.id }}" project-name="{{ project.name }}">-</div>

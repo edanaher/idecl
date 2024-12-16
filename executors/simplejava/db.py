@@ -110,6 +110,15 @@ files_table = Table(
     UniqueConstraint("project_id", "file_id", name="uniq_file_project_file_id")
 )
 
+cached_classes = Table(
+    "cached_classes",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("sha256", String),
+    Column("tarball", BLOB),
+    UniqueConstraint("sha256", name="uniq_cached_classes_sha256"),
+)
+
 # Bootstrap roles
 # TODO: general roles.
 with engine.connect() as conn:

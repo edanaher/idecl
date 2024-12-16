@@ -43,18 +43,41 @@ def run():
             if (basename.startswith("Test") and k.endswith(".java")) or k.endswith("Test.java") or k.endswith("Tests.java"):
                 tests.append(k)
 
+    # Caching!  This hash function is not quite safe, but good enough to test.
+    proc = subprocess.run(["/bin/sh", "-c", f"cd {tmp}" " && { ls; cat *; }"], capture_output=True, text=False, timeout=30)
+    #print("pre-hash result:", proc.stdout)
+    proc = subprocess.run(["/bin/sh", "-c", f"cd {tmp}" " && { ls; cat *; } | sha256sum | cut -c1-64 | xargs echo -n"], capture_output=True, text=False, timeout=30)
+    inputhash = str(testing) + str(proc.stdout)
+    print("hash is", inputhash)
+    with engine.connect() as conn:
+        compiledtar = conn.execute(text("SELECT tarball FROM cached_classes WHERE sha256=:hash"), [{"hash": inputhash}]).first()
+    print("compiledtar is", compiledtar)
+
+
     if testing and not tests:
         return "No tests found; tests should start with Test or end with Test or Tests.  E.g., TestNum.java, NumTest.java, or NumTests.java"
 
     def stream():
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        if testing:
-            proc = subprocess.run(["docker", "run", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", f"/junit/junit-4.13.2.jar:/app"] + [f"/app/{t}" for t in tests], capture_output=True, text=True, timeout=30)
+
+        # TODO: error handling
+        if compiledtar: 
+            untar = subprocess.run(["/bin/sh", "-c", f"cd {tmp} && tar --zstd -x"], input=compiledtar.tarball)
         else:
-            proc = subprocess.run(["docker", "run", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", "/app", "/app/Main.java"], capture_output=True, text=True, timeout=30)
-        if proc.returncode != 0:
-            yield f"0\nError compiling {'tests' if testing else 'program'}:\n" + proc.stderr
-            return
+            if testing:
+                proc = subprocess.run(["docker", "run", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", f"/junit/junit-4.13.2.jar:/app"] + [f"/app/{t}" for t in tests], capture_output=True, text=True, timeout=30)
+            else:
+                proc = subprocess.run(["docker", "run", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", "/app", "/app/Main.java"], capture_output=True, text=True, timeout=30)
+            if proc.returncode != 0:
+                yield f"0\nError compiling {'tests' if testing else 'program'}:\n" + proc.stderr
+                return
+
+            # Add new compile to the cache
+            proc = subprocess.run(["/bin/sh", "-c", f"cd {tmp} && tar --zstd -c ."], capture_output=True, text=False, timeout=30)
+            saved_tarball = proc.stdout
+            with engine.connect() as conn:
+                conn.execute(text("INSERT INTO cached_classes (sha256, tarball) VALUES (:hash, :saved_tarball)"), [{"hash": inputhash, "saved_tarball": saved_tarball}])
+                conn.commit()
 
         if testing:
             proc = subprocess.Popen(["docker", "run", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "java", "-cp", f"/junit/junit-4.13.2.jar:/junit/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"] + [t.replace("/", ".").rstrip('.java') for t in tests], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout

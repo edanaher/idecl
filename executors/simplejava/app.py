@@ -18,7 +18,6 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 def run():
     body = request.json
 
-    print(repr(body))
     testing = request.args.get("test") == "1"
 
     tmp = tempfile.mkdtemp()
@@ -37,7 +36,6 @@ def run():
                 with engine.connect() as conn:
                     contents = conn.execute(text("SELECT contents FROM files WHERE project_id=:pid AND file_id=:fid"),
                             [{"pid": inherited["project"], "fid": inherited["file"]}]).first().contents
-            print(f"{k}: {contents}")
             f.write(contents)
 
         if testing:

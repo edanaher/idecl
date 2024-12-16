@@ -45,7 +45,7 @@ Milestone 4: Projects
 
 Milestone 5: MVP Classroom
 - [X] Student management/invites
-  - [ ] Basic RBAC
+  - [X] Basic RBAC
 - [ ] Better security
   - [ ] enforced timeouts (time for compile, CPU for program)
   - [ ] queueing compiles to avoid OOM

@@ -63,6 +63,8 @@ def run():
         # TODO: error handling
         if compiledtar: 
             untar = subprocess.run(["/bin/sh", "-c", f"cd {tmp} && tar --zstd -x"], input=compiledtar.tarball)
+            if untar.returncode != 0:
+                print("Untar failure: " + str(untar.returncode) + str(untar.stdout) + str(untar.stderr))
         else:
             if testing:
                 proc = subprocess.run(["docker", "run", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", f"/junit/junit-4.13.2.jar:/app"] + [f"/app/{t}" for t in tests], capture_output=True, text=True, timeout=30)

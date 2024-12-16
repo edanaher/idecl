@@ -463,6 +463,16 @@ var fileContents = function(projectid, fileid) {
   }
 }
 
+var fileForRun = function(projectid, fileid) {
+  var attrs = loadLS("attrs", projectid, fileid);
+  if (attrs && attrs.indexOf("i") != -1) {
+    var par = loadLS("parent", projectid);
+    return {"inherit": {"project": parseInt(par.split("|")[0]), "file": parseInt(fileid)}};
+  } else {
+    return {"contents": loadLS("files", projectid, fileid)}
+  }
+}
+
 var loadFile = function(fileid, contents, savehistoryfile) {
   var filenamediv;
   if (typeof(fileid) == "number") {
@@ -685,6 +695,7 @@ var runcommand = function(test) {
   var xhr = new XMLHttpRequest();
   var params = test ? "?test=1" : ""
   xhr.open("POST", "/run" + params, true);
+  xhr.setRequestHeader("Content-Type", "application/json");
   xhr.onprogress = function() {
     if (xhr.readyState === XMLHttpRequest.DONE || xhr.readyState === XMLHttpRequest.LOADING) {
       if(xhr.status != 200)
@@ -702,11 +713,11 @@ var runcommand = function(test) {
     runbutton.innerText = test ? "run tests" : "run";
     document.getElementById("sendinput").disabled = true;
   }
-  var formdata = new FormData();
+  var body = {};
   var filenames = JSON.parse(loadLSc("files"))
   for (var i in filenames)
-    formdata.append(filenames[i], fileContents(projectId(), i));
-  xhr.send(formdata);
+    body[filenames[i]] = fileForRun(projectId(), i);
+  xhr.send(JSON.stringify(body));
   document.getElementById("sendinput").disabled = false;
 }
 

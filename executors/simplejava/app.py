@@ -1,10 +1,13 @@
 from flask import Flask, redirect, render_template, request, send_file, session, Response, stream_with_context
 from flask_login import login_required
 from functools import reduce
+from sqlalchemy import text
 import os
 import shutil
 import subprocess
 import tempfile
+
+from db import engine
 
 app = Flask(__name__)
 
@@ -13,19 +16,30 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 @app.route("/run", methods=["POST"])
 @login_required
 def run():
-    formdata = request.form
+    body = request.json
 
+    print(repr(body))
     testing = request.args.get("test") == "1"
 
     tmp = tempfile.mkdtemp()
     tests = []
-    for k in formdata:
+    for k in body:
         if "/" in k:
             dirname = os.path.join(tmp, os.path.dirname(k))
             if not os.path.exists(dirname):
                 os.makedirs(os.path.join(tmp, os.path.dirname(k)))
         with open(os.path.join(tmp, k), "w") as f:
-            f.write(formdata[k])
+            if "contents" in body[k]:
+                contents = body[k]["contents"]
+            else:
+                # TODO: handle chained inherits
+                inherited = body[k]["inherit"]
+                with engine.connect() as conn:
+                    contents = conn.execute(text("SELECT contents FROM files WHERE project_id=:pid AND file_id=:fid"),
+                            [{"pid": inherited["project"], "fid": inherited["file"]}]).first().contents
+            print(f"{k}: {contents}")
+            f.write(contents)
+
         if testing:
             basename = os.path.basename(k)
             if (basename.startswith("Test") and k.endswith(".java")) or k.endswith("Test.java") or k.endswith("Tests.java"):

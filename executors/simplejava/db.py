@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, MetaData, Table, Column, Boolean, Integer, String, BLOB, CheckConstraint, ForeignKey, UniqueConstraint
+from sqlalchemy import create_engine, MetaData, Table, Column, Boolean, Integer, String, BLOB, CheckConstraint, ForeignKey, UniqueConstraint, text
 import os
 
 engine = create_engine("sqlite+pysqlite:///" + os.environ.get("HOME") + "/idecl.db")
@@ -109,3 +109,17 @@ files_table = Table(
     UniqueConstraint("project_id", "name", name="uniq_file_project_name"),
     UniqueConstraint("project_id", "file_id", name="uniq_file_project_file_id")
 )
+
+# Bootstrap roles
+# TODO: general roles.
+with engine.connect() as conn:
+    count = conn.execute(text("SELECT COUNT(*) FROM roles")).first()[0]
+    if count == 0:
+        conn.execute(text("INSERT INTO roles (name) VALUES (:name)"), [{"name": n} for n in ["teacher", "student"]])
+        conn.commit()
+
+with engine.connect() as conn:
+    count = conn.execute(text("SELECT COUNT(*) FROM users")).first()[0]
+    if count == 0:
+        conn.execute(text("INSERT INTO users (email) VALUES (:email)"), [{"email": e} for e in os.environ.get("USERS").split(",")])
+        conn.commit()

@@ -10,13 +10,6 @@ from permissions import Permissions as P, has_permission, requires_permission
 from db import engine
 
 
-with engine.connect() as conn:
-    count = conn.execute(text("SELECT COUNT(*) FROM users")).first()[0]
-    if count == 0:
-        conn.execute(text("INSERT INTO users (email) VALUES (:email)"), [{"email": e} for e in os.environ.get("USERS").split(",")])
-        conn.commit()
-
-
 @app.route("/projects/<pid>/save", methods=["POST"])
 @requires_permission(P.EDITPROJECT, "project")
 def save_project(pid):

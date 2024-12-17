@@ -67,6 +67,9 @@
     networking.hostName = name;
     system.stateVersion = "24.11";
 
+    environment.systemPackages = with pkgs; [ screen sqlite-interactive gnutar outils coreutils ];
+
+
     deployment.healthChecks = {
       http = [ {
         scheme = "https";

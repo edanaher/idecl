@@ -1,6 +1,7 @@
 #filecontainer {
   vertical-align: top;
   display: inline-block;
+  min-width: 8em;
 }
 
 #filelist {

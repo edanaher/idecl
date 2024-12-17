@@ -5,7 +5,7 @@ This is a (very early stage work-in-progress) IDE for use by teachers teaching A
 
 Notably, this is not meant to be used outside of classrooms or at large-scale; it doesn't have any way to run services and expose them to the internet, no graphics, and is meant to be run on a single host (with appropriate backups), so a single instance likely won't scale beyond 20-50-ish students.  However, that simplicity means that it can be quick and resource-light; the goal is to be able to support a class of 20 reasonably on a $4.00/mo Digital Ocean Droplet, or comfortably on a slighly larger host.  (Note that, unlike most existing systems, that's not $4.00/student; that's $4.00/class.  Hopefully at the point where a teacher can pay for it out of pocket or easily get it approved by their school).
 
-Roadmap:
+### Roadmap:
 
 Milestone 1: PoC running Java on the server
 - [X] Edit and Main.java and Num.java
@@ -37,7 +37,7 @@ Milestone 3: A real server
 Milestone 4: Projects
 - [X] Sharing code across users
 - [X] Starter code/template for the project
-  - [ ] Via generalized forking; files can be editable, hidden, or ignored, and static or updated.  (Also useful for copying projects year to year)
+  - [X] Via generalized forking; files can be editable, hidden, or ignored, and static or updated.  (Also useful for copying projects year to year)
 - [X] Tests
   - [ ] Points assigned to each test.
 - [ ] Solution for testing tests/giving to students after
@@ -51,7 +51,7 @@ Milestone 5: MVP Classroom
   - [ ] queueing compiles to avoid OOM
   - [X] block Internet access
 - [ ] View student code
-- [ ] Cache builds for quick reruns (nix? bazel? manual hashing?) (maybe next milestone?)
+- [X] Cache builds for quick reruns (nix? bazel? manual hashing?) (maybe next milestone?)
 - [ ] Backups (S3)
 - [ ] Import/export of some sort
 - [ ] Detect stdin usage on tests
@@ -92,6 +92,8 @@ Milestone 7: "Real product"
 - [ ] Scaling: spin up more/bigger VM's for high demand (may be milestone 5/6?)
 - [ ] Other languages
 - [ ] One-click app-updating
+- [ ] Expose generalized forking to users to customize how they write assignments and maybe other stuff too.
+- [ ] UI for RBAC to give more granular control than "user" and "teacher"
 
 Milestone 8(?): Fully offline work
 - [ ] SPA to load once

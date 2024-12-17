@@ -67,7 +67,7 @@
     networking.hostName = name;
     system.stateVersion = "24.11";
 
-    environment.systemPackages = with pkgs; [ screen sqlite-interactive gnutar outils coreutils ];
+    environment.systemPackages = with pkgs; [ screen sqlite-interactive ];
 
 
     deployment.healthChecks = {
@@ -117,7 +117,7 @@
       description = "daemon for idecl";
       after = [ "network.target" ];
       wantedBy = [ "multi-user.target" ];
-      path = [ pkgs.docker ];
+      path = with pkgs; [ docker gnutar outils coreutils zstd ];
       environment = {
         PYTHONPATH="${python-with-packages}/${python-with-packages.sitePackages}";
         HOME="/app";

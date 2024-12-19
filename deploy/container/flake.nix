@@ -50,11 +50,21 @@
               networking.enableIPv6 = false;
               services.nginx = {
                 enable = true;
+                package = pkgs.openresty;
                 virtualHosts."localhost" = {
                   default = true;
 #                  locations."/static/" = {
 #                    alias = "${idecl-src}/client/";
 #                  };
+                  locations."/lua" = {
+                    extraConfig = ''
+                      default_type text/plain;
+
+                      content_by_lua_block {
+                        ngx.say("Hello from openresty")
+                      }
+                    '';
+                  };
                   locations."/" = {
                     proxyPass = "http://localhost:${builtins.toString idecl-port}";
                     extraConfig = ''

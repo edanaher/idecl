@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 
 from db import engine
+import dbbootstrap
 
 app = Flask(__name__)
 

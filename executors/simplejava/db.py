@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, MetaData, Table, Column, Boolean, Integer, String, BLOB, CheckConstraint, ForeignKey, UniqueConstraint, text
+from sqlalchemy import create_engine, MetaData, Table, Column, Boolean, Integer, String, BLOB, CheckConstraint, ForeignKey, UniqueConstraint
 import os
 
 engine = create_engine("sqlite+pysqlite:///" + os.environ.get("HOME") + "/idecl.db")
@@ -118,17 +118,3 @@ cached_classes = Table(
     Column("tarball", BLOB),
     UniqueConstraint("sha256", name="uniq_cached_classes_sha256"),
 )
-
-# Bootstrap roles
-# TODO: general roles.
-with engine.connect() as conn:
-    count = conn.execute(text("SELECT COUNT(*) FROM roles")).first()[0]
-    if count == 0:
-        conn.execute(text("INSERT INTO roles (name) VALUES (:name)"), [{"name": n} for n in ["teacher", "student"]])
-        conn.commit()
-
-with engine.connect() as conn:
-    count = conn.execute(text("SELECT COUNT(*) FROM users")).first()[0]
-    if count == 0:
-        conn.execute(text("INSERT INTO users (email) VALUES (:email)"), [{"email": e} for e in os.environ.get("USERS").split(",")])
-        conn.commit()

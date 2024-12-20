@@ -1,10 +1,11 @@
 {
   idecl-poc = { modulesPath, lib, name, pkgs, ... }: let 
+    idecl-port = 9453;
+    common = import ../common.nix { inherit pkgs idecl-port idecl-src; hostname = "idecl.edanaher.net"; usessl = true; };
     terraform-state = builtins.fromJSON (builtins.readFile ../terraform/terraform-out.json);
     resources = terraform-state.values.root_module.resources;
     host = builtins.elemAt resources 0;
     ip = host.values.ipv4_address;
-    idecl-port = 9453;
     idecl-src = pkgs.stdenv.mkDerivation {
       name = "idecl-src";
 
@@ -22,29 +23,8 @@
           python3Packages.gunicorn python3Packages.sqlalchemy python3Packages.alembic
         ];
     };
-    idecl-java-runner = pkgs.dockerTools.buildImage {
-        name = "idecl-java-runner";
-        tag = "0.0.1";
-
-        copyToRoot = pkgs.buildEnv {
-          name = "image-root";
-          paths = [ pkgs.jdk
-            pkgs.busybox # For debugging
-          ];
-          pathsToLink = "/bin";
-        };
-
-        config = {
-          Env = [ "PATH=/bin/" ];
-          Cmd = [ "${pkgs.bash}/bin/bash" ]; # TODO: this is for testing and should be removed
-        };
-
-        created = "now";
-      };
-    python-with-packages = pkgs.python3.withPackages (pp: with pp; [
-      pp.flask pp.flask-login pp.requests
-      pp.gunicorn pp.sqlalchemy pp.alembic
-    ]);
+    idecl-java-runner = common.idecl-java-runner;
+    python-with-packages = common.python-with-packages;
     init-script = pkgs.writeShellScript "init-idecl" ''
       export HOME=/app
       mkdir -p /app
@@ -91,25 +71,7 @@
     networking.firewall.allowedTCPPorts = [ 80 443 ];
     security.acme.acceptTerms = true;
     security.acme.defaults.email = "ssl@edanaher.net";
-    services.nginx = {
-      enable = true;
-      virtualHosts."idecl.edanaher.net" = {
-        default = true;
-        locations."/static/" = {
-          alias = "${idecl-src}/client/";
-        };
-        locations."/" = {
-          proxyPass = "http://localhost:${builtins.toString idecl-port}";
-          extraConfig = ''
-            proxy_set_header Host $host;
-            proxy_set_header X-Forwarded-For $remote_addr;
-            proxy_buffering off;
-          '';
-        };
-        enableACME = true;
-        forceSSL = true;
-      };
-    };
+    services.nginx = common.nginx-config;
 
     virtualisation.docker.enable = true;
 

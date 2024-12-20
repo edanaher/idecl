@@ -42,45 +42,21 @@
               hostPath = "/tmp";
               isReadOnly = false;
             };
+            bindMounts."/app" = {
+              hostPath = "/tmp/idecl-store";
+              isReadOnly = false;
+            };
 
             config = let
               idecl-port = 5000;
               idecl-src = src-path;
-              in { config, pkgs, ... }: {
-              networking.enableIPv6 = false;
-              services.nginx = {
-                enable = true;
-                package = pkgs.openresty;
-                virtualHosts."localhost" = {
-                  default = true;
-#                  locations."/static/" = {
-#                    alias = "${idecl-src}/client/";
-#                  };
-                  locations."/lua" = {
-                    extraConfig = ''
-                      default_type text/plain;
-
-                      content_by_lua_block {
-                        ngx.say("Hello from openresty")
-                      }
-                    '';
-                  };
-                  locations."/" = {
-                    proxyPass = "http://localhost:${builtins.toString idecl-port}";
-                    extraConfig = ''
-                    proxy_set_header Host localhost:5000;
-                    proxy_set_header X-Forwarded-For $remote_addr;
-                    proxy_buffering off;
-                    '';
-                  };
-                };
-              };
+              in { config, pkgs, ... }:
+              let common = import ../common.nix { inherit pkgs idecl-port idecl-src; hostname = "localhost"; usessl = false; }; in {
+              systemd.services.nginx.serviceConfig.ProtectHome = false;
+              services.nginx = common.nginx-config;
               environment.systemPackages = [ pkgs.sqlite-interactive ];
               systemd.services.idecl = let
-                python-with-packages = pkgs.python3.withPackages (pp: with pp; [
-                  pp.flask pp.flask-login pp.requests
-                  pp.sqlalchemy pp.alembic
-                ]);
+                python-with-packages = common.python-with-packages;
                 init-script = pkgs.writeShellScript "init-idecl" ''
                   export HOME=/app
                   mkdir -p /app
@@ -89,25 +65,7 @@
                   ${pkgs.python3Packages.alembic}/bin/alembic upgrade head
                   docker images -q idecl-java-runner:latest | grep . || docker load < ${idecl-java-runner} | ${pkgs.gawk}/bin/awk '{print $3}' | xargs -I {} docker tag {} idecl-java-runner
                   '';
-                idecl-java-runner = pkgs.dockerTools.buildImage {
-                    name = "idecl-java-runner";
-                    tag = "0.0.1";
-
-                    copyToRoot = pkgs.buildEnv {
-                      name = "image-root";
-                      paths = [ pkgs.jdk
-                        pkgs.busybox # For debugging
-                      ];
-                      pathsToLink = "/bin";
-                    };
-
-                    config = {
-                      Env = [ "PATH=/bin/" ];
-                      Cmd = [ "${pkgs.bash}/bin/bash" ]; # TODO: this is for testing and should be removed
-                    };
-
-                    created = "now";
-                  };
+                idecl-java-runner = common.idecl-java-runner;
               in {
                 description = "daemon for idecl";
                 after = [ "network.target" ];

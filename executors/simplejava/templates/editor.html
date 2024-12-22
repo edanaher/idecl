@@ -3,7 +3,9 @@
   <head>
     <title>lightweight IDE for CLassrooms</title>
     <link rel="stylesheet" href="/static/main.css"></script>
+    <link rel="stylesheet" href="/static/xterm/xterm.css"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.36.3/ace.min.js"></script>
+    <script src="/static/xterm/xterm.js"></script>
     <script src="/static/main.js"></script>
     <script type="text/javascript">var classroom_id = {{ classroom_id }};</script>
   </head>
@@ -52,7 +54,7 @@
       <div id="rightcontent">
         <input type="text" id="stdin"></input>
         <button type="button" id="sendinput" disabled="true">Send on stdin</button><br>
-        <pre id="output" style="white-space: pre-wrap"></pre>
+        <div id="terminal"></div>
       </div>
     </div>
   </body>

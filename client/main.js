@@ -693,20 +693,21 @@ var runcommand = function(test) {
   container = undefined;
   var runbutton = document.getElementById(test ? "runtests" : "run");
   runbutton.innerText = test ? "running tests..." :"running...";
-  var output = document.getElementById("output");
   var xhr = new XMLHttpRequest();
   var params = test ? "?test=1" : ""
   xhr.open("POST", "/run" + params, true);
   xhr.setRequestHeader("Content-Type", "application/json");
   xhr.onprogress = function() {
     if (xhr.readyState === XMLHttpRequest.DONE || xhr.readyState === XMLHttpRequest.LOADING) {
-      if(xhr.status != 200)
-        output.textContent = "Error talking to server";
-      else {
+      if(xhr.status != 200) {
+        term.clear();
+        term.write("Error talking to server");
+      } else {
         i = xhr.response.indexOf("\n");
         if (i)
           container = xhr.response.slice(0, i);
-        output.textContent = xhr.response.slice(i + 1);
+        term.clear();
+        term.write(xhr.response.slice(i + 1));
       }
     }
   };
@@ -740,7 +741,8 @@ var sendinput = function() {
     if (xhr.readyState === XMLHttpRequest.DONE) {
       document.getElementById("sendinput").disabled = false;
       if(xhr.status != 200)
-        output.textContent += "Error sending stdin to server\n";
+        term.clear();
+        term.write("Error sending stdin to server\n");
     }
   };
   var formdata = new FormData();
@@ -978,6 +980,18 @@ var initAce = function() {
   sessions = {}
 }
 
+var initTerminal = function() {
+  term = new Terminal({
+    convertEol: true,
+    theme: {
+      foreground: "black",
+      background: "white"
+    }
+  });
+  term.open(document.getElementById("terminal"));
+  term.write("Terminal output");
+}
+
 var switchlayout = function() {
   var layouts = ["split", "fullscreencode", "fullscreenconsole"];
   var maincontent = document.getElementById("maincontent")
@@ -990,6 +1004,7 @@ var switchlayout = function() {
 
 window.onload = function() {
   initAce();
+  initTerminal();
   upgradestore();
   if (!loadLSc("files"))
     loadFromServer(projectId(), true);

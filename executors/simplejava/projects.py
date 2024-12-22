@@ -20,7 +20,7 @@ def newclassroom():
     formdata = request.form
     with engine.connect() as conn:
         classroom = conn.execute(text("INSERT INTO classrooms (name) VALUES (:name) RETURNING id"), [{"name": formdata["name"]}]).first()
-        conn.execute(text("INSERT INTO users_roles (user_id, role_id, classroom_id) VALUES (:user, (SELECT id FROM roles WHERE name='teacher'), :classroom)"), [{"classroom": classroom.id, "user": current_user.id}])
+        conn.execute(text("INSERT INTO users_roles (user_id, role_id, classroom_id) VALUES (:user, (SELECT id FROM roles WHERE name='teacher'), :classroom)"), [{"classroom": classroom.id, "user": current_user.euid}])
         conn.commit()
     return str(classroom.id)
 
@@ -50,7 +50,7 @@ def projects(classroom):
                 UNION
                 SELECT projects.id, projects.name, NULL FROM projects WHERE owner=:user AND projects.classroom_id=:classroom
             ) GROUP BY id;
-        """), [{"classroom": classroom, "perm": P.LISTPROJECT.value, "user": current_user.id, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value}]).all()
+        """), [{"classroom": classroom, "perm": P.LISTPROJECT.value, "user": current_user.euid, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value}]).all()
     return render_template("projects.html", projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT))
 
 @app.route("/classrooms/<classroom>/projects", methods=["POST"])
@@ -60,9 +60,9 @@ def newproject(classroom):
     with engine.connect() as conn:
         # TODO: check permissions on classroom
         if "parent" in formdata:
-            project = conn.execute(text("INSERT INTO projects (name, classroom_id, owner, parent_id) VALUES (:name, :classroom, :uid, :parent_id) RETURNING id"), [{"uid": current_user.id, "classroom": classroom, "name": formdata["name"], "parent_id": int(formdata["parent"])}]).first()
+            project = conn.execute(text("INSERT INTO projects (name, classroom_id, owner, parent_id) VALUES (:name, :classroom, :uid, :parent_id) RETURNING id"), [{"uid": current_user.euid, "classroom": classroom, "name": formdata["name"], "parent_id": int(formdata["parent"])}]).first()
         else:
-            project = conn.execute(text("INSERT INTO projects (name, classroom_id, owner) VALUES (:name, :classroom, :uid) RETURNING id"), [{"uid": current_user.id, "classroom": classroom, "name": formdata["name"]}]).first()
+            project = conn.execute(text("INSERT INTO projects (name, classroom_id, owner) VALUES (:name, :classroom, :uid) RETURNING id"), [{"uid": current_user.euid, "classroom": classroom, "name": formdata["name"]}]).first()
         conn.commit()
     return str(project.id)
 
@@ -81,13 +81,13 @@ def project(pid):
 @requires_permission(P.CLONEPROJECTASASSIGNMENT, "project")
 def clone_project_as_assignment(pid):
     with engine.connect() as conn:
-        alreadcloned = conn.execute(text("SELECT * FROM projects WHERE owner=:uid AND parent_id=:pid AND cloned_as_assignment=:t"), [{"uid": current_user.id, "pid": int(pid), "t": True}]).first()
+        alreadcloned = conn.execute(text("SELECT * FROM projects WHERE owner=:uid AND parent_id=:pid AND cloned_as_assignment=:t"), [{"uid": current_user.euid, "pid": int(pid), "t": True}]).first()
         if alreadcloned:
             abort(400, "User alread cloned project")
 
         projectrow = conn.execute(text("SELECT name, classroom_id FROM projects WHERE id=:pid"), [{"pid": int(pid)}]).first()
         newname = projectrow.name + " - " + current_user.get_email()
-        clone_id = conn.execute(text("INSERT INTO projects (name, classroom_id, owner, parent_id, cloned_as_assignment) VALUES (:name, :classroom, :uid, :parent_id, :t) RETURNING id"), [{"uid": current_user.id, "classroom": projectrow.classroom_id, "name": newname, "parent_id": int(pid), "t": True}]).first().id
+        clone_id = conn.execute(text("INSERT INTO projects (name, classroom_id, owner, parent_id, cloned_as_assignment) VALUES (:name, :classroom, :uid, :parent_id, :t) RETURNING id"), [{"uid": current_user.euid, "classroom": projectrow.classroom_id, "name": newname, "parent_id": int(pid), "t": True}]).first().id
 
         clone_files = conn.execute(text("SELECT files.id, files.name, files.contents, files.file_id FROM files LEFT JOIN files AS elim_templates ON (files.project_id = elim_templates.project_id AND 'template/' || files.name = elim_templates.name) WHERE files.project_id=:pid AND elim_templates.id IS NULL"), [{"pid": int(pid)}]).all()
         for fileinfo in clone_files:

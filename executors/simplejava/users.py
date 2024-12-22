@@ -12,9 +12,8 @@ from permissions import Permissions as P, has_permission, requires_permission
 @requires_permission(P.LISTUSERS)
 def users():
     with engine.connect() as conn:
-        # TODO: require admin permissions
         users = conn.execute(text("SELECT id, email, name FROM users WHERE deactivated <> 1 OR deactivated IS NULL")).all()
-        classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms"), [{"uid": current_user.id}]).all()
+        classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms"), [{"uid": current_user.euid}]).all()
         inactive_users = conn.execute(text("SELECT id, email, name FROM users WHERE deactivated = 1")).all()
     return render_template("users.html", users=users, inactive_users=inactive_users, classrooms=classrooms, current_user=current_user, canaddusers=has_permission(P.ADDUSER), candeactivateusers=has_permission(P.DEACTIVATEUSER), canreactivateusers=has_permission(P.REACTIVATEUSER))
 
@@ -42,7 +41,7 @@ def view_user(uid):
         # TODO: require admin permissions
         user = conn.execute(text("SELECT id, email, name, deactivated FROM users WHERE id=:id"), [{"id": uid}]).first()
         roles = conn.execute(text("SELECT users_roles.id, classrooms.name AS classroom, roles.name AS role FROM users_roles LEFT JOIN classrooms ON classroom_id = classrooms.id JOIN roles ON roles.id=role_id WHERE user_id=:id"), [{"id": uid}]).all()
-        classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms"), [{"uid": current_user.id}]).all()
+        classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms"), [{"uid": current_user.euid}]).all()
     can_sudo = has_permission(P.SUDO)
     return render_template("user.html", user=user, roles=roles, classrooms=classrooms, can_sudo=can_sudo)
 

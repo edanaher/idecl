@@ -15,10 +15,6 @@ from db import engine
 def save_project(pid):
     data = request.json
     with engine.connect() as conn:
-        # TODO: turn permissions back on with RBAC
-        #row = conn.execute(text("SELECT * FROM projects WHERE owner=:uid AND projects.id=:pid"), [{"pid": pid, "uid": current_user.id }]).first()
-        #if not row:
-        #    abort(401)
         hidden = False
         inherited = False
         readonly = False
@@ -49,12 +45,7 @@ def attrsToString(row):
 @app.route("/projects/<pid>/load", methods=["GET"])
 @requires_permission(P.VIEWPROJECT, "project")
 def load_project(pid):
-    uid = current_user.id
     with engine.connect() as conn:
-        # TODO: turn permissions back on with RBAC
-        #row = conn.execute(text("SELECT * FROM projects WHERE owner=:uid AND projects.id=:pid"), [{"pid": pid, "uid": uid}]).first()
-        #if not row:
-        #    abort(401)
         rows = conn.execute(text("SELECT file_id, name, contents, hidden, inherited, readonly FROM files WHERE project_id=:pid"), [{"pid": pid}]).all()
         if (len(rows) == 0):
             return "{}"

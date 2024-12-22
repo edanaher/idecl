@@ -69,7 +69,7 @@ def has_permission(perm, classroom_id = None, project_id = None):
         """), [{"uid": current_user.euid, "perm": perm.value, "classroom":classroom_id, "project":project_id}]).first()
         if project_id:
             owner = conn.execute(text(f"SELECT owner FROM projects WHERE id=:project"), [{"project": project_id}]).first().owner
-            if owner and owner == current_user.id:
+            if owner and owner == current_user.euid:
                 return True
     return valid is not None
 

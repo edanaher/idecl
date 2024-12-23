@@ -699,8 +699,7 @@ var runcommand = function(test) {
   xhr.setRequestHeader("Content-Type", "application/json");
   xhr.onprogress = function() {
     if (xhr.readyState === XMLHttpRequest.DONE || xhr.readyState === XMLHttpRequest.LOADING) {
-      if(xhr.status != 200) {
-        term.clear();
+      if(xhr.status != 200 && xhr.readyState == XMLHttpRequest.DONE) {
         term.write("Error talking to server");
       } else {
         i = xhr.response.indexOf("\n");
@@ -740,9 +739,10 @@ var sendinput = function() {
   xhr.onload = function() {
     if (xhr.readyState === XMLHttpRequest.DONE) {
       document.getElementById("sendinput").disabled = false;
-      if(xhr.status != 200)
+      if(xhr.status != 200) {
         term.clear();
         term.write("Error sending stdin to server\n");
+      }
     }
   };
   var formdata = new FormData();
@@ -983,13 +983,33 @@ var initAce = function() {
 var initTerminal = function() {
   term = new Terminal({
     convertEol: true,
+    cursorBlink: true,
+    cursorStyle: "block",
+    cursorInactiveStyle: "bar",
+    disableStdin: false,
     theme: {
       foreground: "black",
-      background: "white"
+      background: "white",
+      cursor: "gray",
+      selectionBackground: "lightgray"
     }
   });
   term.open(document.getElementById("terminal"));
-  term.write("Terminal output");
+  term.prompt = function() {
+    console.log("prompt");
+  }
+  var line = "";
+  term.onKey(function(k, ev) {
+    console.log(k, ev);
+    if (k.key == "\r") {
+      term.writeln("");
+      console.log(line);
+      line = "";
+      return;
+    }
+    term.write(k.key);
+    line += k.key;
+  })
 }
 
 var switchlayout = function() {

@@ -145,7 +145,7 @@
 #maincontent[layout="fullscreenconsole"] #leftcontent {
   display: none;
 }
-#maincontent[layout="fullscreenconsole"] #rightcontent #output {
+#maincontent[layout="fullscreenconsole"] #rightcontent #xterm-screen {
   width: 80vw;
 }
 
@@ -166,7 +166,7 @@
 
 }
 
-#output {
+#xterm-screen {
   width: 40vw;
   height: 90vh;
   overflow: auto;

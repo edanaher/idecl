@@ -697,6 +697,8 @@ var runcommand = function(test) {
   var params = test ? "?test=1" : ""
   xhr.open("POST", "/run" + params, true);
   xhr.setRequestHeader("Content-Type", "application/json");
+  var seenSoFar = 0;
+  term.focus();
   xhr.onprogress = function() {
     if (xhr.readyState === XMLHttpRequest.DONE || xhr.readyState === XMLHttpRequest.LOADING) {
       if(xhr.status != 200 && xhr.readyState == XMLHttpRequest.DONE) {
@@ -705,8 +707,10 @@ var runcommand = function(test) {
         i = xhr.response.indexOf("\n");
         if (i)
           container = xhr.response.slice(0, i);
-        term.clear();
-        term.write(xhr.response.slice(i + 1));
+        if (seenSoFar == 0)
+          seenSoFar = i + 1;
+        term.write(xhr.response.slice(seenSoFar));
+        seenSoFar = xhr.response.length;
       }
     }
   };
@@ -720,7 +724,7 @@ var runcommand = function(test) {
   for (var i in filenames)
     body[filenames[i]] = fileForRun(projectId(), i);
   xhr.send(JSON.stringify(body));
-  document.getElementById("sendinput").disabled = false;
+  //document.getElementById("sendinput").disabled = false;
 }
 
 var runcode = function() {
@@ -749,6 +753,33 @@ var sendinput = function() {
   formdata.append("input", document.getElementById("stdin").value)
   xhr.send(formdata);
 }
+
+
+var sendinputfromterminal = (function() {
+  var waiting = false;
+  var buffer = "";
+  return function(content) {
+    if (waiting) {
+      buffer += content;
+      return;
+    }
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/" + container + "/stdin", true);
+    xhr.onload = function() {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
+        waiting = false;
+        if(xhr.status != 200)
+          term.write("Error sending stdin to server\n");
+        if (buffer)
+          sendinputfromterminal("");
+      }
+    };
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.send(JSON.stringify({"input": buffer + content}));
+    kuffer = "";
+    waiting = true;
+  };
+})();
 
 var bootstrapStorage = function() {
     localStorage.setItem("version", 0);
@@ -1001,17 +1032,13 @@ var initTerminal = function() {
   term.prompt = function() {
     console.log("prompt");
   }
-  var line = "";
   term.onKey(function(k, ev) {
     console.log(k, ev);
-    if (k.key == "\r") {
-      term.writeln("");
-      console.log(line);
-      line = "";
-      return;
-    }
-    term.write(k.key);
-    line += k.key;
+    if (k.key == "\r")
+      term.write("\n\r");
+    else
+      term.write(k.key);
+    sendinputfromterminal(k.key);
   })
   var resizeTimer = null;
   window.addEventListener("resize", function() {
@@ -1046,7 +1073,7 @@ window.onload = function() {
   }
   document.getElementById("run").addEventListener("click", runcode);
   document.getElementById("runtests").addEventListener("click", runtests);
-  document.getElementById("sendinput").addEventListener("click", sendinput);
+  //document.getElementById("sendinput").addEventListener("click", sendinput);
   editor.on("blur", saveFile);
   editor.on("change", markDirty);
   document.getElementById("cloneproject").addEventListener("click", function() { cloneProjectInit(false); });

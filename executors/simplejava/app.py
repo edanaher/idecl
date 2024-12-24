@@ -133,10 +133,10 @@ def css():
 @app.route("/<containerid>/stdin", methods=["POST"])
 @login_required
 def stdin(containerid):
-    formdata = request.form
-    input = formdata["input"]
+    data = request.json
+    input = data["input"]
     with open(os.path.join(containerid.replace("@", "/"), "stdin.fifo"), "w") as f:
-        f.write(input + "\n")
+        f.write(input)
     return ""
 
 import oauth

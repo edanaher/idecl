@@ -22,7 +22,7 @@ Milestone 2: Usable for writing unit tests to copy to another platform.
 
 Milestone 2.5?: UX
 - [X] Real text editor (Monaco?  CodeMirror? **ace.c9.io?**)
-- [ ] Inline text entry for stdin; terminal emulator? (xtermjs? terminal.js)
+- [X] Inline text entry for stdin; terminal emulator? (**xtermjs**? terminal.js)
 - [ ] Maybe some pretty.  Maybe keep the simple style.
 - [X] Directories for files
 

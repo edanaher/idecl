@@ -994,7 +994,10 @@ var initTerminal = function() {
       selectionBackground: "lightgray"
     }
   });
+  term.fit = new FitAddon.FitAddon();
+  term.loadAddon(term.fit);
   term.open(document.getElementById("terminal"));
+  term.fit.fit();
   term.prompt = function() {
     console.log("prompt");
   }
@@ -1010,6 +1013,16 @@ var initTerminal = function() {
     term.write(k.key);
     line += k.key;
   })
+  var resizeTimer = null;
+  window.addEventListener("resize", function() {
+    if (resizeTimer)
+      clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      console.log("resize");
+      term.fit.fit();
+      resizeTimer = null;
+    }, 50);
+  });
 }
 
 var switchlayout = function() {

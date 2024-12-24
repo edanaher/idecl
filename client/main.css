@@ -166,10 +166,9 @@
 
 }
 
-#xterm-screen {
+#terminal {
   width: 40vw;
   height: 90vh;
-  overflow: auto;
 }
 
 #loggedinas {

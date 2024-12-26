@@ -24,6 +24,26 @@ rec {
 
     created = "now";
   };
+  ace = pkgs.stdenv.mkDerivation rec {
+    version = "v1.37.1";
+    name = "ace-web-editor-${version}";
+
+    buildDependencies = [ pkgs.git ]; # Shouldn't fetchFromGithub handle this?
+
+    src = pkgs.fetchFromGitHub {
+      owner = "ajaxorg";
+      repo = "ace-builds";
+      rev = version;
+      hash = "sha256-o0E67W97e51IwCa7ur/GBU5/q9b1U2AF45HejNf5bt0=";
+    };
+
+    buildPhase = "true";
+
+    installPhase = ''
+      mkdir -p $out
+      cp src-min/ace.js $out/
+    '';
+  };
   nginx-config = {
     enable = true;
     package = pkgs.openresty;
@@ -32,6 +52,9 @@ rec {
     '';
     virtualHosts."${hostname}" = {
       default = true;
+      locations."/static/ace/" = {
+        alias = "${ace}/";
+      };
       locations."/static/" = {
         alias = "${idecl-src}/client/";
       };

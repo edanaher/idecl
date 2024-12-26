@@ -1064,6 +1064,7 @@ var switchlayout = function() {
   var i = layouts.indexOf(cur);
   var next = (i + 1) % layouts.length;
   maincontent.setAttribute("layout", layouts[next]);
+  term.fit.fit();
 }
 
 window.onload = function() {

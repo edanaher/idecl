@@ -712,6 +712,8 @@ var runcommand = function(test) {
         term.write(xhr.response.slice(seenSoFar));
         seenSoFar = xhr.response.length;
       }
+      if (xhr.readyState === XMLHttpRequest.DONE)
+        container = null;
     }
   };
   xhr.onload = function() {
@@ -1033,6 +1035,8 @@ var initTerminal = function() {
     console.log("prompt");
   }
   term.onKey(function(k, ev) {
+    if (!container)
+      return;
     console.log(k, ev);
     if (k.key == "\r")
       term.write("\n\r");

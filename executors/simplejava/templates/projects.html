@@ -76,6 +76,7 @@
           xhr.open("POST", "/projects/" + id + "/assignment", true);
           xhr.onload = function() {
             cloneelem.parentNode.removeChild(cloneelem);
+            location.reload();
           };
           xhr.send();
         });

@@ -16,8 +16,10 @@
       <div id="classroomname"><a href="/classrooms/{{ classroom_id }}/projects">{{ classroom_name }}</a></div> &gt;
       <div id="projectname">{{ project_name }}</div>
       <button id="switchlayout">switch layout</button>
+      {% if canclone %}
       <button id="cloneproject">clone</button>
       <button id="cloneassignment">clone as assignment</button>
+      {% endif %}
       {% if canpublish and canunpublish %}
       <button id="publish" {{"published" if published else ""}}>{{ "unpublish project" if published else "publish project" }}</button>
       {% endif %}

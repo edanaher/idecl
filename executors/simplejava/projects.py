@@ -72,10 +72,18 @@ def newproject(classroom):
 def project(pid):
     # TODO: check permissions on classroom
     with engine.connect() as conn:
-        row  = conn.execute(text("SELECT projects.name, classrooms.name AS classroom, classrooms.id AS classroom_id, tags.id AS tag_id FROM projects JOIN classrooms ON classrooms.id=projects.classroom_id LEFT JOIN projects_tags ON projects_tags.project_id=projects.id LEFT JOIN tags ON projects_tags.tag_id=tags.id WHERE projects.id=:pid AND (tags.name='published' OR tags.name IS NULL)"), [{"pid": pid}]).first()
+        row  = conn.execute(text("SELECT projects.name, projects.cloned_as_assignment, classrooms.name AS classroom, classrooms.id AS classroom_id, tags.id AS tag_id FROM projects JOIN classrooms ON classrooms.id=projects.classroom_id LEFT JOIN projects_tags ON projects_tags.project_id=projects.id LEFT JOIN tags ON projects_tags.tag_id=tags.id WHERE projects.id=:pid AND (tags.name='published' OR tags.name IS NULL)"), [{"pid": pid}]).first()
     if row == None:
         return redirect(f"/classrooms/{classroom}/projects")
-    return render_template("editor.html", classroom_name=row.classroom, project_name=row.name, classroom_id = row.classroom_id, canpublish=has_permission(P.ADDPROJECTTAG), canunpublish=has_permission(P.DELETEPROJECTTAG), published=not not row.tag_id )
+    return render_template("editor.html",
+            classroom_name=row.classroom,
+            project_name=row.name,
+            classroom_id=row.classroom_id,
+            # TODO: Cloning a student's project would be nice for experimenting.  Enable it later once behavior is clearer.
+            canclone=has_permission(P.ADDPROJECT, row.classroom_id) and not row.cloned_as_assignment,
+            canpublish=has_permission(P.ADDPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,
+            canunpublish=has_permission(P.DELETEPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,
+            published=not not row.tag_id )
 
 @app.route("/projects/<pid>/assignment", methods = ["POST"])
 @requires_permission(P.CLONEPROJECTASASSIGNMENT, "project")
@@ -86,7 +94,7 @@ def clone_project_as_assignment(pid):
             abort(400, "User alread cloned project")
 
         projectrow = conn.execute(text("SELECT name, classroom_id FROM projects WHERE id=:pid"), [{"pid": int(pid)}]).first()
-        newname = projectrow.name + " - " + current_user.get_email()
+        newname = projectrow.name + " - " + current_user.get_eemail()
         clone_id = conn.execute(text("INSERT INTO projects (name, classroom_id, owner, parent_id, cloned_as_assignment) VALUES (:name, :classroom, :uid, :parent_id, :t) RETURNING id"), [{"uid": current_user.euid, "classroom": projectrow.classroom_id, "name": newname, "parent_id": int(pid), "t": True}]).first().id
 
         clone_files = conn.execute(text("SELECT files.id, files.name, files.contents, files.file_id FROM files LEFT JOIN files AS elim_templates ON (files.project_id = elim_templates.project_id AND 'template/' || files.name = elim_templates.name) WHERE files.project_id=:pid AND elim_templates.id IS NULL"), [{"pid": int(pid)}]).all()

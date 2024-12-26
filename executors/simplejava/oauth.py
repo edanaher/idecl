@@ -43,7 +43,6 @@ class User:
             erow = None
             if "sudo" in request.cookies and request.cookies["sudo"]:
                 erow = conn.execute(text("SELECT id, email FROM users WHERE id=:id"), [{"id": request.cookies["sudo"]}]).first()
-            print(f"erow is {erow}")
         if row:
             self.id = row.id
             self.email = row.email
@@ -68,6 +67,9 @@ class User:
 
     def get_email(self):
         return self.email
+
+    def get_eemail(self):
+        return self.eemail
 
     def desc(self):
         if self.id == self.euid:

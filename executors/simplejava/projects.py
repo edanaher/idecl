@@ -29,9 +29,10 @@ def newclassroom():
 def projects(classroom):
     with engine.connect() as conn:
         projects = conn.execute(text("""
-            SELECT id, name, GROUP_CONCAT(cancloneassignment) AS cancloneassignment FROM (
+            SELECT id, name, GROUP_CONCAT(cancloneassignment AND (cloned_as_assignment IS NULL)) AS cancloneassignment, cloned_as_assignment FROM (
                 SELECT projects.id, projects.name,
-                       GROUP_CONCAT(rp_cloneassignment.id) AND (already_cloned.id IS NULL) AS cancloneassignment
+                       GROUP_CONCAT(rp_cloneassignment.id) AND (already_cloned.id IS NULL) AS cancloneassignment,
+                       projects.cloned_as_assignment
                 FROM projects
                 LEFT JOIN users_roles ON ((projects.id = users_roles.project_id OR users_roles.project_id IS NULL)
                                           AND (users_roles.classroom_id IS NULL or users_roles.classroom_id=:classroom))
@@ -48,7 +49,7 @@ def projects(classroom):
                      OR projects_tags.id IS NOT NULL)
                 GROUP BY projects.id
                 UNION
-                SELECT projects.id, projects.name, NULL FROM projects WHERE owner=:user AND projects.classroom_id=:classroom
+                SELECT projects.id, projects.name, NULL, cloned_as_assignment FROM projects WHERE owner=:user AND projects.classroom_id=:classroom
             ) GROUP BY id;
         """), [{"classroom": classroom, "perm": P.LISTPROJECT.value, "user": current_user.euid, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value}]).all()
     return render_template("projects.html", projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT))

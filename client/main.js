@@ -698,7 +698,6 @@ var runcommand = function(test) {
   xhr.open("POST", "/run" + params, true);
   xhr.setRequestHeader("Content-Type", "application/json");
   var seenSoFar = 0;
-  term.focus();
   xhr.onprogress = function() {
     if (xhr.readyState === XMLHttpRequest.DONE || xhr.readyState === XMLHttpRequest.LOADING) {
       if(xhr.status != 200 && xhr.readyState == XMLHttpRequest.DONE) {
@@ -712,20 +711,26 @@ var runcommand = function(test) {
         term.write(xhr.response.slice(seenSoFar));
         seenSoFar = xhr.response.length;
       }
-      if (xhr.readyState === XMLHttpRequest.DONE)
+      if (xhr.readyState === XMLHttpRequest.DONE) {
         container = null;
+        term.options.cursorStyle = "underline";
+        term.options.cursorInactiveStyle = "none";
+      }
     }
   };
   xhr.onload = function() {
     xhr.onprogress();
     runbutton.innerText = test ? "run tests" : "run";
-    document.getElementById("sendinput").disabled = true;
+    //document.getElementById("sendinput").disabled = true;
   }
   var body = {};
   var filenames = JSON.parse(loadLSc("files"))
   for (var i in filenames)
     body[filenames[i]] = fileForRun(projectId(), i);
   xhr.send(JSON.stringify(body));
+
+  term.options.cursorStyle = "block";
+  term.options.cursorInactiveStyle = "bar";
   //document.getElementById("sendinput").disabled = false;
 }
 
@@ -1016,7 +1021,7 @@ var initAce = function() {
 var initTerminal = function() {
   term = new Terminal({
     convertEol: true,
-    cursorBlink: true,
+    cursorBlink: false,
     cursorStyle: "block",
     cursorInactiveStyle: "bar",
     disableStdin: false,

@@ -29,10 +29,14 @@ def newclassroom():
 def projects(classroom):
     with engine.connect() as conn:
         projects = conn.execute(text("""
-            SELECT id, name, GROUP_CONCAT(cancloneassignment AND (cloned_as_assignment IS NULL)) AS cancloneassignment, cloned_as_assignment FROM (
+            SELECT id, name,
+                   GROUP_CONCAT(cancloneassignment AND (cloned_as_assignment IS NULL)) AS cancloneassignment,
+                   GROUP_CONCAT(canview) AS canview
+            FROM (
                 SELECT projects.id, projects.name,
                        GROUP_CONCAT(rp_cloneassignment.id) AND (already_cloned.id IS NULL) AS cancloneassignment,
-                       projects.cloned_as_assignment
+                       projects.cloned_as_assignment,
+                       GROUP_CONCAT(rp_view.id) AS canview
                 FROM projects
                 LEFT JOIN users_roles ON ((projects.id = users_roles.project_id OR users_roles.project_id IS NULL)
                                           AND (users_roles.classroom_id IS NULL or users_roles.classroom_id=:classroom))
@@ -40,6 +44,7 @@ def projects(classroom):
                 LEFT JOIN projects_tags ON (roles_permissions.tag_id = projects_tags.tag_id AND projects_tags.project_id=projects.id)
                 LEFT JOIN classrooms_tags ON (roles_permissions.tag_id = projects_tags.tag_id AND classrooms_tags.classroom_id=:classroom)
                 LEFT JOIN roles_permissions AS rp_cloneassignment ON (users_roles.role_id = rp_cloneassignment.role_id AND rp_cloneassignment.permission_id=:perm_cloneassignment)
+                LEFT JOIN roles_permissions AS rp_view ON (users_roles.role_id = rp_view.role_id AND rp_view.permission_id=:perm_view)
                 LEFT JOIN projects AS already_cloned ON (already_cloned.parent_id=projects.id AND already_cloned.owner=:user AND already_cloned.cloned_as_assignment=TRUE)
                 WHERE projects.classroom_id=:classroom
                 AND users_roles.user_id=:user
@@ -49,9 +54,9 @@ def projects(classroom):
                      OR projects_tags.id IS NOT NULL)
                 GROUP BY projects.id
                 UNION
-                SELECT projects.id, projects.name, NULL, cloned_as_assignment FROM projects WHERE owner=:user AND projects.classroom_id=:classroom
+                SELECT projects.id, projects.name, NULL, cloned_as_assignment, TRUE FROM projects WHERE owner=:user AND projects.classroom_id=:classroom
             ) GROUP BY id;
-        """), [{"classroom": classroom, "perm": P.LISTPROJECT.value, "user": current_user.euid, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value}]).all()
+        """), [{"classroom": classroom, "perm": P.LISTPROJECT.value, "user": current_user.euid, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value, "perm_view": P.VIEWPROJECT.value}]).all()
     return render_template("projects.html", projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT))
 
 @app.route("/classrooms/<classroom>/projects", methods=["POST"])

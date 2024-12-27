@@ -75,6 +75,18 @@
 
     virtualisation.docker.enable = true;
 
+    # I accept that there may be an ssh MITM.
+    nixpkgs.config.permittedInsecurePackages = [ "litestream-0.3.13" ];
+    systemd.services.idecl-backup =  {
+      description = "backup service for idecl";
+      after = [ "network.target" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        WorkingDirectory = "/app";
+        ExecStart = "/bin/sh -c 'source /app/secrets.sh && ${pkgs.litestream}/bin/litestream replicate /app/idecl.db s3://edanaher-idecl/litestream-prod-bak'";
+      };
+    };
+
     systemd.services.idecl =  {
       description = "daemon for idecl";
       after = [ "network.target" ];

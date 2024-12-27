@@ -2,11 +2,12 @@ from sqlalchemy import create_engine, MetaData, Table, Column, Boolean, Integer,
 import os
 
 engine = create_engine("sqlite+pysqlite:///" + os.environ.get("HOME") + "/idecl.db")
-def _fk_pragma_on_connect(dbapi_con, con_record):
+def _pragmas_on_connect(dbapi_con, con_record):
     dbapi_con.execute('pragma foreign_keys=ON')
+    dbapi_con.execute('pragma journal_mode=WAL')
 
 from sqlalchemy import event
-event.listen(engine, 'connect', _fk_pragma_on_connect)
+event.listen(engine, 'connect', _pragmas_on_connect)
 
 metadata_obj = MetaData()
 

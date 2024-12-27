@@ -52,7 +52,7 @@ Milestone 5: MVP Classroom
   - [X] block Internet access
 - [X] View student code
 - [X] Cache builds for quick reruns (nix? bazel? manual hashing?) (maybe next milestone?)
-- [ ] Backups (S3)
+- [X] Backups (S3 via litestream)
 - [ ] Import/export of some sort
 - [X] Detect stdin usage on tests
 - [X] Don't load hidden files into the client.

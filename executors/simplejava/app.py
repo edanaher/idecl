@@ -81,6 +81,7 @@ def run(pid):
 
 
     if testing and not tests:
+        shutil.rmtree(tmp)
         return "No tests found; tests should start with Test or end with Test or Tests.  E.g., TestNum.java, NumTest.java, or NumTests.java"
 
     def stream():
@@ -98,6 +99,7 @@ def run(pid):
                 proc = subprocess.run(["docker", "run", "--rm", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", "/app", "/app/Main.java"], capture_output=True, text=True, timeout=30)
             if proc.returncode != 0:
                 yield f"0\nError compiling {'tests' if testing else 'program'}:\n" + proc.stderr
+                shutil.rmtree(tmp)
                 return
 
             # Add new compile to the cache
@@ -108,10 +110,10 @@ def run(pid):
                 conn.commit()
 
         if testing:
-            proc = subprocess.Popen(["docker", "run", "--rm", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "java", "-cp", f"/junit/junit-4.13.2.jar:/junit/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"] + [t.replace("/", ".").rstrip('.java') for t in tests], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
+            proc = subprocess.Popen(["docker", "run", "--rm", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "java", "-cp", f"/junit/junit-4.13.2.jar:/junit/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"] + [t.replace("/", ".").rstrip('.java') for t in tests], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
         else:
             os.mkfifo(os.path.join(tmp, "stdin.fifo"))
-            proc = subprocess.Popen(["docker", "run", "--rm", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", "--net", "none", "idecl-java-runner", "/bin/sh", "-c", "java -cp /app Main <> /app/stdin.fifo"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
+            proc = subprocess.Popen(["docker", "run", "--rm", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", "--net", "none", "idecl-java-runner", "/bin/sh", "-c", "java -cp /app Main <> /app/stdin.fifo"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
         yield container_name + "\n"
 
         epoll = select.epoll(2)
@@ -132,6 +134,7 @@ def run(pid):
 
         proc.wait()
         if proc.returncode != 0:
+            shutil.rmtree(tmp)
             return "Error running: " + str(proc.returncode) + "\n:" + reduce((lambda a, b : a + b), iter(proc.stderr.readline, ""), "")
 
         shutil.rmtree(tmp)

@@ -3,6 +3,7 @@ from flask_login import login_required
 from functools import reduce
 from sqlalchemy import text
 import os
+import select
 import shutil
 import subprocess
 import tempfile
@@ -112,11 +113,23 @@ def run(pid):
             os.mkfifo(os.path.join(tmp, "stdin.fifo"))
             proc = subprocess.Popen(["docker", "run", "--rm", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", "--net", "none", "idecl-java-runner", "/bin/sh", "-c", "java -cp /app Main <> /app/stdin.fifo"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
         yield container_name + "\n"
-        # TODO: intersperse stdout and stderr
-        while l := proc.stdout.readline():
-            yield l
-        while l := proc.stderr.readline():
-            yield l
+
+        epoll = select.epoll(2)
+        epoll.register(proc.stdout.fileno(), select.EPOLLIN | select.POLLHUP)
+        epoll.register(proc.stderr.fileno(), select.EPOLLIN | select.POLLHUP)
+        os.set_blocking(proc.stdout.fileno(), False)
+        os.set_blocking(proc.stderr.fileno(), False)
+        stillopen = 2
+        while stillopen > 0:
+            events = epoll.poll()
+            for fileno, event in events:
+                if event == select.POLLHUP:
+                    epoll.unregister(fileno)
+                    stillopen -= 1
+                    continue
+                file = proc.stdout if fileno == proc.stdout.fileno() else proc.stderr
+                yield file.read()
+
         proc.wait()
         if proc.returncode != 0:
             return "Error running: " + str(proc.returncode) + "\n:" + reduce((lambda a, b : a + b), iter(proc.stderr.readline, ""), "")

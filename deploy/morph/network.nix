@@ -36,6 +36,14 @@
       done
       docker images -q idecl-java-runner:latest | grep . || docker load < ${idecl-java-runner} | ${pkgs.gawk}/bin/awk '{print $3}' | xargs -I {} docker tag {} idecl-java-runner
       '';
+    litestream-config = pkgs.writeText "litestream-config" ''
+      dbs:
+        - path: /app/idecl.db
+          replicas:
+            - url: s3://edanaher-idecl/litestream-prod-bak
+              retention: 168h
+              sync-interval: 60s
+      '';
   in {
     imports = lib.optional (builtins.pathExists ./do-userdata.nix) ./do-userdata.nix ++ [
       (modulesPath + "/virtualisation/digital-ocean-config.nix")
@@ -83,7 +91,7 @@
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         WorkingDirectory = "/app";
-        ExecStart = "/bin/sh -c 'source /app/secrets.sh && ${pkgs.litestream}/bin/litestream replicate /app/idecl.db s3://edanaher-idecl/litestream-prod-bak'";
+        ExecStart = "/bin/sh -c 'source /app/secrets.sh && ${pkgs.litestream}/bin/litestream replicate -config ${litestream-config}'";
       };
     };
 

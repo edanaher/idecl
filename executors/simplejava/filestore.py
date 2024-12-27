@@ -17,7 +17,7 @@ def save_project(pid):
     with engine.connect() as conn:
         filedata = data["files"]
 
-        conn.execute(text("DELETE FROM files WHERE project_id=:pid AND file_id NOT IN (" + ",".join(filedata.keys()) + ")"), [{"pid": pid}])
+        conn.execute(text("DELETE FROM files WHERE project_id=:pid AND NOT hidden AND file_id NOT IN (" + ",".join(filedata.keys()) + ")"), [{"pid": pid}])
         conn.execute(text("INSERT INTO files (project_id, file_id, name, contents, hidden, inherited, readonly) VALUES (:pid, :file_id, :name, :contents, :hidden, :inherited, :readonly) ON CONFLICT DO UPDATE SET contents=:contents, name=:name"),
                 [{"pid": pid, "file_id": k, "name": filedata[k]["name"], "contents": filedata[k]["contents"],
                   "hidden": "h" in filedata[k].get("attrs", ""),
@@ -41,7 +41,7 @@ def attrsToString(row):
 @requires_permission(P.VIEWPROJECT, "project")
 def load_project(pid):
     with engine.connect() as conn:
-        rows = conn.execute(text("SELECT file_id, name, contents, hidden, inherited, readonly FROM files WHERE project_id=:pid"), [{"pid": pid}]).all()
+        rows = conn.execute(text("SELECT file_id, name, contents, hidden, inherited, readonly FROM files WHERE project_id=:pid AND hidden = FALSE"), [{"pid": pid}]).all()
         if (len(rows) == 0):
             return "{}"
 

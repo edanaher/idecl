@@ -55,7 +55,7 @@ Milestone 5: MVP Classroom
 - [ ] Backups (S3)
 - [ ] Import/export of some sort
 - [ ] Detect stdin usage on tests
-- [/] Don't load hidden files into the client.
+- [X] Don't load hidden files into the client.
 
 Milestone 6: Full classroom
 - [ ] History to help detect cheating

@@ -14,15 +14,16 @@ app = Flask(__name__)
 
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 
-@app.route("/run", methods=["POST"])
+@app.route("/projects/<pid>/run", methods=["POST"])
 @login_required
-def run():
+def run(pid):
     body = request.json
 
     testing = request.args.get("test") == "1"
 
     tmp = tempfile.mkdtemp()
     tests = []
+    # TODO: This should all be saved, not passed in.  The body here should just be to avoid sync issues.
     for k in body:
         if "/" in k:
             dirname = os.path.join(tmp, os.path.dirname(k))
@@ -43,6 +44,29 @@ def run():
             basename = os.path.basename(k)
             if (basename.startswith("Test") and k.endswith(".java")) or k.endswith("Test.java") or k.endswith("Tests.java"):
                 tests.append(k)
+
+    with engine.connect() as conn:
+        rows = conn.execute(text("SELECT file_id, name, contents, inherited FROM files WHERE project_id=:pid"), [{"pid": int(pid)}]).all()
+        for r in rows:
+            if r.name in body:
+                continue
+            # TODO: test nested inherits
+            print("Need to add ", r.name)
+            parent = conn.execute(text("SELECT parent_id FROM projects WHERE id=:pid"), [{"pid": pid}]).first()
+            file = r
+            while file.inherited:
+                file = conn.execute(text("SELECT file_id, name, contents, inherited FROM files WHERE project_id=:pid AND file_id=:fileid"), [{"pid": parent.parent_id, "fileid": r.file_id}]).first()
+                parent = conn.execute(text("SELECT parent_id FROM projects WHERE id=:pid"), [{"pid": parent.parent_id}]).first()
+            print("Writing file", r.name)
+            with open(os.path.join(tmp, r.name), "w") as f:
+                f.write(file.contents)
+
+            if testing:
+                basename = os.path.basename(r.name)
+                if (basename.startswith("Test") and basename.endswith(".java")) or basename.endswith("Test.java") or basename.endswith("Tests.java"):
+                    tests.append(r.name)
+    print(tests)
+
 
     # Caching!  This hash function is not quite safe, but good enough to test.
     proc = subprocess.run(["/bin/sh", "-c", f"cd {tmp}" " && { ls; cat *; }"], capture_output=True, text=False, timeout=30)
@@ -133,6 +157,8 @@ def css():
 @app.route("/<containerid>/stdin", methods=["POST"])
 @login_required
 def stdin(containerid):
+    if containerid == "null":
+        return "error"
     data = request.json
     input = data["input"]
     with open(os.path.join(containerid.replace("@", "/"), "stdin.fifo"), "w") as f:

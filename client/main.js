@@ -691,7 +691,7 @@ var runcommand = function(test) {
   runbutton.innerText = test ? "running tests..." :"running...";
   var xhr = new XMLHttpRequest();
   var params = test ? "?test=1" : ""
-  xhr.open("POST", "/run" + params, true);
+  xhr.open("POST", "/projects/" + projectId() + "/run" + params, true);
   xhr.setRequestHeader("Content-Type", "application/json");
   var seenSoFar = 0;
   xhr.onprogress = function() {

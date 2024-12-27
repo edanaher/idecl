@@ -54,7 +54,7 @@ Milestone 5: MVP Classroom
 - [X] Cache builds for quick reruns (nix? bazel? manual hashing?) (maybe next milestone?)
 - [ ] Backups (S3)
 - [ ] Import/export of some sort
-- [ ] Detect stdin usage on tests
+- [X] Detect stdin usage on tests
 - [X] Don't load hidden files into the client.
 
 Milestone 6: Full classroom

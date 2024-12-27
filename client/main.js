@@ -975,7 +975,7 @@ var initFiles = function() {
     div.innerText = filenames[f];
     div.classList.add("filename");
     div.setAttribute("fileid", f);
-    if (filenames[f] == lastfile) {
+    if (f == lastfile) {
       div.classList.add("open");
       opened = true;
     }
@@ -997,7 +997,6 @@ var initFiles = function() {
   editor.setSession(sess);
   sessions[lastfile] = sess;
   var attrs = loadLSc("attrs", lastfile);
-  console.log(lastfile, attrs);
   if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
     editor.setReadOnly(true);
   else

@@ -48,7 +48,7 @@
             };
 
             config = let
-              idecl-port = 5000;
+              idecl-port = 9453;
               idecl-src = src-path;
               in { config, pkgs, ... }:
               let common = import ../common.nix { inherit pkgs idecl-port idecl-src; hostname = "localhost"; usessl = false; }; in {

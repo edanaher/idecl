@@ -1,6 +1,6 @@
 {pkgs, hostname, usessl, idecl-port, idecl-src}: 
 rec {
-  idecl-port = 5000;
+  idecl-port = 9453;
   python-with-packages = pkgs.python3.withPackages (pp: with pp; [
     pp.flask pp.flask-login pp.requests
     pp.gunicorn pp.sqlalchemy pp.alembic

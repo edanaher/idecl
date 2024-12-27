@@ -21,7 +21,8 @@ def run(pid):
 
     testing = request.args.get("test") == "1"
 
-    tmp = tempfile.mkdtemp()
+    tmp = tempfile.mkdtemp(prefix="idecl_")
+    container_name = f"{tmp[1:].replace('/', '-')}"
     tests = []
     # TODO: This should all be saved, not passed in.  The body here should just be to avoid sync issues.
     for k in body:
@@ -65,7 +66,6 @@ def run(pid):
                 basename = os.path.basename(r.name)
                 if (basename.startswith("Test") and basename.endswith(".java")) or basename.endswith("Test.java") or basename.endswith("Tests.java"):
                     tests.append(r.name)
-    print(tests)
 
 
     # Caching!  This hash function is not quite safe, but good enough to test.
@@ -92,9 +92,9 @@ def run(pid):
                 print("Untar failure: " + str(untar.returncode) + str(untar.stdout) + str(untar.stderr))
         else:
             if testing:
-                proc = subprocess.run(["docker", "run", "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", f"/junit/junit-4.13.2.jar:/app"] + [f"/app/{t}" for t in tests], capture_output=True, text=True, timeout=30)
+                proc = subprocess.run(["docker", "run", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", f"/junit/junit-4.13.2.jar:/app"] + [f"/app/{t}" for t in tests], capture_output=True, text=True, timeout=30)
             else:
-                proc = subprocess.run(["docker", "run", "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", "/app", "/app/Main.java"], capture_output=True, text=True, timeout=30)
+                proc = subprocess.run(["docker", "run", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", "/app", "/app/Main.java"], capture_output=True, text=True, timeout=30)
             if proc.returncode != 0:
                 yield f"0\nError compiling {'tests' if testing else 'program'}:\n" + proc.stderr
                 return
@@ -107,11 +107,11 @@ def run(pid):
                 conn.commit()
 
         if testing:
-            proc = subprocess.Popen(["docker", "run", "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "java", "-cp", f"/junit/junit-4.13.2.jar:/junit/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"] + [t.replace("/", ".").rstrip('.java') for t in tests], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
+            proc = subprocess.Popen(["docker", "run", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "java", "-cp", f"/junit/junit-4.13.2.jar:/junit/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"] + [t.replace("/", ".").rstrip('.java') for t in tests], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
         else:
             os.mkfifo(os.path.join(tmp, "stdin.fifo"))
-            proc = subprocess.Popen(["docker", "run", "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", "--net", "none", "idecl-java-runner", "/bin/sh", "-c", "java -cp /app Main <> /app/stdin.fifo"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
-        yield f"{tmp.replace('/', '@')}\n"
+            proc = subprocess.Popen(["docker", "run", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", "--net", "none", "idecl-java-runner", "/bin/sh", "-c", "java -cp /app Main <> /app/stdin.fifo"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
+        yield container_name + "\n"
         # TODO: intersperse stdout and stderr
         while l := proc.stdout.readline():
             yield l
@@ -154,14 +154,20 @@ def js():
 def css():
     return send_file("../../client/main.css")
 
-@app.route("/<containerid>/stdin", methods=["POST"])
+@app.route("/containers/<containerid>", methods=["DELETE"])
+@login_required
+def kill_container(containerid):
+    proc = subprocess.run(["docker", "kill", containerid], capture_output=True, text=False, timeout=30)
+    return ""
+
+@app.route("/containers/<containerid>/stdin", methods=["POST"])
 @login_required
 def stdin(containerid):
     if containerid == "null":
         return "error"
     data = request.json
     input = data["input"]
-    with open(os.path.join(containerid.replace("@", "/"), "stdin.fifo"), "w") as f:
+    with open(os.path.join("/", containerid.replace("-", "/"), "stdin.fifo"), "w") as f:
         f.write(input)
     return ""
 

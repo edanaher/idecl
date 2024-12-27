@@ -684,11 +684,19 @@ var loadFromServer = function(pid) {
   return
 }
 
+container = undefined;
 var runcommand = function(test) {
+  if (container) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("DELETE", "/containers/" + container, true);
+    xhr.send();
+    return;
+  }
   saveFile();
-  container = undefined;
   var runbutton = document.getElementById(test ? "runtests" : "run");
-  runbutton.innerText = test ? "running tests..." :"running...";
+  var otherrunbutton = document.getElementById(!test ? "runtests" : "run");
+  runbutton.innerText = test ? "stop running tests..." : "stop running...";
+  otherrunbutton.setAttribute("disabled", "");
   var xhr = new XMLHttpRequest();
   var params = test ? "?test=1" : ""
   xhr.open("POST", "/projects/" + projectId() + "/run" + params, true);
@@ -717,6 +725,7 @@ var runcommand = function(test) {
   xhr.onload = function() {
     xhr.onprogress();
     runbutton.innerText = test ? "run tests" : "run";
+    otherrunbutton.removeAttribute("disabled");
     //document.getElementById("sendinput").disabled = true;
   }
   var body = {};
@@ -742,7 +751,7 @@ var sendinput = function() {
   document.getElementById("sendinput").disabled = true;
   var stdin = document.getElementById("stdin");
   var xhr = new XMLHttpRequest();
-  xhr.open("POST", "/" + container + "/stdin", true);
+  xhr.open("POST", "/containers/" + container + "/stdin", true);
   xhr.onload = function() {
     if (xhr.readyState === XMLHttpRequest.DONE) {
       document.getElementById("sendinput").disabled = false;
@@ -767,7 +776,7 @@ var sendinputfromterminal = (function() {
       return;
     }
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/" + container + "/stdin", true);
+    xhr.open("POST", "/containers/" + container + "/stdin", true);
     xhr.onload = function() {
       if (xhr.readyState === XMLHttpRequest.DONE) {
         waiting = false;

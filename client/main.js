@@ -605,8 +605,9 @@ var saveToServer = function() {
   var par= loadLSc("parent");
   if (par)
     postdata["parent"] = par;
+  postdata["files"] = {};
   for (var i in filenames)
-    postdata[i] = {
+    postdata.files[i] = {
       "name": filenames[i],
       "contents": loadLSc("files", i),
       "attrs": loadLSc("attrs", i) || ""
@@ -667,14 +668,9 @@ var loadFromServer = function(pid) {
 
     saveLS("files", pid, JSON.stringify(filenames));
     saveLS("lastfile", pid, serverFiles[0].fileid); // TODO: load from history
-    console.log("on", pid, "parent is", serverResponse.parent);
+
     if (serverResponse.parent) {
       saveLS("parent", pid, serverResponse.parent);
-      // TODO: Incidate this is in progress. Or don't do it, and load the files server-side.
-      if (!loadLS("files", serverResponse.parent)) {
-        console.log("Loading parent project");
-        loadFromServer(serverResponse.parent);
-      }
     }
     if (pid == projectId()) {
       initFiles();

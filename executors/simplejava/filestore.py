@@ -15,19 +15,14 @@ from db import engine
 def save_project(pid):
     data = request.json
     with engine.connect() as conn:
-        hidden = False
-        inherited = False
-        readonly = False
-        if "attrs" in data:
-            if "h" in data["attrs"]:
-                hidden = True
-            if "i" in data["attrs"]:
-                inherited = True
-            if "r" in data["attrs"]:
-                readonly = True
+        filedata = data["files"]
 
-        conn.execute(text("DELETE FROM files WHERE project_id=:pid AND file_id NOT IN (" + ",".join(data.keys()) + ")"), [{"pid": pid}])
-        conn.execute(text("INSERT INTO files (project_id, file_id, name, contents, hidden, inherited, readonly) VALUES (:pid, :file_id, :name, :contents, :hidden, :inherited, :readonly) ON CONFLICT DO UPDATE SET contents=:contents, name=:name"), [{"pid": pid, "file_id": k, "name": data[k]["name"], "contents": data[k]["contents"], "hidden": "h" in data[k].get("attrs", ""), "inherited": "i" in data[k].get("attrs", ""), "readonly": "r" in data[k].get("attrs", "")} for k in data if k != "parent"])
+        conn.execute(text("DELETE FROM files WHERE project_id=:pid AND file_id NOT IN (" + ",".join(filedata.keys()) + ")"), [{"pid": pid}])
+        conn.execute(text("INSERT INTO files (project_id, file_id, name, contents, hidden, inherited, readonly) VALUES (:pid, :file_id, :name, :contents, :hidden, :inherited, :readonly) ON CONFLICT DO UPDATE SET contents=:contents, name=:name"),
+                [{"pid": pid, "file_id": k, "name": filedata[k]["name"], "contents": filedata[k]["contents"],
+                  "hidden": "h" in filedata[k].get("attrs", ""),
+                  "inherited": "i" in filedata[k].get("attrs", ""),
+                  "readonly": "r" in filedata[k].get("attrs", "")} for k in filedata])
         conn.commit()
 
     return "Success"

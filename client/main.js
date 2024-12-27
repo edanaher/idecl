@@ -251,11 +251,32 @@ var cursorupdate = function() {
     logedit("s", cursor, anchor);
 }
 
+autosavestate = {
+  forcetime: null,
+  timer: null
+};
+var autosave = function() {
+  saveToServer();
+  autosavestate.forcetime = null;
+  autosavestate.timer = null;
+}
+
+var triggerautosave = function() {
+  if (autosavestate.timer) {
+    clearTimeout(autosavestate.timer);
+    autosavestate.timer = setTimeout(autosave, Math.min(5000, autosavestate.forcetime - Date.now()));
+  } else {
+    autosavestate.forcetime = Date.now() + 30000;
+    autosavestate.timer = setTimeout(autosave, 5000);
+  }
+}
+
 var editorupdate = function(delta) {
   var action = delta.action[0];
   var text = delta.lines.join("\n");
   var type = delta.action[0] == "r" ? "d" : delta.action[0];
   logedit(type, delta.start, text);
+  triggerautosave();
 }
 
 var saveFile = function() {

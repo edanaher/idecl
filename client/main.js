@@ -1072,6 +1072,12 @@ var switchlayout = function() {
   term.fit.fit();
 }
 
+var addClickListenerById = function(id, f) {
+  var elem = document.getElementById(id);
+  if (elem)
+    elem.addEventListener("click", f);
+}
+
 window.onload = function() {
   initAce();
   initTerminal();
@@ -1081,22 +1087,20 @@ window.onload = function() {
   else {
     initFiles();
   }
-  document.getElementById("run").addEventListener("click", runcode);
-  document.getElementById("runtests").addEventListener("click", runtests);
+  addClickListenerById("run", runcode);
+  addClickListenerById("runtests", runtests);
   //document.getElementById("sendinput").addEventListener("click", sendinput);
   editor.on("blur", saveFile);
   editor.on("change", markDirty);
-  document.getElementById("cloneproject").addEventListener("click", function() { cloneProjectInit(false); });
-  document.getElementById("cloneassignment").addEventListener("click", function() { cloneProjectInit(true) });
-  var publishbutton = document.getElementById("publish");
-  if (publishbutton)
-    publishbutton.addEventListener("click", publish);
-  document.getElementById("addfile").addEventListener("click", addFile);
-  document.getElementById("removefile").addEventListener("click", removeFile);
-  document.getElementById("savefiles").addEventListener("click", saveToServer);
-  document.getElementById("loadfiles").addEventListener("click", function() { loadFromServer() });
-  document.getElementById("resetfiles").addEventListener("click", resetFiles);
-  document.getElementById("historyback").addEventListener("click", function() { historymove(-1); });
-  document.getElementById("historyforward").addEventListener("click", function() { historymove(1); });
-  document.getElementById("switchlayout").addEventListener("click", switchlayout);
+  addClickListenerById("cloneproject", function() { cloneProjectInit(false); });
+  addClickListenerById("cloneassignment", function() { cloneProjectInit(true) });
+  addClickListenerById("publish", publish);
+  addClickListenerById("addfile", addFile);
+  addClickListenerById("removefile", removeFile);
+  addClickListenerById("savefiles", saveToServer);
+  addClickListenerById("loadfiles", function() { loadFromServer() });
+  addClickListenerById("resetfiles", resetFiles);
+  addClickListenerById("historyback", function() { historymove(-1); });
+  addClickListenerById("historyforward", function() { historymove(1); });
+  addClickListenerById("switchlayout", switchlayout);
 }

@@ -996,6 +996,12 @@ var initFiles = function() {
   sess.on("changeSelection", cursorupdate);
   editor.setSession(sess);
   sessions[lastfile] = sess;
+  var attrs = loadLSc("attrs", lastfile);
+  console.log(lastfile, attrs);
+  if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
+    editor.setReadOnly(true);
+  else
+    editor.setReadOnly(false);
 
   edits = loadLSc("edits");
   if (edits)

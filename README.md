@@ -50,7 +50,7 @@ Milestone 5: MVP Classroom
   - [ ] enforced timeouts (time for compile, CPU for program)
   - [ ] queueing compiles to avoid OOM
   - [X] block Internet access
-- [ ] View student code
+- [X] View student code
 - [X] Cache builds for quick reruns (nix? bazel? manual hashing?) (maybe next milestone?)
 - [ ] Backups (S3)
 - [ ] Import/export of some sort
@@ -60,12 +60,12 @@ Milestone 5: MVP Classroom
 Milestone 6: Full classroom
 - [ ] History to help detect cheating
 - [ ] UI to show student status, easily look at code
-- [ ] Hide tests or other files from students
+- [X] Hide tests or other files from students
 - [ ] Hide implementation of specific methods from students
 - [ ] Assignment (markdown) within the platform
 - [ ] Ability to pull in libraries
 - [ ] Dark mode
-- [ ] View as student (sudo? Associated student?)
+- [X] View as student (sudo? Associated student?)
 - [ ] Live shared editing
   - [ ] With shared cursors (https://github.com/convergencelabs/ace-collab-ext)
 - [ ] Comments on code/chat on project
@@ -80,20 +80,22 @@ Milestone 6b: Deployable
 - [ ] Web UI configuration for things like backups
 - [ ] Documentation
 - [ ] DNS of some sort
-  - Teachers register via oauth against allowlist, get token for update?
-  - custom DNS? NFS?
-  - if custom, detect when host down, provide useful error?
+  - [ ] Teachers register via oauth against allowlist, get token for update?
+  - [ ] custom DNS? NFS?
+  - [ ] if custom, detect when host down, provide useful error?
 
 Milestone 7: "Real product"
 - [ ] API
 - [ ] Mobile interface
 - [ ] Custom run/compile commands
 - [ ] Cost savings: spin down VM when not in use?
-- [ ] Scaling: spin up more/bigger VM's for high demand (may be milestone 5/6?)
+  - [ ] Lambda with core logic, spin up VM if multiple students active at the same time?
+- [ ] Scaling: spin up more/bigger VM's for high demand or serve out to Lambda (may be milestone 5/6?)
 - [ ] Other languages
 - [ ] One-click app-updating
 - [ ] Expose generalized forking to users to customize how they write assignments and maybe other stuff too.
 - [ ] UI for RBAC to give more granular control than "user" and "teacher"
+- [ ] Shell access inside containers
 
 Milestone 8(?): Fully offline work
 - [ ] SPA to load once

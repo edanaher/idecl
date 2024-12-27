@@ -92,9 +92,9 @@ def run(pid):
                 print("Untar failure: " + str(untar.returncode) + str(untar.stdout) + str(untar.stderr))
         else:
             if testing:
-                proc = subprocess.run(["docker", "run", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", f"/junit/junit-4.13.2.jar:/app"] + [f"/app/{t}" for t in tests], capture_output=True, text=True, timeout=30)
+                proc = subprocess.run(["docker", "run", "--rm", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", f"/junit/junit-4.13.2.jar:/app"] + [f"/app/{t}" for t in tests], capture_output=True, text=True, timeout=30)
             else:
-                proc = subprocess.run(["docker", "run", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", "/app", "/app/Main.java"], capture_output=True, text=True, timeout=30)
+                proc = subprocess.run(["docker", "run", "--rm", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", "/app", "/app/Main.java"], capture_output=True, text=True, timeout=30)
             if proc.returncode != 0:
                 yield f"0\nError compiling {'tests' if testing else 'program'}:\n" + proc.stderr
                 return
@@ -107,10 +107,10 @@ def run(pid):
                 conn.commit()
 
         if testing:
-            proc = subprocess.Popen(["docker", "run", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "java", "-cp", f"/junit/junit-4.13.2.jar:/junit/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"] + [t.replace("/", ".").rstrip('.java') for t in tests], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
+            proc = subprocess.Popen(["docker", "run", "--rm", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "java", "-cp", f"/junit/junit-4.13.2.jar:/junit/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"] + [t.replace("/", ".").rstrip('.java') for t in tests], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
         else:
             os.mkfifo(os.path.join(tmp, "stdin.fifo"))
-            proc = subprocess.Popen(["docker", "run", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", "--net", "none", "idecl-java-runner", "/bin/sh", "-c", "java -cp /app Main <> /app/stdin.fifo"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
+            proc = subprocess.Popen(["docker", "run", "--rm", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", "--net", "none", "idecl-java-runner", "/bin/sh", "-c", "java -cp /app Main <> /app/stdin.fifo"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1) # TODO: timeout
         yield container_name + "\n"
         # TODO: intersperse stdout and stderr
         while l := proc.stdout.readline():

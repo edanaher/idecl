@@ -1,8 +1,10 @@
+local server = require "resty.websocket.server"
+local cjson = require "cjson"
+
 local state = ngx.shared.state
 if state:get("count") == nil then
   state:set("count", 0)
 end
-local server = require "resty.websocket.server"
 local wb, err = server:new{
   timeout = 5000,
   max_payload_len = 65535
@@ -33,13 +35,12 @@ while true do
   elseif typ == "pong" then
     ngx.log(ngx.INFO, "client ponged")
   elseif typ == "text" then
-    ngx.sleep(1)
-    local bytes, err = wb:send_text(data .. state:get("count"))
+    local json = cjson.decode(data)
+    local bytes, err = wb:send_text(cjson.encode({op = json.op, result = "oh noes"}))
     if not bytes then
       ngx.log(ngx.ERR, "failed to send text: ", err)
       return ngx.exit(444)
     end
-    state:incr("count", 1)
   end
 end
 wb:send_close()

@@ -58,15 +58,6 @@ rec {
       locations."/static/" = {
         alias = "${idecl-src}/client/";
       };
-      locations."/lua" = {
-        extraConfig = ''
-          default_type text/plain;
-
-          content_by_lua_block {
-            ngx.say("Hello from openresty")
-          }
-        '';
-      };
       locations."/" = {
         proxyPass = "http://localhost:${builtins.toString idecl-port}";
         extraConfig = ''
@@ -77,7 +68,7 @@ rec {
       };
       enableACME = usessl;
       forceSSL = usessl;
-      locations."/sockets/websocket" = {
+      locations."/websocket" = {
         extraConfig = ''
           lua_code_cache off;
           lua_socket_log_errors off;

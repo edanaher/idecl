@@ -755,9 +755,16 @@ var runcommand = function(test) {
     body[filenames[i]] = fileForRun(projectId(), i);
   xhr.send(JSON.stringify(body));
 
+  websocket.send(JSON.stringify({"op": "run"}));
+
   term.options.cursorStyle = "block";
   term.options.cursorInactiveStyle = "bar";
   //document.getElementById("sendinput").disabled = false;
+}
+
+websocketcbs = {};
+websocketcbs["run"] = function(data) {
+  console.log("ran program", data.result)
 }
 
 var runcode = function() {
@@ -1109,6 +1116,33 @@ var addClickListenerById = function(id, f) {
     elem.addEventListener("click", f);
 }
 
+websocket = null;
+var webSocketConnect = function() {
+  if (websocket !== null) return log("already connected");
+  websocket = new WebSocket("ws://" + location.host + "/websocket/");
+  websocket.onopen = function () {
+    console.log("connected");
+  };
+  websocket.onerror = function (error) {
+    console.log(error);
+  };
+  websocket.onmessage = function (e) {
+    console.log(e);
+    var parsed = JSON.parse(e.data)
+    return websocketcbs[parsed.op](parsed);
+  };
+  websocket.onclose = function () {
+    console.log("disconnected");
+    // TODO: attempt reconnect
+    websocket = null;
+  };
+  return false;
+}
+
+var initWebsocket = function() {
+  webSocketConnect();
+}
+
 window.onload = function() {
   initAce();
   initTerminal();
@@ -1118,6 +1152,7 @@ window.onload = function() {
   else {
     initFiles();
   }
+  initWebsocket();
   addClickListenerById("run", runcode);
   addClickListenerById("runtests", runtests);
   //document.getElementById("sendinput").addEventListener("click", sendinput);

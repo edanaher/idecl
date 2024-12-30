@@ -1,6 +1,7 @@
 from flask import abort, redirect, render_template, request, send_file, session, current_app
 from flask_login import login_required, current_user
 from sqlalchemy import text
+import json
 
 from app import app
 from db import engine
@@ -90,3 +91,16 @@ def reactivate_user(uid):
         conn.execute(text("UPDATE users SET deactivated=0 WHERE id=:id"), [{"id": uid}])
         conn.commit()
     return ""
+
+@app.route("/users/me")
+def whoami():
+    if not current_user.is_authenticated:
+        abort(401)
+    return json.dumps({
+        "id": current_user.id,
+        "email": current_user.get_email(),
+        "effective": {
+            "id": current_user.get_eid(),
+            "email": current_user.get_eemail(),
+        } })
+

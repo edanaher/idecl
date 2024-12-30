@@ -18,7 +18,13 @@ if not wb then
   return ngx.exit(444)
 end
 
-function runprogram(json)
+local whoami = ngx.location.capture("/users/me")
+if whoami.status == 401 then
+  ngx.log(ngx.ERR, "Rejecting unauthenticated websocket")
+  return ngx.exit(444)
+end
+
+local function runprogram(json)
   newval, err = state:incr("compiling", 1)
   if err then
     ngx.log(ngx.ERR, "failed incr compiling", err)
@@ -29,7 +35,7 @@ function runprogram(json)
     state:incr("compiling", -1)
     return
   end
-  ngx.sleep(10)
+  ngx.sleep(2)
   local bytes, err = wb:send_text(cjson.encode({op = json.op, result = "oh noes"}))
   if not bytes then
     ngx.log(ngx.ERR, "failed to send text: ", err)

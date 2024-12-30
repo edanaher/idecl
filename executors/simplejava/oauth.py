@@ -63,7 +63,7 @@ class User:
         return self.id
 
     def get_eid(self):
-        return self.id
+        return self.euid
 
     def get_email(self):
         return self.email

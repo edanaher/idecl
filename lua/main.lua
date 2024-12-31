@@ -66,7 +66,20 @@ local function runprogram(json)
     end
   end
   local running = ngx_pipe.spawn(command, {merge_stderr = true, write_timeout = 3600, stdout_read_timeout = 3600, wait_timeout = 3600})
-  local output = running:stdout_read_all()
+  while true do
+    local output, err = running:stdout_read_any(4096)
+    if output then
+      wb:send_text(cjson.encode({output = output}))
+    end
+    if err == "closed" then
+      break
+    end
+    if err then
+      wb:send_text(cjson.encode({output = "Idecl error: " .. err.. "\n"}))
+    end
+    -- In case of badness, don't spam the client too hard.
+    ngx.sleep(0.1)
+  end
 
   wb:send_text(cjson.encode({output = output, complete = true}))
 

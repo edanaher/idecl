@@ -1,4 +1,5 @@
 local server = require "resty.websocket.server"
+local ngx_pipe = require "ngx.pipe"
 local cjson = require "cjson"
 local MAX_CONCURRENT_COMPILES = 8
 
@@ -44,8 +45,8 @@ local function runprogram(json)
     method=ngx.HTTP_POST,
     headers={["content-type"]="application/json"}
   })
-  newval, err = state:incr("compiling", -1)
-  compile_result = cjson.decode(compile.body)
+  local newval, err = state:incr("compiling", -1)
+  local compile_result = cjson.decode(compile.body)
   if compile_result.error then
     local bytes, err = wb:send_text(cjson.encode({op = json.op, output = compile_result.error, complete = true}))
     if not bytes then
@@ -55,13 +56,20 @@ local function runprogram(json)
     end
   end
   local bytes, err = wb:send_text(cjson.encode({output="compiled\n"}))
-  local execute = ngx.location.capture("/projects/" .. tostring(json.pid) .. "/execute/" .. compile_result.container, {
-    args=args,
-    body = cjson.encode({tests = compile_result.tests}),
-    method=ngx.HTTP_POST,
-    headers={["content-type"]="application/json"}
-  })
-  wb:send_text(cjson.encode({output = execute.body, complete = true}))
+
+  local command = {ngx.var.docker_bin, "run", "--rm", "--name", compile_result.container, "-m128m", "--ulimit", "cpu=10", "-v", compile_result.path .. ":/app", "--net", "none", "--", "idecl-java-runner", "java", "-cp", "/app", "Main"}
+  if json.test then
+    command = {ngx.var.docker_bin, "run", "--rm", "--name", compile_result.container, "-m128m", "--ulimit", "cpu=10", "-v", compile_result.path .. ":/app", "-v", ngx.var.junit_path .. ":/junit", "-v", ngx.var.hamcrest_path .. ":/hamcrest","--net", "none", "--", "idecl-java-runner", "java", "-cp", "/junit/junit-4.13.2.jar:/hamcrest/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"}
+    for _, t in ipairs(compile_result.tests) do
+      local classname = t:gsub("/", "."):gsub(".java$", "")
+      table.insert(command, classname)
+    end
+  end
+  local running = ngx_pipe.spawn(command, {merge_stderr = true, write_timeout = 3600, stdout_read_timeout = 3600, wait_timeout = 3600})
+  local output = running:stdout_read_all()
+
+  wb:send_text(cjson.encode({output = output, complete = true}))
+
 end
 
 

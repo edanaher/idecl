@@ -113,48 +113,6 @@ def compile(pid):
 
     return json.dumps(result)
 
-@app.route("/projects/<pid>/execute/<container_name>", methods=["POST"])
-#@app.route("/projects/<pid>/compile2", methods=["POST"])
-@login_required
-def executeprogram(pid, container_name):
-    testing = request.args.get("test") == "1"
-    path = os.path.join("/", container_name.replace("-", "/"))
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-
-    body = request.json
-
-    if testing:
-        tests = body["tests"]
-        proc = subprocess.Popen(["docker", "run", "--rm", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{path}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "java", "-cp", f"/junit/junit-4.13.2.jar:/junit/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"] + [t.replace("/", ".").rstrip('.java') for t in tests], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
-    else:
-        os.mkfifo(os.path.join(path, "stdin.fifo"))
-        proc = subprocess.Popen(["docker", "run", "--rm", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{path}:/app", "--net", "none", "idecl-java-runner", "/bin/sh", "-c", "java -cp /app Main <> /app/stdin.fifo"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
-    #yield container_name + "\n"
-
-    epoll = select.epoll(2)
-    epoll.register(proc.stdout.fileno(), select.EPOLLIN | select.POLLHUP)
-    epoll.register(proc.stderr.fileno(), select.EPOLLIN | select.POLLHUP)
-    os.set_blocking(proc.stdout.fileno(), False)
-    os.set_blocking(proc.stderr.fileno(), False)
-    stillopen = 2
-    result = ""
-    while stillopen > 0:
-        events = epoll.poll()
-        for fileno, event in events:
-            if event == select.POLLHUP:
-                epoll.unregister(fileno)
-                stillopen -= 1
-                continue
-            file = proc.stdout if fileno == proc.stdout.fileno() else proc.stderr
-            result += file.read()
-
-    proc.wait()
-
-    shutil.rmtree(path)
-
-    if proc.returncode != 0:
-        return "Error running: " + str(proc.returncode) + "\n:" + reduce((lambda a, b : a + b), iter(proc.stderr.readline, ""), "")
-    return result
 
 @app.route("/login")
 def login():

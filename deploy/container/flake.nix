@@ -52,6 +52,12 @@
               idecl-src = src-path;
               in { config, pkgs, ... }:
               let common = import ../common.nix { inherit pkgs idecl-port idecl-src; hostname = "localhost"; usessl = false; }; in {
+              users.groups.hostdocker = {
+                gid = 131; # Change to your local docker group
+                name = "hostdocker";
+                members = [ "nginx" ];
+
+              };
               systemd.services.nginx.serviceConfig.ProtectHome = false;
               services.nginx = common.nginx-config;
               environment.systemPackages = [ pkgs.sqlite-interactive ];

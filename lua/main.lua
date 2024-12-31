@@ -44,9 +44,10 @@ local function runprogram(json)
     method=ngx.HTTP_POST,
     headers={["content-type"]="application/json"}
   })
-  local bytes, err = wb:send_text(cjson.encode({op = json.op, result = start.body}))
+  local bytes, err = wb:send_text(cjson.encode({op = json.op, output = start.body, complete = true}))
   if not bytes then
     ngx.log(ngx.ERR, "failed to send text: ", err)
+    newval, err = state:incr("compiling", -1)
     return ngx.exit(444)
   end
   newval, err = state:incr("compiling", -1)

@@ -718,45 +718,25 @@ var runcommand = function(test) {
   var otherrunbutton = document.getElementById(!test ? "runtests" : "run");
   runbutton.innerText = test ? "stop running tests..." : "stop running...";
   otherrunbutton.setAttribute("disabled", "");
-  var xhr = new XMLHttpRequest();
   var params = test ? "?test=1" : ""
-  xhr.open("POST", "/projects/" + projectId() + "/run" + params, true);
-  xhr.setRequestHeader("Content-Type", "application/json");
-  var seenSoFar = 0;
-  xhr.onprogress = function() {
-    if (xhr.readyState === XMLHttpRequest.DONE || xhr.readyState === XMLHttpRequest.LOADING) {
-      if(xhr.status != 200 && xhr.readyState == XMLHttpRequest.DONE) {
-        term.write("Error talking to server");
-      } else {
-        i = xhr.response.indexOf("\n");
-        if (i)
-          container = xhr.response.slice(0, i);
-        if (seenSoFar == 0)
-          seenSoFar = i + 1;
-        term.write(xhr.response.slice(seenSoFar));
-        seenSoFar = xhr.response.length;
-      }
-      if (xhr.readyState === XMLHttpRequest.DONE) {
-        container = null;
-        term.options.cursorStyle = "underline";
-        term.options.cursorInactiveStyle = "none";
-      }
-    }
-  };
-  xhr.onload = function() {
-    xhr.onprogress();
-    runbutton.innerText = test ? "run tests" : "run";
-    otherrunbutton.removeAttribute("disabled");
-    //document.getElementById("sendinput").disabled = true;
-  }
+
   var body = {};
   var filenames = JSON.parse(loadLSc("files"))
   for (var i in filenames)
     body[filenames[i]] = fileForRun(projectId(), i);
-  xhr.send(JSON.stringify(body));
 
   var websocket = webSocketConnect({"op": "run", "pid": projectId(), "files": body, "test": test}, function(data) {
-    console.log("received", data);
+    if (data.container)
+      container = data.container;
+    if (data.output)
+      term.write(data.output);
+    if (data.complete) {
+      container = null;
+      term.options.cursorStyle = "underline";
+      term.options.cursorInactiveStyle = "none";
+      runbutton.innerText = test ? "run tests" : "run";
+      otherrunbutton.removeAttribute("disabled");
+    }
   });
 
   term.options.cursorStyle = "block";

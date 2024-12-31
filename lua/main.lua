@@ -44,13 +44,24 @@ local function runprogram(json)
     method=ngx.HTTP_POST,
     headers={["content-type"]="application/json"}
   })
-  local bytes, err = wb:send_text(cjson.encode({op = json.op, output = compile.body, complete = true}))
-  if not bytes then
-    ngx.log(ngx.ERR, "failed to send text: ", err)
-    newval, err = state:incr("compiling", -1)
-    return ngx.exit(444)
-  end
   newval, err = state:incr("compiling", -1)
+  compile_result = cjson.decode(compile.body)
+  if compile_result.error then
+    local bytes, err = wb:send_text(cjson.encode({op = json.op, output = compile_result.error, complete = true}))
+    if not bytes then
+      ngx.log(ngx.ERR, "failed to send text: ", err)
+      newval, err = state:incr("compiling", -1)
+      return ngx.exit(444)
+    end
+  end
+  local bytes, err = wb:send_text(cjson.encode({output="compiled\n"}))
+  local execute = ngx.location.capture("/projects/" .. tostring(json.pid) .. "/execute/" .. compile_result.container, {
+    args=args,
+    body = cjson.encode({tests = compile_result.tests}),
+    method=ngx.HTTP_POST,
+    headers={["content-type"]="application/json"}
+  })
+  wb:send_text(cjson.encode({output = execute.body, complete = true}))
 end
 
 

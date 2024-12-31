@@ -59,7 +59,7 @@ rec {
         alias = "${idecl-src}/client/";
       };
       locations."/" = {
-        proxyPass = "http://localhost:${builtins.toString idecl-port}";
+        proxyPass = "http://127.0.0.1:${builtins.toString idecl-port}";
         extraConfig = ''
           proxy_set_header Host $host;
           proxy_set_header X-Forwarded-For $remote_addr;

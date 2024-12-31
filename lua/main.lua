@@ -1,6 +1,6 @@
 local server = require "resty.websocket.server"
 local cjson = require "cjson"
-local MAX_CONCURRENT_COMPILES = 2
+local MAX_CONCURRENT_COMPILES = 8
 
 local state = ngx.shared.state
 if state:get("compiling") == nil then
@@ -25,18 +25,26 @@ if whoami.status == 401 then
 end
 
 local function runprogram(json)
-  newval, err = state:incr("compiling", 1)
+  local newval, err = state:incr("compiling", 1)
+  ngx.req.read_body()
   if err then
     ngx.log(ngx.ERR, "failed incr compiling", err)
     return ngx.exit(444)
   end
   if newval > MAX_CONCURRENT_COMPILES then
     local bytes, err = wb:send_text(cjson.encode({op = json.op, result = "concurrency exceeded: " .. tostring(newval)}))
-    state:incr("compiling", -1)
-    return
   end
-  ngx.sleep(2)
-  local bytes, err = wb:send_text(cjson.encode({op = json.op, result = "oh noes"}))
+  local args = {}
+  if json.test then
+    args.test = 1
+  end
+  local start = ngx.location.capture("/projects/" .. tostring(json.pid) .. "/run", {
+    args=args,
+    body=cjson.encode(json.files),
+    method=ngx.HTTP_POST,
+    headers={["content-type"]="application/json"}
+  })
+  local bytes, err = wb:send_text(cjson.encode({op = json.op, result = start.body}))
   if not bytes then
     ngx.log(ngx.ERR, "failed to send text: ", err)
     return ngx.exit(444)

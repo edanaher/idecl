@@ -755,7 +755,7 @@ var runcommand = function(test) {
     body[filenames[i]] = fileForRun(projectId(), i);
   xhr.send(JSON.stringify(body));
 
-  var websocket = webSocketConnect({"op": "run"}, function(data) {
+  var websocket = webSocketConnect({"op": "run", "pid": projectId(), "files": body, "test": test}, function(data) {
     console.log("received", data);
   });
 

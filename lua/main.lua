@@ -38,13 +38,13 @@ local function runprogram(json)
   if json.test then
     args.test = 1
   end
-  local start = ngx.location.capture("/projects/" .. tostring(json.pid) .. "/run", {
+  local compile = ngx.location.capture("/projects/" .. tostring(json.pid) .. "/compile", {
     args=args,
     body=cjson.encode(json.files),
     method=ngx.HTTP_POST,
     headers={["content-type"]="application/json"}
   })
-  local bytes, err = wb:send_text(cjson.encode({op = json.op, output = start.body, complete = true}))
+  local bytes, err = wb:send_text(cjson.encode({op = json.op, output = compile.body, complete = true}))
   if not bytes then
     ngx.log(ngx.ERR, "failed to send text: ", err)
     newval, err = state:incr("compiling", -1)

@@ -1,7 +1,7 @@
 {
   idecl-poc = { modulesPath, lib, name, pkgs, ... }: let 
     idecl-port = 9453;
-    common = import ../common.nix { inherit pkgs idecl-port idecl-src; hostname = "idecl.edanaher.net"; usessl = true; };
+    common = import ../common.nix { inherit pkgs idecl-port idecl-src; hostname = "idecl.edanaher.net"; };
     terraform-state = builtins.fromJSON (builtins.readFile ../terraform/terraform-out.json);
     resources = terraform-state.values.root_module.resources;
     host = builtins.elemAt resources 0;

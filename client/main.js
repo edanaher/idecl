@@ -1032,7 +1032,10 @@ var initTerminal = function() {
       background: "white",
       cursor: "gray",
       selectionBackground: "lightgray"
-    }
+    },
+    fontFamily: "monospace",
+    fontSize: "14"
+
   });
   term.fit = new FitAddon.FitAddon();
   term.loadAddon(term.fit);

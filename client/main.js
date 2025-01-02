@@ -1085,7 +1085,11 @@ var addClickListenerById = function(id, f) {
 }
 
 var webSocketConnect = function(message, onmessage) {
-  var websocket = new WebSocket("ws://" + location.host + "/websocket/");
+  var websocket
+  if (location.protocal == "https:")
+    websocket = new WebSocket("wss://" + location.host + "/websocket/");
+  else
+    websocket = new WebSocket("ws://" + location.host + "/websocket/");
   websocket.onopen = function () {
     websocket.send(JSON.stringify(message))
   };

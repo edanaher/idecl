@@ -1,4 +1,6 @@
-{pkgs, hostname, usessl, idecl-port, idecl-src}: 
+{pkgs, hostname, idecl-port, idecl-src, dev ? false}:
+let usessl = ! dev;
+in
 rec {
   idecl-port = 9453;
   python-with-packages = pkgs.python3.withPackages (pp: with pp; [
@@ -95,7 +97,7 @@ rec {
       locations."/" = {
         proxyPass = "http://127.0.0.1:${builtins.toString idecl-port}";
         extraConfig = ''
-          proxy_set_header Host $host;
+          proxy_set_header Host $host${if dev then ":5000" else ""};
           proxy_set_header X-Forwarded-For $remote_addr;
           proxy_buffering off;
         '';

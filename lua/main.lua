@@ -26,11 +26,10 @@ if whoami.status == 401 then
 end
 
 local stillrunning = true;
-local function handle_input(path)
+local function handle_input(path, name)
   local tmpname = path:gsub(".*/", "")
   while stillrunning do
     local data, typ, err = wb:recv_frame()
-    ngx.log(ngx.ERR, "Received input in thread ", typ, " ", err, " ", data)
     if wb.fatal then
       ngx.log(ngx.ERR, "failed to receive frame: ", err)
       return ngx.exit(444)
@@ -59,6 +58,9 @@ local function handle_input(path)
           method = ngx.HTTP_POST,
           headers = {["content-type"]="application/json"}
         })
+      end
+      if json.kill then
+        ngx_pipe.spawn({ngx.var.docker_bin, "kill", name}, {merge_stderr = true})
       end
     end
     ngx.sleep(0.1)
@@ -107,7 +109,7 @@ local function runprogram(json)
     end
   end
   local running = ngx_pipe.spawn(command, {merge_stderr = true})
-  ngx.thread.spawn(handle_input, compile_result.path)
+  ngx.thread.spawn(handle_input, compile_result.path, compile_result.container)
 
   while true do
     local output, err = running:stdout_read_any(4096)

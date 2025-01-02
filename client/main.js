@@ -708,9 +708,7 @@ var loadFromServer = function(pid) {
 websocket = undefined;
 var runcommand = function(test) {
   if (websocket) {
-    var xhr = new XMLHttpRequest();
-    //xhr.open("DELETE", "/containers/" + container, true);
-    //xhr.send();
+    websocket.send(JSON.stringify({"kill": true}))
     return;
   }
   saveFile();

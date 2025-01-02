@@ -770,14 +770,14 @@ var sendinput = function() {
 }
 
 
-var sendinputfromterminal = function(content) {
-};
 var sendinputfromterminal = (function() {
   var buffer = "";
   return function(content) {
     if (content == "\r") {
       websocket.send(JSON.stringify({"input": buffer + content}));
       buffer = "";
+    } else if (content == "\x7f") {
+      buffer = buffer.slice(0, buffer.length - 1);
     } else {
       buffer += content;
     }
@@ -1046,6 +1046,8 @@ var initTerminal = function() {
       return;
     if (k.key == "\r")
       term.write("\n\r");
+    else if (k.key == "\x7f")
+      term.write("\b \b");
     else
       term.write(k.key);
     sendinputfromterminal(k.key);

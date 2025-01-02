@@ -46,6 +46,10 @@
               hostPath = "/tmp/idecl-store";
               isReadOnly = false;
             };
+            bindMounts."/var/run/idecl" = {
+              hostPath = "/var/run/idecl";
+              isReadOnly = false;
+            };
 
             config = let
               idecl-port = 9453;
@@ -66,6 +70,7 @@
                 init-script = pkgs.writeShellScript "init-idecl" ''
                   export HOME=/app
                   mkdir -p /app
+                  mkdir -p /var/run/idecl
                   cd ${idecl-src}/executors/simplejava
                   source ${src-path}/deploy/morph/secrets.sh
                   ${pkgs.python3Packages.alembic}/bin/alembic upgrade head

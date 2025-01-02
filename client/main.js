@@ -705,12 +705,12 @@ var loadFromServer = function(pid) {
   return
 }
 
-container = undefined;
+websocket = undefined;
 var runcommand = function(test) {
-  if (container) {
+  if (websocket) {
     var xhr = new XMLHttpRequest();
-    xhr.open("DELETE", "/containers/" + container, true);
-    xhr.send();
+    //xhr.open("DELETE", "/containers/" + container, true);
+    //xhr.send();
     return;
   }
   saveFile();
@@ -725,13 +725,13 @@ var runcommand = function(test) {
   for (var i in filenames)
     body[filenames[i]] = fileForRun(projectId(), i);
 
-  var websocket = webSocketConnect({"op": "run", "pid": projectId(), "files": body, "test": test}, function(data) {
+  websocket = webSocketConnect({"op": "run", "pid": projectId(), "files": body, "test": test}, function(data) {
     if (data.container)
       container = data.container;
     if (data.output)
       term.write(data.output);
     if (data.complete) {
-      container = null;
+      websocket = null;
       term.options.cursorStyle = "underline";
       term.options.cursorInactiveStyle = "none";
       runbutton.innerText = test ? "run tests" : "run";
@@ -772,31 +772,20 @@ var sendinput = function() {
 }
 
 
+var sendinputfromterminal = function(content) {
+};
 var sendinputfromterminal = (function() {
-  var waiting = false;
   var buffer = "";
   return function(content) {
-    if (waiting) {
+    if (content == "\r") {
+      websocket.send(JSON.stringify({"input": buffer + content}));
+      buffer = "";
+    } else {
       buffer += content;
-      return;
     }
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/containers/" + container + "/stdin", true);
-    xhr.onload = function() {
-      if (xhr.readyState === XMLHttpRequest.DONE) {
-        waiting = false;
-        if(xhr.status != 200)
-          term.write("Error sending stdin to server\n");
-        if (buffer)
-          sendinputfromterminal("");
-      }
-    };
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.send(JSON.stringify({"input": buffer + content}));
-    kuffer = "";
-    waiting = true;
   };
 })();
+
 
 var bootstrapStorage = function() {
     localStorage.setItem("version", 0);
@@ -1055,9 +1044,8 @@ var initTerminal = function() {
     console.log("prompt");
   }
   term.onKey(function(k, ev) {
-    if (!container)
+    if (!websocket)
       return;
-    console.log(k, ev);
     if (k.key == "\r")
       term.write("\n\r");
     else
@@ -1096,7 +1084,6 @@ var addClickListenerById = function(id, f) {
 var webSocketConnect = function(message, onmessage) {
   var websocket = new WebSocket("ws://" + location.host + "/websocket/");
   websocket.onopen = function () {
-    console.log("connected");
     websocket.send(JSON.stringify(message))
   };
   websocket.onerror = function (error) {
@@ -1107,7 +1094,6 @@ var webSocketConnect = function(message, onmessage) {
     return onmessage(parsed);
   };
   websocket.onclose = function () {
-    console.log("disconnected");
     // TODO: attempt reconnect if appropriate
   };
   return websocket;

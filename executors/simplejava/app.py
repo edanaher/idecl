@@ -23,7 +23,9 @@ def compile(pid):
 
     testing = request.args.get("test") == "1"
 
-    tmp = tempfile.mkdtemp(prefix="idecl_")
+    tmp = tempfile.mkdtemp(dir="/var/run/idecl", prefix="container_")
+    shutil.chown(tmp, "nginx")
+
     container_name = f"{tmp[1:].replace('/', '-')}"
     tests = []
     # TODO: This should all be saved, not passed in.  The body here should just be to avoid sync issues.
@@ -90,6 +92,7 @@ def compile(pid):
         result = {"path": tmp, "container": container_name}
         if testing:
             result["tests"] = tests
+        os.mkfifo(tmp + "/stdin.fifo")
         return json.dumps(result)
     else:
         if testing:
@@ -110,6 +113,8 @@ def compile(pid):
     result = {"path": tmp, "container": container_name}
     if testing:
         result["tests"] = tests
+
+    os.mkfifo(tmp + "/stdin.fifo")
 
     return json.dumps(result)
 
@@ -148,14 +153,12 @@ def kill_container(containerid):
     proc = subprocess.run(["docker", "kill", containerid], capture_output=True, text=False, timeout=30)
     return ""
 
-@app.route("/containers/<containerid>/stdin", methods=["POST"])
+@app.route("/containers/<tmppath>/stdin", methods=["POST"])
 @login_required
-def stdin(containerid):
-    if containerid == "null":
-        return "error"
+def stdin(tmppath):
     data = request.json
     input = data["input"]
-    with open(os.path.join("/", containerid.replace("-", "/"), "stdin.fifo"), "w") as f:
+    with open(os.path.join("/var/run/idecl", tmppath, "stdin.fifo"), "w") as f:
         f.write(input)
     return ""
 

@@ -20,6 +20,7 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 @login_required
 def compile(pid):
     body = request.json
+    print(repr(request.headers), flush=True)
 
     testing = request.args.get("test") == "1"
 
@@ -101,8 +102,6 @@ def compile(pid):
             proc = subprocess.run(["docker", "run", "--rm", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", "/app", "/app/Main.java"], capture_output=True, text=True, timeout=30)
         if proc.returncode != 0:
             return json.dumps({"error": f"0\nError compiling {'tests' if testing else 'program'}:\n" + proc.stderr})
-            shutil.rmtree(tmp)
-            return
 
         # Add new compile to the cache
         proc = subprocess.run(["/bin/sh", "-c", f"cd {tmp} && tar --zstd -c ."], capture_output=True, text=False, timeout=30)

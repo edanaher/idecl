@@ -28,6 +28,7 @@
     init-script = pkgs.writeShellScript "init-idecl" ''
       export HOME=/app
       mkdir -p /app
+      mkdir -p /var/run/idecl
       cd ${idecl-src}/executors/simplejava
       source /app/secrets.sh
       ${pkgs.python3Packages.alembic}/bin/alembic upgrade head

@@ -53,7 +53,7 @@ local function handle_input(path, name)
       local json = cjson.decode(data)
       if json.input then
         -- TODO: do this in lua; maybe with https://github.com/tokers/lua-io-nginx-module
-        local compile = ngx.location.capture("/containers/" .. tostring(tmpname) .. "/stdin", {
+        local input = ngx.location.capture("/containers/" .. tostring(tmpname) .. "/stdin", {
           body = cjson.encode({input = json.input}),
           method = ngx.HTTP_POST,
           headers = {["content-type"]="application/json"}
@@ -88,11 +88,12 @@ local function runprogram(json)
   if json.test then
     args.test = 1
   end
+  ngx.req.set_header("Content-Type", "application/json")
   local compile = ngx.location.capture("/projects/" .. tostring(json.pid) .. "/compile", {
     args=args,
     body=cjson.encode(json.files),
     method=ngx.HTTP_POST,
-    headers={["content-type"]="application/json"}
+    headers={["Content-Type"]="application/json"}
   })
   local newval, err = state:incr("compiling", -1)
 

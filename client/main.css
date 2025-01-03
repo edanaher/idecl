@@ -169,6 +169,10 @@
   border-style: solid;
 }
 
+#clearterminal {
+  margin-left: 20px;
+}
+
 #terminal {
   width: 40vw;
   height: 90vh;

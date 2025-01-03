@@ -1131,4 +1131,5 @@ window.onload = function() {
   addClickListenerById("historyback", function() { historymove(-1); });
   addClickListenerById("historyforward", function() { historymove(1); });
   addClickListenerById("switchlayout", switchlayout);
+  addClickListenerById("clearterminal", function() { term.clear() });
 }

@@ -1,14 +1,14 @@
 local server = require "resty.websocket.server"
 local ngx_pipe = require "ngx.pipe"
 local cjson = require "cjson"
-local MAX_CONCURRENT_COMPILES = 8
+local MAX_CONCURRENT_COMPILES = 2
 
 local state = ngx.shared.state
 if state:get("compiling") == nil then
   state:set("compiling", 0)
 end
 if state:get("runqueue") == nil then
-  state:set("runcount", {})
+  state:set("runqueue", {})
 end
 local wb, err = server:new{
   timeout = 5000,
@@ -69,14 +69,20 @@ local function handle_input(path, name)
 end
 
 local function runprogram(json)
-  local newval, err = state:incr("compiling", 1)
   ngx.req.read_body()
+  local newval, err = state:incr("compiling", 1)
   if err then
     ngx.log(ngx.ERR, "failed incr compiling", err)
     return ngx.exit(444)
   end
   if newval > MAX_CONCURRENT_COMPILES then
-    local bytes, err = wb:send_text(cjson.encode({op = json.op, result = "concurrency exceeded: " .. tostring(newval)}))
+    -- TODO: Actually queue.
+    local bytes, err = wb:send_text(cjson.encode({op = json.op, output = "waiting in queue..."}))
+    while newval > MAX_CONCURRENT_COMPILES do
+      state:incr("compiling", -1)
+      ngx.sleep(0.5 + math.random())
+      newval = state:incr("compiling", 1)
+    end
   end
   local args = {}
   if json.test then
@@ -89,12 +95,13 @@ local function runprogram(json)
     headers={["content-type"]="application/json"}
   })
   local newval, err = state:incr("compiling", -1)
+
+
   local compile_result = cjson.decode(compile.body)
   if compile_result.error then
     local bytes, err = wb:send_text(cjson.encode({op = json.op, output = compile_result.error, complete = true}))
     if not bytes then
       ngx.log(ngx.ERR, "failed to send text: ", err)
-      newval, err = state:incr("compiling", -1)
       return ngx.exit(444)
     end
     return ngx.exit(444)

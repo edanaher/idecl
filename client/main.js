@@ -1086,7 +1086,7 @@ var addClickListenerById = function(id, f) {
 
 var webSocketConnect = function(message, onmessage) {
   var websocket
-  if (location.protocal == "https:")
+  if (location.protocol == "https:")
     websocket = new WebSocket("wss://" + location.host + "/websocket/");
   else
     websocket = new WebSocket("ws://" + location.host + "/websocket/");

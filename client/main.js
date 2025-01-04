@@ -931,6 +931,7 @@ var publish = function() {
   }
 }
 var submit = function() {
+  saveToServer()
   var submit_button = this;
   if (this.hasAttribute("submitted")) {
     var xhr = new XMLHttpRequest();

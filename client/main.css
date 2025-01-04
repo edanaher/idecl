@@ -189,6 +189,18 @@
   top: 10px;
 }
 
+span.tag {
+  border-width: 1px;
+  border-color: gray;
+  border-style: solid;
+  border-radius: 12px;
+  font-size: smaller;
+  padding: 1px;
+  padding-left: 4px;
+  background-color: #EEEEFF;
+  color: #336699
+}
+
 #projectlist button.delete-project {
   margin-left: 10px;
 }

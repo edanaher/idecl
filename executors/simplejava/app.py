@@ -20,7 +20,6 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 @login_required
 def compile(pid):
     body = request.json
-    print(repr(request.headers), flush=True)
 
     testing = request.args.get("test") == "1"
 

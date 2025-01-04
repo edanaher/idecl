@@ -104,6 +104,14 @@
           {{ project.name }}
         {% endif %}
 
+        {% if project.tags %}
+          {% for tag in project.tags.split(",") %}
+            <span class="tag">
+              {{ tag }}
+            </span>
+          {% endfor %}
+        {% endif %}
+
         {% if project.cancloneassignment == "1" %}
           <button class="cloneassignment" project-id="{{ project.id }}">Clone project as asssignment</div>
         {% endif %}

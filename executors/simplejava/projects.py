@@ -12,6 +12,8 @@ def classrooms():
     with engine.connect() as conn:
         # TODO: Is the distinct really necessary?  The problem is a user can have multiple roles with access to a classroom.
         classrooms = conn.execute(text("SELECT DISTINCT(classrooms.id), classrooms.name FROM classrooms JOIN users_roles ON (classrooms.id=users_roles.classroom_id OR users_roles.classroom_id IS NULL) JOIN roles_permissions USING (role_id) WHERE permission_id=:perm AND user_id=:uid"), [{"uid": current_user.euid, "perm": P.GETCLASSROOM.value}]).all()
+    if len(classrooms) == 1 and not has_permission(P.ADDCLASSROOM):
+        return redirect(f"/classrooms/{classrooms[0].id}/projects")
     return render_template("classrooms.html", classrooms=classrooms, loggedinas=current_user, canaddclassroom=has_permission(P.ADDCLASSROOM), canmanageusers=has_permission(P.LISTUSERS))
 
 @app.route("/classrooms", methods=["POST"])
@@ -28,6 +30,7 @@ def newclassroom():
 @requires_permission(P.GETCLASSROOM, "classroom")
 def projects(classroom):
     with engine.connect() as conn:
+        classroom_row = conn.execute(text("SELECT id, name FROM classrooms WHERE id=:classroom"), [{"classroom": classroom}]).first()
         projects = conn.execute(text("""
             SELECT massed_projects.id, massed_projects.name,
                    GROUP_CONCAT(cancloneassignment AND (cloned_as_assignment IS NULL)) AS cancloneassignment,
@@ -61,7 +64,7 @@ def projects(classroom):
             LEFT JOIN tags AS display_tags ON display_pt.tag_id=display_tags.id
             GROUP BY massed_projects.id;
         """), [{"classroom": classroom, "perm": P.LISTPROJECT.value, "user": current_user.euid, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value, "perm_view": P.VIEWPROJECT.value}]).all()
-    return render_template("projects.html", projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT))
+    return render_template("projects.html", classroom=classroom_row, projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT))
 
 @app.route("/classrooms/<classroom>/projects", methods=["POST"])
 @requires_permission(P.ADDPROJECT, "classroom")

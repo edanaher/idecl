@@ -197,6 +197,7 @@ span.tag {
   font-size: smaller;
   padding: 1px;
   padding-left: 4px;
+  padding-right: 4px;
   background-color: #EEEEFF;
   color: #336699
 }

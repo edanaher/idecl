@@ -1,7 +1,12 @@
+#body {
+  display: flex;
+}
 #filecontainer {
   vertical-align: top;
-  display: inline-block;
+  display: flex;
   min-width: 8em;
+  flex: 1 1 10%;
+  flex-direction: column;
 }
 
 #filelist {
@@ -131,8 +136,15 @@
   color: #440000;
 }
 
+#maincontent {
+  display: flex;
+  gap: 6px;
+}
+
 #leftcontent {
-  display: inline-block;
+  display: flex;
+  flex: 10 10 45%;
+  flex-direction: column;
 }
 
 #maincontent[layout="fullscreencode"] #code {
@@ -154,13 +166,15 @@
 }
 
 #rightcontent {
-  display: inline-block;
+  display: flex;
   vertical-align: top;
+  flex: 10 10 45%;
+  flex-direction: column;
 }
 
 #code {
   position: relative;
-  width: 40vw;
+  /*width: 40vw;*/
   height: 90vh;
   top: 4px;
   padding: 4px;
@@ -173,8 +187,11 @@
   margin-left: 20px;
 }
 
+#terminal-container {
+  display: block;
+}
 #terminal {
-  width: 40vw;
+  /*width: 40vw;*/
   height: 90vh;
   padding: 4px;
   border-color: gray;

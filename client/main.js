@@ -1067,7 +1067,8 @@ var initTerminal = function() {
   term.fit = new FitAddon.FitAddon();
   term.loadAddon(term.fit);
   term.open(document.getElementById("terminal"));
-  term.fit.fit();
+  for (var i = 0; i < 50; i++)
+    term.fit.fit();
   term.prompt = function() {
     console.log("prompt");
   }
@@ -1088,7 +1089,8 @@ var initTerminal = function() {
       clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function() {
       console.log("resize");
-      term.fit.fit();
+      for (var i = 0; i < 50; i++)
+        term.fit.fit();
       resizeTimer = null;
     }, 50);
   });
@@ -1102,7 +1104,8 @@ var switchlayout = function() {
   var i = layouts.indexOf(cur);
   var next = (i + 1) % layouts.length;
   maincontent.setAttribute("layout", layouts[next]);
-  term.fit.fit();
+  for (var i = 0; i < 50; i++)
+    term.fit.fit();
 }
 
 var addClickListenerById = function(id, f) {

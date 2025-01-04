@@ -195,6 +195,12 @@ body {
   margin-left: 20px;
 }
 
+#runstatus {
+  margin-left: 12px;
+  font-style: italic;
+  color: gray;
+}
+
 #terminalcontainer {
   display: flex;
   flex: 1 1;

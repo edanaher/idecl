@@ -77,7 +77,7 @@ local function runprogram(json)
   end
   if newval > MAX_CONCURRENT_COMPILES then
     -- TODO: Actually queue.
-    local bytes, err = wb:send_text(cjson.encode({op = json.op, output = "waiting in queue..."}))
+    local bytes, err = wb:send_text(cjson.encode({op = json.op, status = "waiting in queue..."}))
     while newval > MAX_CONCURRENT_COMPILES do
       state:incr("compiling", -1)
       ngx.sleep(0.5 + math.random())
@@ -89,6 +89,7 @@ local function runprogram(json)
     args.test = 1
   end
   ngx.req.set_header("Content-Type", "application/json")
+  local bytes, err = wb:send_text(cjson.encode({op = json.op, status = "compiling..."}))
   local compile = ngx.location.capture("/projects/" .. tostring(json.pid) .. "/compile", {
     args=args,
     body=cjson.encode(json.files),
@@ -100,14 +101,14 @@ local function runprogram(json)
 
   local compile_result = cjson.decode(compile.body)
   if compile_result.error then
-    local bytes, err = wb:send_text(cjson.encode({op = json.op, output = compile_result.error, complete = true}))
+    local bytes, err = wb:send_text(cjson.encode({op = json.op, output = compile_result.error, complete = true, status="error compiling"}))
     if not bytes then
       ngx.log(ngx.ERR, "failed to send text: ", err)
       return ngx.exit(444)
     end
     return ngx.exit(444)
   end
-  local bytes, err = wb:send_text(cjson.encode({output="compiled\n", result=compile_result}))
+  local bytes, err = wb:send_text(cjson.encode({status="running"}))
   local command = {ngx.var.docker_bin, "run", "--rm", "--name", compile_result.container, "-m128m", "--ulimit", "cpu=10", "-v", compile_result.path .. ":/app", "--net", "none", "--", "idecl-java-runner", "/bin/sh", "-c", "java -cp /app Main <> /app/stdin.fifo"}
   if json.test then
     command = {ngx.var.docker_bin, "run", "--rm", "--name", compile_result.container, "-m128m", "--ulimit", "cpu=10", "-v", compile_result.path .. ":/app", "-v", ngx.var.junit_path .. ":/junit", "-v", ngx.var.hamcrest_path .. ":/hamcrest","--net", "none", "idecl-java-runner", "java", "-cp", "/junit/junit-4.13.2.jar:/hamcrest/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"}
@@ -133,7 +134,7 @@ local function runprogram(json)
     -- In case of badness, don't spam the client too hard.
     ngx.sleep(0.1)
   end
-  wb:send_text(cjson.encode({output = output, complete = true}))
+  wb:send_text(cjson.encode({output = output, complete = true, status="complete"}))
 end
 
 

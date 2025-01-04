@@ -727,6 +727,8 @@ var runcommand = function(test) {
       container = data.container;
     if (data.output)
       term.write(data.output);
+    if (data.status)
+      document.getElementById("runstatus").innerText = data.status;
     if (data.complete) {
       websocket = null;
       term.options.cursorStyle = "underline";
@@ -738,7 +740,7 @@ var runcommand = function(test) {
 
   term.options.cursorStyle = "block";
   term.options.cursorInactiveStyle = "bar";
-  //document.getElementById("sendinput").disabled = false;
+  document.getElementById("runstatus").innerText = "starting..."
 }
 
 var runcode = function() {
@@ -1166,5 +1168,5 @@ window.onload = function() {
   addClickListenerById("historyback", function() { historymove(-1); });
   addClickListenerById("historyforward", function() { historymove(1); });
   addClickListenerById("switchlayout", switchlayout);
-  addClickListenerById("clearterminal", function() { term.clear() });
+  addClickListenerById("clearterminal", function() { term.clear(); document.getElementById("runstatus").innerText = ""; });
 }

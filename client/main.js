@@ -688,7 +688,6 @@ var loadFromServer = function(pid) {
     }
 
     saveLS("files", pid, JSON.stringify(filenames));
-    saveLS("lastfile", pid, serverFiles[0].fileid); // TODO: load from history
 
     if (serverResponse.parent) {
       saveLS("parent", pid, serverResponse.parent);

@@ -106,7 +106,7 @@ rec {
       forceSSL = usessl;
       locations."/websocket" = {
         extraConfig = ''
-          lua_code_cache off;
+          ${if dev then "lua_code_cache off;" else ""}
           lua_socket_log_errors off;
           lua_check_client_abort on;
           set $docker_bin "${pkgs.docker}/bin/docker";

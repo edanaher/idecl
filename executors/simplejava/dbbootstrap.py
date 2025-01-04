@@ -18,3 +18,7 @@ with engine.connect() as conn:
         uids = conn.execute(text("SELECT id FROM users")).all()
         conn.execute(text("INSERT INTO users_roles (user_id, role_id) VALUES (:uid, (SELECT id FROM roles WHERE name='teacher'))"), [{"uid": u.id} for u in uids])
         conn.commit()
+
+with engine.connect() as conn:
+    conn.execute(text("INSERT INTO tags (id, name) VALUES (2, :name) ON CONFLICT DO NOTHING"), [{"name": "submitted"}])
+    conn.commit()

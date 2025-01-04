@@ -904,6 +904,7 @@ var cloneProjectInit = function(assignment) {
   xhr.send(formdata);
 }
 
+// TODO: dedupe these
 var publish = function() {
   var publish_button = this;
   if (this.hasAttribute("published")) {
@@ -926,6 +927,32 @@ var publish = function() {
       publish_button.setAttribute("published", "");
     };
     this.innerText = "publishing..."
+    this.disabled = true;
+    xhr.send();
+  }
+}
+var submit = function() {
+  var submit_button = this;
+  if (this.hasAttribute("submitted")) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("DELETE", "/projects/" + projectId() + "/tags/2", true);
+    xhr.onload = function() {
+      submit_button.disabled = false;
+      submit_button.innerText = "submit project";
+      submit_button.removeAttribute("submitted");
+    };
+    this.innerText = "unsubmitting..."
+    this.disabled = true;
+    xhr.send();
+  } else {
+    var xhr = new XMLHttpRequest();
+    xhr.open("PUT", "/projects/" + projectId() + "/tags/2", true);
+    xhr.onload = function() {
+      submit_button.disabled = false;
+      submit_button.innerText = "unsubmit project";
+      submit_button.setAttribute("submitted", "");
+    };
+    this.innerText = "submitting..."
     this.disabled = true;
     xhr.send();
   }
@@ -1123,6 +1150,7 @@ window.onload = function() {
   addClickListenerById("cloneproject", function() { cloneProjectInit(false); });
   addClickListenerById("cloneassignment", function() { cloneProjectInit(true) });
   addClickListenerById("publish", publish);
+  addClickListenerById("submit", submit);
   addClickListenerById("addfile", addFile);
   addClickListenerById("removefile", removeFile);
   addClickListenerById("savefiles", saveToServer);

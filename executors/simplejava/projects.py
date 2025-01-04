@@ -78,7 +78,19 @@ def newproject(classroom):
 def project(pid):
     # TODO: check permissions on classroom
     with engine.connect() as conn:
-        row  = conn.execute(text("SELECT projects.name, projects.cloned_as_assignment, classrooms.name AS classroom, classrooms.id AS classroom_id, tags.id AS tag_id FROM projects JOIN classrooms ON classrooms.id=projects.classroom_id LEFT JOIN projects_tags ON projects_tags.project_id=projects.id LEFT JOIN tags ON projects_tags.tag_id=tags.id WHERE projects.id=:pid AND (tags.name='published' OR tags.name IS NULL)"), [{"pid": pid}]).first()
+        row  = conn.execute(text("""
+            SELECT projects.name, projects.cloned_as_assignment,
+                classrooms.name AS classroom, classrooms.id AS classroom_id,
+                tags.id AS tag_id,
+                submitted.id AS submitted_id
+            FROM projects
+            JOIN classrooms ON classrooms.id=projects.classroom_id
+            LEFT JOIN projects_tags ON projects_tags.project_id=projects.id
+            LEFT JOIN tags ON projects_tags.tag_id=tags.id AND tags.name='published'
+            LEFT JOIN projects_tags AS submitted_pt ON submitted_pt.project_id=projects.id
+            LEFT JOIN tags AS submitted ON submitted_pt.tag_id=submitted.id AND submitted.name = 'submitted'
+            WHERE projects.id=:pid AND (tags.name='published' OR tags.name IS NULL)
+        """), [{"pid": pid}]).first()
     if row == None:
         return redirect(f"/classrooms/{classroom}/projects")
     return render_template("editor.html",
@@ -89,6 +101,7 @@ def project(pid):
             canclone=has_permission(P.ADDPROJECT, row.classroom_id) and not row.cloned_as_assignment,
             canpublish=has_permission(P.ADDPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,
             canunpublish=has_permission(P.DELETEPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,
+            cansubmit=row.cloned_as_assignment, submitted=not not row.submitted_id,
             published=not not row.tag_id )
 
 @app.route("/projects/<pid>/assignment", methods = ["POST"])

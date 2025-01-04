@@ -23,6 +23,9 @@
       {% if canpublish and canunpublish %}
       <button id="publish" {{"published" if published else ""}}>{{ "unpublish project" if published else "publish project" }}</button>
       {% endif %}
+      {% if cansubmit %}
+      <button id="submit" {{"submitted" if submitted else ""}}>{{ "unsubmit project" if submitted else "submit project" }}</button>
+      {% endif %}
       <div id="loggedinas">{{ current_user.email }}
         {% if current_user.id != current_user.euid %}
         viewing as {{ current_user.eemail }}

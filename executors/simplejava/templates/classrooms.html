@@ -5,27 +5,29 @@
       var selfview = document.getElementById("view-as-self");
       if (selfview)
         selfview.addEventListener("click", function() {
-          document.cookie = "sudo=; path=/; expoires=Thu, 01 Jan 1970 00:00:01 GMT";
+          document.cookie = "sudo=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
           window.location.replace("/");
         });
-      document.getElementById("addclassroom").addEventListener("click", function() {
-        var name = prompt("What is the new classroom called?");
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", "/classrooms", true);
-        xhr.onload = function() {
-          var a = document.createElement("a");
-          a.href = "/classrooms/" + xhr.response + "/projects";
-          a.innerText = name;
-          var li = document.createElement("li");
-          li.appendChild(a);
-          var ul = document.getElementById("classroomlist");
-          ul.appendChild(li);
-        };
-        var formdata = new FormData();
-        formdata.append("name", name);
-        xhr.send(formdata);
+      var addclassroom = document.getElementById("addclassroom");
+      if (addclassroom)
+        addclassroom.addEventListener("click", function() {
+          var name = prompt("What is the new classroom called?");
+          var xhr = new XMLHttpRequest();
+          xhr.open("POST", "/classrooms", true);
+          xhr.onload = function() {
+            var a = document.createElement("a");
+            a.href = "/classrooms/" + xhr.response + "/projects";
+            a.innerText = name;
+            var li = document.createElement("li");
+            li.appendChild(a);
+            var ul = document.getElementById("classroomlist");
+            ul.appendChild(li);
+          };
+          var formdata = new FormData();
+          formdata.append("name", name);
+          xhr.send(formdata);
 
-      })
+        })
     }
   </script>
   <div id="logo" style="display:inline-block; font-size:larger; font-style: italic; font-color: #330000;"><a href="/">idecl</a></div>

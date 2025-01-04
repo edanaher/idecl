@@ -1144,6 +1144,10 @@ window.onload = function() {
   addClickListenerById("run", runcode);
   addClickListenerById("runtests", runtests);
   //document.getElementById("sendinput").addEventListener("click", sendinput);
+  addClickListenerById("view-as-self", function() {
+      document.cookie = "sudo=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+      window.location.replace("/");
+  });
   editor.on("blur", saveFile);
   editor.on("change", markDirty);
   addClickListenerById("cloneproject", function() { cloneProjectInit(false); });

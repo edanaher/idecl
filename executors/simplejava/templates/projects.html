@@ -10,12 +10,6 @@
         var xhr = new XMLHttpRequest();
         xhr.open("DELETE", "/projects/" + id, true);
         xhr.onload = function() {
-        var selfview = document.getElementById("view-as-self");
-        if (selfview)
-          selfview.addEventListener("click", function() {
-            document.cookie = "sudo=; path=/; expoires=Thu, 01 Jan 1970 00:00:01 GMT";
-            window.location.replace("/");
-          });
           var row = deleteButton.parentNode;
           row.parentNode.removeChild(row);
           var files = JSON.parse(localStorage.getItem("files|" + id));
@@ -32,6 +26,12 @@
       }
     }
     window.onload = function() {
+      var selfview = document.getElementById("view-as-self");
+      if (selfview)
+        selfview.addEventListener("click", function() {
+          document.cookie = "sudo=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+          window.location.replace("/");
+      });
       var deletes = document.getElementsByClassName("delete-project");
       for (var i = 0; i < deletes.length; i++) {
         deletes[i].addEventListener("click", deleteProject);

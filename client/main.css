@@ -1,7 +1,7 @@
 html {
   height: 100%;
 }
-body {
+body.doflex {
   display: flex;
   flex-direction: column;
   height: 99%;

@@ -1047,13 +1047,6 @@ var initAce = function() {
   sessions = {}
 }
 
-var resizeTerminal = function() {
-  term.resize(term.cols, 0);
-  for (var i = 0; i < 50; i++)
-    term.fit.fit();
-  term.resize(term.cols, 0);
-}
-
 var initTerminal = function() {
   term = new Terminal({
     convertEol: true,
@@ -1074,7 +1067,8 @@ var initTerminal = function() {
   term.fit = new FitAddon.FitAddon();
   term.loadAddon(term.fit);
   term.open(document.getElementById("terminal"));
-  resizeTerminal();
+  for (var i = 0; i < 50; i++)
+    term.fit.fit();
   term.prompt = function() {
     console.log("prompt");
   }
@@ -1094,7 +1088,9 @@ var initTerminal = function() {
     if (resizeTimer)
       clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function() {
-      resizeTerminal()
+      console.log("resize");
+      for (var i = 0; i < 50; i++)
+        term.fit.fit();
       resizeTimer = null;
     }, 50);
   });
@@ -1108,7 +1104,8 @@ var switchlayout = function() {
   var i = layouts.indexOf(cur);
   var next = (i + 1) % layouts.length;
   maincontent.setAttribute("layout", layouts[next]);
-  resizeTerminal();
+  for (var i = 0; i < 50; i++)
+    term.fit.fit();
 }
 
 var addClickListenerById = function(id, f) {

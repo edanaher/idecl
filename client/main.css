@@ -202,7 +202,7 @@ body {
 #terminal {
   display: relative;
   width: 100%;
-  max-height: 90vh;
+  /*height: 80vh;*/
   padding: 4px;
   border-color: gray;
   border-width: 1px;

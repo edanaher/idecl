@@ -110,12 +110,14 @@ local function runprogram(json)
   end
 
   if not ready then
-    local bytes, err = wb:send_text(cjson.encode({op = json.op, status = "waiting in queue..."}))
     local isnext, err = state:add("nextcompile", compileid)
     ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] checking for nextcompile")
+    local position, err
     if not isnext then
       ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] is going into the queue")
-      state:rpush("compilequeue", compileid)
+      position, err = state:rpush("compilequeue", compileid)
+      position = position + 1
+      local bytes, err = wb:send_text(cjson.encode({op = json.op, status = "#" .. tostring(position) .. " in queue..."}))
     end
     local retries = 0
     local lastnext = -1
@@ -131,6 +133,8 @@ local function runprogram(json)
       if nextcompile ~= lastnext then
         lastnext = nextcompile
         retries = 0
+        position = position - 1
+        local bytes, err = wb:send_text(cjson.encode({op = json.op, status = "#" .. tostring(position) .. " in queue..."}))
       end
       if retries > 35 then
         lock:lock("compile")
@@ -145,6 +149,7 @@ local function runprogram(json)
       end
     end
     retries = 0
+    local bytes, err = wb:send_text(cjson.encode({op = json.op, status = "#1 in queue..."}))
     while not ready do
       ngx.sleep(0.5)
       for i=1, MAX_CONCURRENT_COMPILES do

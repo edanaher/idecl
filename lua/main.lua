@@ -2,14 +2,21 @@ local server = require "resty.websocket.server"
 local ngx_pipe = require "ngx.pipe"
 local cjson = require "cjson"
 local MAX_CONCURRENT_COMPILES = 2
+local resty_lock = require "resty.lock"
 
 local state = ngx.shared.state
-if state:get("compiling") == nil then
-  state:set("compiling", 0)
+-- Uses nowcompiling:i, compilequeue as list keys
+-- nextid for next id, temporarily(?)
+-- nextcompile for the next job to compile
+if false then
+  state:delete("nextcompile")
+  for i=1, MAX_CONCURRENT_COMPILES do
+    state:delete("nowcompiling:" .. tostring(i))
+  end
+  state:delete("compilequeue")
 end
-if state:get("runqueue") == nil then
-  state:set("runqueue", {})
-end
+
+
 local wb, err = server:new{
   timeout = 5000,
   max_payload_len = 65535
@@ -70,20 +77,71 @@ end
 
 local function runprogram(json)
   ngx.req.read_body()
-  local newval, err = state:incr("compiling", 1)
-  if err then
-    ngx.log(ngx.ERR, "failed incr compiling", err)
+  local lock, err = resty_lock:new("state", {exptime = 10, timeout = 5})
+  if not lock then
+    ngx.log(ngx.ERR, "failed to create lock: ", err)
     return ngx.exit(444)
   end
-  if newval > MAX_CONCURRENT_COMPILES then
-    -- TODO: Actually queue.
-    local bytes, err = wb:send_text(cjson.encode({op = json.op, status = "waiting in queue..."}))
-    while newval > MAX_CONCURRENT_COMPILES do
-      state:incr("compiling", -1)
-      ngx.sleep(0.5 + math.random())
-      newval = state:incr("compiling", 1)
+  local compileid = state:incr("nextid", 1, 0)
+  ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] initializing")
+  local elapsed, err = lock:lock("compile")
+  if not elapsed then
+    ngx.log(ngx.ERR, "failed to lock lock: ", err)
+    return ngx.exit(444)
+  end
+  local ready = false
+  -- if there's a nextcompile, we know there's a queue.
+  if not state:get("nextcompile") then
+      ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] checking for a slot")
+    -- if there's no nextcompile, try to grab a slot.
+    for i=1, MAX_CONCURRENT_COMPILES do
+      local success, err = state:add("nowcompiling:" .. tostring(i), compileid)
+      if success then
+        ready = i
+        ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] taking slot " .. tostring(ready))
+        break
+      end
     end
   end
+  local ok, err = lock:unlock("compile")
+  if not ok then
+    ngx.log(ngx.ERR, "failed to unlock lock: ", err)
+    return ngx.exit(444)
+  end
+
+  if not ready then
+    local bytes, err = wb:send_text(cjson.encode({op = json.op, status = "waiting in queue..."}))
+    local isnext, err = state:add("nextcompile", compileid)
+    ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] checking queue")
+    if not isnext then
+      ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] is immediately next")
+      state:rpush("compilequeue", compileid)
+    end
+    while not isnext do
+      ngx.sleep(1)
+      if state:get("nextcompile") == compileid then
+        isnext = true
+        ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] is finally next")
+      end
+    end
+    while not ready do
+      ngx.sleep(0.5)
+      for i=1, MAX_CONCURRENT_COMPILES do
+        local success, err = state:add("nowcompiling:" .. tostring(i), compileid)
+        if success then
+          ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] is finally ready")
+          ready = i
+          break
+        end
+      end
+    end
+    lock:lock("compile")
+    local nextinqueue, err = state:lpop("compilequeue")
+    state:set("nextcompile", nextinqueue)
+    ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] setting " .. tostring(nextinqueue) .. " as nextcompile")
+    lock:unlock("compile")
+  end
+
   local args = {}
   if json.test then
     args.test = 1
@@ -96,7 +154,10 @@ local function runprogram(json)
     method=ngx.HTTP_POST,
     headers={["Content-Type"]="application/json"}
   })
-  local newval, err = state:incr("compiling", -1)
+  ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] releasing slot " .. tostring(ready))
+  lock:lock("compile")
+  state:delete("nowcompiling:" .. tostring(ready))
+  state:set("nextcompile", nextinqueue)
 
 
   local compile_result = cjson.decode(compile.body)

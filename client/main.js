@@ -1091,6 +1091,7 @@ var initTerminal = function() {
       clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function() {
       console.log("resize");
+      term.resize(term.cols, 10)
       for (var i = 0; i < 50; i++)
         term.fit.fit();
       resizeTimer = null;

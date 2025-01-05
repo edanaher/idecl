@@ -112,18 +112,39 @@ local function runprogram(json)
   if not ready then
     local bytes, err = wb:send_text(cjson.encode({op = json.op, status = "waiting in queue..."}))
     local isnext, err = state:add("nextcompile", compileid)
-    ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] checking queue")
+    ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] checking for nextcompile")
     if not isnext then
-      ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] is immediately next")
+      ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] is going into the queue")
       state:rpush("compilequeue", compileid)
     end
+    local retries = 0
+    local lastnext = -1
     while not isnext do
       ngx.sleep(1)
-      if state:get("nextcompile") == compileid then
+      local nextcompile = state:get("nextcompile")
+      if nextcompile  == compileid then
         isnext = true
         ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] is finally next")
       end
+      -- After 35 seconds, with no nextcompile update, update it
+      retries = retries + 1
+      if nextcompile ~= lastnext then
+        lastnext = nextcompile
+        retries = 0
+      end
+      if retries > 35 then
+        lock:lock("compile")
+        -- Make sure no one else updated it already
+        local updatednextcompile = state:get("nextcompile")
+        if updatednextcompile == lastnext then
+          local nextinqueue, err = state:lpop("compilequeue")
+          ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] timeout overriding nextcompile from " .. tostring(lastnext) .. " to " .. tostring(nextinqueue))
+          state:set("nextcompile", nextinqueue)
+        end
+        lock:unlock("compile")
+      end
     end
+    retries = 0
     while not ready do
       ngx.sleep(0.5)
       for i=1, MAX_CONCURRENT_COMPILES do
@@ -132,6 +153,16 @@ local function runprogram(json)
           ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] is finally ready")
           ready = i
           break
+        end
+      end
+      -- After 30 seconds, nuke the queue and try again
+      retries = retries + 1
+      if retries > 60 then
+        ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] timeout; nuking nowcompiling")
+        for i=1, MAX_CONCURRENT_COMPILES do
+          local stale = state:get("nowcompiling:" .. tostring(i))
+          ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] removing " .. tostring(stale) .. " from slot " .. tostring(i))
+          state:delete("nowcompiling:" .. tostring(i))
         end
       end
     end
@@ -155,9 +186,7 @@ local function runprogram(json)
     headers={["Content-Type"]="application/json"}
   })
   ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] releasing slot " .. tostring(ready))
-  lock:lock("compile")
   state:delete("nowcompiling:" .. tostring(ready))
-  state:set("nextcompile", nextinqueue)
 
 
   local compile_result = cjson.decode(compile.body)

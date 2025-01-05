@@ -1053,8 +1053,8 @@ var initTerminal = function() {
   term = new Terminal({
     convertEol: true,
     cursorBlink: false,
-    cursorStyle: "block",
-    cursorInactiveStyle: "bar",
+    cursorStyle: "underline",
+    cursorInactiveStyle: "none",
     disableStdin: false,
     theme: {
       foreground: "black",

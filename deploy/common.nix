@@ -80,6 +80,37 @@ rec {
       cp $src $out/hamcrest-core-${version}.jar
     '';
   };
+  dompurify = pkgs.stdenv.mkDerivation rec {
+    version = "3.2.3";
+    name = "dompurify-${version}";
+
+    src = pkgs.fetchzip {
+      url = "https://registry.npmjs.org/dompurify/-/dompurify-${version}.tgz";
+      hash = "sha256-4D2+gSIRYE4KxLCk26DQYN2mCBG/K5ekirjY4IyIJ28=";
+    };
+
+    buildPhase = "true";
+    installPhase = ''
+      mkdir -p $out
+      cp $src/dist/purify.min.js $out
+    '';
+  };
+  marked = pkgs.stdenv.mkDerivation rec {
+    version = "15.0.5";
+    name = "marked-${version}";
+
+    src = pkgs.fetchzip {
+      url = "https://registry.npmjs.org/marked/-/marked-${version}.tgz";
+      hash = "sha256-gjYSI2yr+KGQgEBy8mfDBi2vRp8CDqyGvVa/0QNVWMw=";
+    };
+
+    buildPhase = "true";
+    installPhase = ''
+      mkdir -p $out
+      cp $src/marked.min.js $out
+    '';
+  };
+
   nginx-config = {
     enable = true;
     package = pkgs.openresty;
@@ -90,6 +121,12 @@ rec {
       default = true;
       locations."/static/ace/" = {
         alias = "${ace}/";
+      };
+      locations."/static/dompurify/" = {
+        alias = "${dompurify}/";
+      };
+      locations."/static/marked/" = {
+        alias = "${marked}/";
       };
       locations."/static/" = {
         alias = "${idecl-src}/client/";

@@ -785,6 +785,10 @@ var sendinputfromterminal = (function() {
   };
 })();
 
+var rendermarkdown = function() {
+  document.getElementById("markdownoutput").innerHTML = DOMPurify.sanitize(marked.parse("# Markdown\nThis is neat.\n- *Whoo*!"));
+}
+
 
 var bootstrapStorage = function() {
     localStorage.setItem("version", 0);
@@ -1150,6 +1154,7 @@ window.onload = function() {
   }
   addClickListenerById("run", runcode);
   addClickListenerById("runtests", runtests);
+  addClickListenerById("rendermarkdown", rendermarkdown);
   //document.getElementById("sendinput").addEventListener("click", sendinput);
   addClickListenerById("view-as-self", function() {
       document.cookie = "sudo=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";

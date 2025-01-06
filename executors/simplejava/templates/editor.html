@@ -5,6 +5,8 @@
     <link rel="stylesheet" href="/static/main.css"></script>
     <link rel="stylesheet" href="/static/xterm/xterm.css"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.36.3/ace.min.js"></script>
+    <script src="/static/dompurify/purify.min.js"></script>
+    <script src="/static/marked/marked.min.js"></script>
     <script src="/static/xterm/xterm.js"></script>
     <script src="/static/xterm/addon-fit.js"></script>
     <script src="/static/main.js"></script>
@@ -54,11 +56,15 @@
         <div>
           <button type="button" id="run">run</button>
           <button type="button" id="runtests">run tests</button>
+          <button type="button" id="rendermarkdown">render markdown</button>
         </div>
         <div id="code">Code here</div>
       </div>
       <div id="rightcontent">
         <div>Program output:<button id="clearterminal">clear</button><span id="runstatus"></span></div>
+        <div id="markdowncontainer">
+          <div id="markdownoutput"></div>
+        </div>
         <div id="terminalcontainer">
           <div id="terminal"></div>
         </div>

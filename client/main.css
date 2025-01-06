@@ -204,11 +204,19 @@ body.doflex {
 #markdowncontainer {
   display: flex;
   flex: 1 1;
+  max-height: 90vh;
+  overflow: scroll;
 
   border-color: gray;
   border-width: 1px;
   border-style: solid;
+  padding: 4px;
 }
+
+#markdownoutput {
+  height: 0; /* it'll overflow fine into the markdowncontainer */
+}
+
 
 #terminalcontainer {
   display: flex;

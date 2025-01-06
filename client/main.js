@@ -786,7 +786,7 @@ var sendinputfromterminal = (function() {
 })();
 
 var rendermarkdown = function() {
-  document.getElementById("markdownoutput").innerHTML = DOMPurify.sanitize(marked.parse("# Markdown\nThis is neat.\n- *Whoo*!"));
+  document.getElementById("markdownoutput").innerHTML = DOMPurify.sanitize(marked.parse(editor.getValue()));
 }
 
 

@@ -213,6 +213,9 @@ body.doflex {
   padding: 4px;
 }
 
+#markdowncontainer.hidden { display: none; }
+#terminalcontainer.hidden { display: none; }
+
 #markdownoutput {
   height: 0; /* it'll overflow fine into the markdowncontainer */
 }

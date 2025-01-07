@@ -494,6 +494,18 @@ var fileForRun = function(projectid, fileid) {
   }
 }
 
+var setOutputType = function() {
+  var filenamediv = document.querySelector(".filename.open");
+  if (filenamediv.innerText.endsWith(".md")) {
+    document.getElementById("terminalcontainer").classList.add("hidden")
+    document.getElementById("markdowncontainer").classList.remove("hidden")
+    rendermarkdown();
+  } else {
+    document.getElementById("terminalcontainer").classList.remove("hidden")
+    document.getElementById("markdowncontainer").classList.add("hidden")
+  }
+}
+
 var loadFile = function(fileid, contents, savehistoryfile) {
   var filenamediv;
   if (typeof(fileid) == "number") {
@@ -534,6 +546,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
     else
       editor.setReadOnly(false);
   }
+  setOutputType();
 }
 
 var addFile = function() {
@@ -1046,6 +1059,7 @@ var initFiles = function() {
   filenames = document.getElementsByClassName("filename");
   for (var i = 0; i < filenames.length; i++)
     filenames[i].addEventListener("click", loadFile);
+  setOutputType();
 }
 
 var initAce = function() {

@@ -62,7 +62,7 @@ Milestone 6: Full classroom
 - [ ] UI to show student status, easily look at code
 - [X] Hide tests or other files from students
 - [ ] Hide implementation of specific methods from students
-- [ ] Assignment (markdown) within the platform
+- [X] Assignment (markdown) within the platform
 - [ ] Ability to pull in libraries
 - [ ] Dark mode
 - [X] View as student (sudo? Associated student?)

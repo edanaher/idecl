@@ -840,8 +840,30 @@ var rendermarkdown = (function(delay) {
 
 var bootstrapStorage = function() {
     localStorage.setItem("version", 0);
-    saveLSc("files", JSON.stringify(["Main.java", "Num.java", "TestNum.java"]));
-    localStorage.setItem("lastfile|" + projectId(), "Main.java");
+    saveLSc("files", JSON.stringify(["instructions.md", "Main.java", "Num.java", "TestNum.java", "template/Num.java"]));
+    localStorage.setItem("lastfile|" + projectId(), "instructions.md");
+    localStorage.setItem(localFileStore("instructions.md"), `# Numbers
+
+This is a sample project to get you started.  This file is written in markdown, a simple formatting language.  You can do **bold**, _italic_, and other simple formatting.
+
+This document (or any other file ending in .md) will be shown to the students only in rendered form (visible to the right).
+
+Any files starting in Test, ending in Test.java or Tests.java, or in a tests/ directory will be hidden from the students and run as tests.
+
+Any files in the template/ directory will be copied to the top-level, overwriting any files in this project.
+
+And finally, any other files will be read-only for thet students.
+
+For example, in this sample project, Main.java will be provided to the students as read-only, while Num.java will be overwritten by template/Num.java and the students will be able to edit it.  They will not be able to see TestNum.java, but the "run tests" button will run the tests in that file.  This file will be visible to the students, but only rendered, not as the underlying markdown.
+
+### Instructions
+
+Add a single method \`add\` to the \`Num\` class that takes two integers as arguments and returns their sum.
+
+### Sample input/output
+
+\`add(5, 8)\`should return 13
+`);
     localStorage.setItem(localFileStore("Main.java"), `import java.util.Scanner;
 
 public class Main {
@@ -861,6 +883,9 @@ public class Main {
   public static int add(int a, int b) {
     return a + b;
   }
+}`);
+  localStorage.setItem(localFileStore("template/Num.java"), `public class Num {
+  // fill in your code here
 }`);
   localStorage.setItem(localFileStore("TestNum.java"), `import org.junit.*;
 import static org.junit.Assert.*;

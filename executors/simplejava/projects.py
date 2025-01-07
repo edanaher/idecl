@@ -115,8 +115,8 @@ def project(pid):
 @requires_permission(P.CLONEPROJECTASASSIGNMENT, "project")
 def clone_project_as_assignment(pid):
     with engine.connect() as conn:
-        alreadcloned = conn.execute(text("SELECT * FROM projects WHERE owner=:uid AND parent_id=:pid AND cloned_as_assignment=:t"), [{"uid": current_user.euid, "pid": int(pid), "t": True}]).first()
-        if alreadcloned:
+        alreadycloned = conn.execute(text("SELECT * FROM projects WHERE owner=:uid AND parent_id=:pid AND cloned_as_assignment=:t"), [{"uid": current_user.euid, "pid": int(pid), "t": True}]).first()
+        if alreadycloned:
             abort(400, "User alread cloned project")
 
         projectrow = conn.execute(text("SELECT name, classroom_id FROM projects WHERE id=:pid"), [{"pid": int(pid)}]).first()

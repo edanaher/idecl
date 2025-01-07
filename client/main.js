@@ -497,18 +497,29 @@ var fileForRun = function(projectid, fileid) {
   }
 }
 
-var setOutputType = function() {
+var setOutputType = function(readonly) {
   var filenamediv = document.querySelector(".filename.open");
-  if (filenamediv.innerText.endsWith(".md")) {
+  var markdown = filenamediv.innerText.endsWith(".md");
+  var leftmarkdown = readonly && markdown;
+  var rightmarkdown = !readonly && markdown;
+  markdownvisible = leftmarkdown ? "instructions" : rightmarkdown ? "markdownoutput" : null
+  if (leftmarkdown) {
+    document.getElementById("code").classList.add("hidden")
+    document.getElementById("instructionscontainer").classList.remove("hidden")
+  } else {
+    document.getElementById("code").classList.remove("hidden")
+    document.getElementById("instructionscontainer").classList.add("hidden")
+  }
+  if (rightmarkdown) {
     document.getElementById("terminalcontainer").classList.add("hidden")
     document.getElementById("markdowncontainer").classList.remove("hidden")
-    markdownvisible = true;
     rendermarkdown();
   } else {
     document.getElementById("terminalcontainer").classList.remove("hidden")
     document.getElementById("markdowncontainer").classList.add("hidden")
-    markdownvisible = false;
   }
+  if (markdownvisible)
+    rendermarkdown();
 }
 
 var loadFile = function(fileid, contents, savehistoryfile) {
@@ -551,7 +562,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
     else
       editor.setReadOnly(false);
   }
-  setOutputType();
+  setOutputType(attrs && attrs.indexOf("r") != -1);
 }
 
 var addFile = function() {
@@ -803,18 +814,26 @@ var sendinputfromterminal = (function() {
   };
 })();
 
-var rendermarkdown = (function() {
+var rendermarkdown = (function(delay) {
   var timer;
+  var lastrender = 0;
   return function() {
-    var elem = document.getElementById("markdownoutput");
     if (!markdownvisible)
       return;
+    if (timer)
+      return;
     var render = function() {
+      var elem = document.getElementById(markdownvisible)
       elem.innerHTML = DOMPurify.sanitize(marked.parse(editor.getValue()));
       timer = null;
     }
-    if (!timer)
+    var now = Date.now();
+    if (now - lastrender > 300) {
+      render();
+      lastrender = now;
+    } else {
       timer = setTimeout(render, 300);
+    }
   }
 })();
 
@@ -1075,7 +1094,7 @@ var initFiles = function() {
   filenames = document.getElementsByClassName("filename");
   for (var i = 0; i < filenames.length; i++)
     filenames[i].addEventListener("click", loadFile);
-  setOutputType();
+  setOutputType(attrs && attrs.indexOf("r") != -1);
 }
 
 var initAce = function() {

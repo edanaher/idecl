@@ -1,4 +1,5 @@
 var baseURL = function() { return (document.URL + "/").replace(/\/\/$/, "/"); }
+var markdownvisible;
 var projectId = function() {
   p = document.URL.match(/projects\/([0-9]*)/)
   return p && parseInt(p[1]);
@@ -431,6 +432,8 @@ var historymove = function(adjust) {
 
 var markDirty = function() {
   document.getElementById("savefiles").classList.add("dirty");
+  if (markdownvisible)
+    rendermarkdown();
 }
 
 var renameFile = function(elem) {
@@ -499,10 +502,12 @@ var setOutputType = function() {
   if (filenamediv.innerText.endsWith(".md")) {
     document.getElementById("terminalcontainer").classList.add("hidden")
     document.getElementById("markdowncontainer").classList.remove("hidden")
+    markdownvisible = true;
     rendermarkdown();
   } else {
     document.getElementById("terminalcontainer").classList.remove("hidden")
     document.getElementById("markdowncontainer").classList.add("hidden")
+    markdownvisible = false;
   }
 }
 
@@ -798,9 +803,20 @@ var sendinputfromterminal = (function() {
   };
 })();
 
-var rendermarkdown = function() {
-  document.getElementById("markdownoutput").innerHTML = DOMPurify.sanitize(marked.parse(editor.getValue()));
-}
+var rendermarkdown = (function() {
+  var timer;
+  return function() {
+    var elem = document.getElementById("markdownoutput");
+    if (!markdownvisible)
+      return;
+    var render = function() {
+      elem.innerHTML = DOMPurify.sanitize(marked.parse(editor.getValue()));
+      timer = null;
+    }
+    if (!timer)
+      timer = setTimeout(render, 300);
+  }
+})();
 
 
 var bootstrapStorage = function() {
@@ -1168,7 +1184,6 @@ window.onload = function() {
   }
   addClickListenerById("run", runcode);
   addClickListenerById("runtests", runtests);
-  addClickListenerById("rendermarkdown", rendermarkdown);
   //document.getElementById("sendinput").addEventListener("click", sendinput);
   addClickListenerById("view-as-self", function() {
       document.cookie = "sudo=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";

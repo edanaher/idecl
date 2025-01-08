@@ -12,6 +12,8 @@
       if (addclassroom)
         addclassroom.addEventListener("click", function() {
           var name = prompt("What is the new classroom called?");
+          if (!name)
+            return;
           var xhr = new XMLHttpRequest();
           xhr.open("POST", "/classrooms", true);
           xhr.onload = function() {

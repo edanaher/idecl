@@ -39,6 +39,8 @@
       {% if canaddproject %}
       document.getElementById("addproject").addEventListener("click", function() {
         var name = prompt("What is the new project called?");
+        if (!name)
+          return;
         var xhr = new XMLHttpRequest();
         xhr.open("POST", document.location, true);
         xhr.onload = function() {

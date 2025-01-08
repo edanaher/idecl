@@ -183,8 +183,11 @@ body.doflex {
   border-color: gray;
   border-width: 1px;
   border-style: solid;
+  overflow: scroll;
 }
-
+#instructions {
+  height: 0;
+}
 #instructionscontainer.hidden { display: none; }
 #code.hidden { display: none; }
 

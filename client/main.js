@@ -429,9 +429,11 @@ var historymove = function(adjust) {
   displayeditstate();
 }
 
+var promptForSave = function(e) { e.preventDefault() }
 
 var markDirty = function() {
   document.getElementById("savefiles").classList.add("dirty");
+  window.addEventListener("beforeunload", promptForSave);
   if (markdownvisible)
     rendermarkdown();
 }
@@ -647,6 +649,7 @@ var saveToServer = function() {
       else {
         savebutton.innerText = "save";
         document.getElementById("savefiles").classList.remove("dirty");
+        window.removeEventListener("beforeunload", promptForSave);
       }
     }
   };
@@ -666,6 +669,10 @@ var saveToServer = function() {
   xhr.send(JSON.stringify(postdata));
 }
 
+var pagehidden = function() {
+  if (document.visibilityState == "hidden")
+    saveToServer();
+}
 var loadFromServer = function(pid) {
   if (pid === undefined)
     pid = projectId();
@@ -683,11 +690,13 @@ var loadFromServer = function(pid) {
       // or local save, bootstrap it.
       if (!loadLSc("files")) {
         bootstrapStorage();
+        saveToServer();
         initFiles();
       }
       else
         loadbutton.innerText = "no server save";
       document.getElementById("savefiles").classList.remove("dirty");
+      window.removeEventListener("beforeunload", promptForSave);
       return;
     }
 
@@ -725,6 +734,7 @@ var loadFromServer = function(pid) {
       initFiles();
       loadbutton.innerText = "load";
       document.getElementById("savefiles").classList.remove("dirty");
+      window.removeEventListener("beforeunload", promptForSave);
     }
   }
   xhr.send();
@@ -1242,6 +1252,7 @@ window.onload = function() {
   addClickListenerById("addfile", addFile);
   addClickListenerById("removefile", removeFile);
   addClickListenerById("savefiles", saveToServer);
+  document.addEventListener("visibilitychange", pagehidden);
   addClickListenerById("loadfiles", function() { loadFromServer() });
   addClickListenerById("resetfiles", resetFiles);
   addClickListenerById("historyback", function() { historymove(-1); });

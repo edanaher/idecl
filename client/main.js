@@ -1251,7 +1251,6 @@ window.onload = function() {
   editor.on("blur", saveFile);
   editor.on("change", markDirty);
   addClickListenerById("cloneproject", function() { cloneProjectInit(false); });
-  addClickListenerById("cloneassignment", function() { cloneProjectInit(true) });
   addClickListenerById("publish", publish);
   addClickListenerById("submit", submit);
   addClickListenerById("addfile", addFile);
@@ -1263,5 +1262,5 @@ window.onload = function() {
   addClickListenerById("historyback", function() { historymove(-1); });
   addClickListenerById("historyforward", function() { historymove(1); });
   addClickListenerById("switchlayout", switchlayout);
-  addClickListenerById("clearterminal", function() { term.clear(); document.getElementById("runstatus").innerText = ""; });
+  addClickListenerById("clearterminal", function() { term.clear(); });
 }

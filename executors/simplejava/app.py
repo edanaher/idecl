@@ -1,5 +1,5 @@
 from flask import Flask, redirect, render_template, request, send_file, session, Response, stream_with_context
-from flask_login import login_required
+from flask_login import login_required, current_user
 from functools import reduce
 from sqlalchemy import text
 import json
@@ -8,6 +8,7 @@ import select
 import shutil
 import subprocess
 import tempfile
+import time
 
 from db import engine
 import dbbootstrap
@@ -158,6 +159,16 @@ def stdin(tmppath):
     input = data["input"]
     with open(os.path.join("/var/run/idecl", tmppath, "stdin.fifo"), "w") as f:
         f.write(input)
+    return ""
+
+@app.route("/comments", methods=["POST"])
+@login_required
+def addcomment():
+    data = request.json
+    comment = data["content"]
+    with engine.connect() as conn:
+        conn.execute(text("INSERT INTO comments (user_id, contents, created) VALUES (:uid, :comment, :now)"), [{"uid": current_user.get_id(), "comment": comment, "now": int(time.time())}])
+        conn.commit()
     return ""
 
 import oauth

@@ -145,6 +145,31 @@ body.doflex {
   color: #440000;
 }
 
+#navbarpadding {
+  display: flex;
+  flex: 1 1;
+}
+
+#comments {
+  flex: 0 0;
+  border: 1px solid #333333;
+  padding: 2px;
+  margin: 2px;
+  text-align: center;
+  /*background-color: #EEFFEE;*/
+  color: #333333;
+}
+
+#commentbox {
+  position: absolute;
+  bottom: 40px;
+  z-index: 99;
+  background-color: #CCCCCC;
+  padding: 2px;
+  border: 1px solid black;
+}
+#commentbox.hidden { display: none; }
+
 #maincontent {
   display: flex;
   flex: 1 1;

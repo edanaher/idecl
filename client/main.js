@@ -811,6 +811,24 @@ var sendinput = function() {
   xhr.send(formdata);
 }
 
+var showcomment = function() {
+  document.getElementById("commentbox").classList.remove("hidden");
+}
+
+var hidecomment = function() {
+  document.getElementById("commentbox").classList.add("hidden");
+}
+
+var submitcomment = function() {
+  var entry = document.getElementById("commentbody");
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "/comments", true);
+  xhr.setRequestHeader("Content-Type", "application/json");
+  var data = JSON.stringify({"content": entry.value});
+  xhr.send(data);
+  entry.value = "";
+  document.getElementById("commentbox").classList.add("hidden")
+}
 
 var sendinputfromterminal = (function() {
   var buffer = "";
@@ -1265,6 +1283,9 @@ window.onload = function() {
   addClickListenerById("resetfiles", resetFiles);
   addClickListenerById("historyback", function() { historymove(-1); });
   addClickListenerById("historyforward", function() { historymove(1); });
+  addClickListenerById("comments", showcomment);
+  addClickListenerById("submitcomment", submitcomment);
+  addClickListenerById("cancelcomment", hidecomment);
   addClickListenerById("switchlayout", switchlayout);
   addClickListenerById("clearterminal", function() { term.clear(); });
 }

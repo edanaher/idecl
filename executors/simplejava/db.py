@@ -119,3 +119,12 @@ cached_classes = Table(
     Column("tarball", BLOB),
     UniqueConstraint("sha256", name="uniq_cached_classes_sha256"),
 )
+
+comments = Table(
+    "comments",
+    metadata_obj,
+    Column("id", Integer, primary_key=True),
+    Column("user_id", Integer),
+    Column("contents", String),
+    Column("created", Integer),
+)

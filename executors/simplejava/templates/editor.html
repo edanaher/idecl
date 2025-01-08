@@ -35,6 +35,13 @@
         {% endif %}
       </div>
     </div>
+    <div id="commentbox" class="hidden">
+      <textarea id="commentbody" cols="60" rows="10"></textarea>
+      <div>
+        <button id="submitcomment">submit</button>
+        <button id="cancelcomment">cancel</button>
+      </div>
+    </div>
     <div id="maincontent" layout="split">
       <div id="filecontainer">
         <div id="filelist">
@@ -51,6 +58,8 @@
           <div id="historyforward">&gt;</div>
         </div>
         <!--div id="resetfiles">reset</div-->
+        <div id="navbarpadding"></div>
+        <div id="comments">Comments</div>
       </div>
       <div id="leftcontent">
         <div>

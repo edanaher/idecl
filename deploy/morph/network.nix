@@ -42,8 +42,8 @@
         - path: /app/idecl.db
           replicas:
             - url: s3://edanaher-idecl/litestream-prod-bak
-              retention: 168h
-              sync-interval: 60s
+              retention: 720h
+              sync-interval: 5m
       '';
   in {
     imports = lib.optional (builtins.pathExists ./do-userdata.nix) ./do-userdata.nix ++ [

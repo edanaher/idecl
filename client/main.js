@@ -957,7 +957,7 @@ var cloneProject = function(from, to, assignment) {
     }
     newfiles[f] = newname;
   }
-  saveLS("files|", to, JSON.stringify(newfiles));
+  saveLS("files", to, JSON.stringify(newfiles));
   // TODO: Link to specific history number to track pre-clone history
   saveLS("parent", to, from + "|" + 0);
   for (var f in newfiles) {

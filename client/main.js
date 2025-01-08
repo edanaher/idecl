@@ -457,6 +457,7 @@ var renameFile = function(elem) {
     var newname = editbox.value;
     elem.removeChild(editbox);
     elem.innerText = editbox.value;
+    elem.setAttribute("title", editbox.value);
     elem.classList.remove("editing");
 
     if (newname == name)
@@ -589,6 +590,7 @@ var addFile = function() {
   var filelist = document.getElementById("filelist");
   var div = document.createElement("div");
   div.innerText = newfile;
+  div.setAttribute("title", newfile);
   div.classList.add("filename");
   div.setAttribute("fileid", nextId);
   filelist.appendChild(div);
@@ -978,6 +980,8 @@ var cloneProject = function(from, to, assignment) {
 
 var cloneProjectInit = function(assignment) {
   var name = prompt("What is the new project name?");
+  if (!name)
+    return;
 
   var xhr = new XMLHttpRequest();
   xhr.open("POST", "/classrooms/" + classroom_id + "/projects", true);
@@ -1090,6 +1094,7 @@ var initFiles = function() {
       continue;
     var div = document.createElement("div");
     div.innerText = filenames[f];
+    div.setAttribute("title", filenames[f]);
     div.classList.add("filename");
     div.setAttribute("fileid", f);
     if (f == lastfile) {

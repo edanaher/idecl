@@ -41,7 +41,16 @@ def attrsToString(row):
 @requires_permission(P.VIEWPROJECT, "project")
 def load_project(pid):
     with engine.connect() as conn:
-        rows = conn.execute(text("SELECT file_id, name, contents, hidden, inherited, readonly FROM files WHERE project_id=:pid AND hidden = FALSE"), [{"pid": pid}]).all()
+        # TODO: handle nested inherit
+        rows = conn.execute(text("""
+            SELECT files.file_id, files.name,
+            COALESCE(inherited.contents, files.contents) AS contents,
+            files.hidden, files.inherited, files.readonly
+            FROM files
+            JOIN projects ON files.project_id = projects.id
+            LEFT JOIN files AS inherited ON files.inherited AND inherited.file_id = files.file_id AND inherited.project_id = projects.parent_id
+            WHERE files.project_id=:pid AND NOT files.hidden
+        """), [{"pid": pid}]).all()
         if (len(rows) == 0):
             return "{}"
 

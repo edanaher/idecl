@@ -132,6 +132,8 @@ def clone_project_as_assignment(pid):
             if filename.startswith("Test") or filename.endswith("Test.java") or filename.endswith("Tests.java"):
                 hidden = True
                 inherited = True
+            if filename.endswith(".md"):
+                inherited = True
             if filename.startswith("template/"):
                 filename = filename.removeprefix("template/")
                 readonly = False

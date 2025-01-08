@@ -969,6 +969,10 @@ var cloneProject = function(from, to, assignment) {
         saveLS("files", to, f, f);
         attrs = attrs.concat("hi");
       }
+      if (files[f].endsWith(".md")) {
+        saveLS("files", to, f, f);
+        attrs = attrs.concat("i");
+      }
       if (!templated[f])
         attrs = attrs.concat("r");
 

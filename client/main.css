@@ -234,14 +234,28 @@ body.doflex {
   border-style: solid;
 }
 
+#rightheader {
+  margin-bottom: 4px;
+}
 #clearterminal {
   margin-left: 20px;
+}
+#clearterminal.hidden {
+  display: none;
+}
+
+#toggleinstructions {
+  position: absolute;
+  right: 10px;
 }
 
 #runstatus {
   margin-left: 12px;
   font-style: italic;
   color: gray;
+}
+#runstatus.hidden {
+  display: none
 }
 
 #markdowncontainer {

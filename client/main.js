@@ -500,12 +500,14 @@ var fileForRun = function(projectid, fileid) {
   }
 }
 
+var manualmarkdown = false;
 var setOutputType = function(readonly) {
   var filenamediv = document.querySelector(".filename.open");
   var markdown = filenamediv.innerText.endsWith(".md");
   var leftmarkdown = readonly && markdown;
   var rightmarkdown = !readonly && markdown;
-  markdownvisible = leftmarkdown ? "instructions" : rightmarkdown ? "markdownoutput" : null
+  markdownvisible = leftmarkdown ? "instructions" : rightmarkdown ? "markdownoutput" : null;
+
   if (leftmarkdown) {
     document.getElementById("code").classList.add("hidden")
     document.getElementById("instructionscontainer").classList.remove("hidden")
@@ -513,16 +515,47 @@ var setOutputType = function(readonly) {
     document.getElementById("code").classList.remove("hidden")
     document.getElementById("instructionscontainer").classList.add("hidden")
   }
-  if (rightmarkdown) {
+
+  if (rightmarkdown || manualmarkdown) {
     document.getElementById("terminalcontainer").classList.add("hidden")
     document.getElementById("markdowncontainer").classList.remove("hidden")
+    document.getElementById("toggleinstructions").innerText = "Show output";
+    document.getElementById("rightlabel").innerText = "Instructions:";
+    document.getElementById("clearterminal").classList.add("hidden");
+    document.getElementById("runstatus").classList.add("hidden");
     rendermarkdown();
   } else {
     document.getElementById("terminalcontainer").classList.remove("hidden")
     document.getElementById("markdowncontainer").classList.add("hidden")
+    document.getElementById("toggleinstructions").innerText = "Show instructions";
+    document.getElementById("rightlabel").innerText = "Program output:";
+    document.getElementById("clearterminal").classList.remove("hidden");
+    document.getElementById("runstatus").classList.remove("hidden");
   }
   if (markdownvisible)
     rendermarkdown();
+}
+
+var toggleinstructions = function() {
+  var markdowncontainer = document.getElementById("markdowncontainer");
+  if (markdowncontainer.classList.contains("hidden")) {
+    document.getElementById("terminalcontainer").classList.add("hidden")
+    document.getElementById("markdowncontainer").classList.remove("hidden")
+    document.getElementById("toggleinstructions").innerText = "Show output";
+    document.getElementById("rightlabel").innerText = "Instructions:";
+    document.getElementById("clearterminal").classList.add("hidden");
+    document.getElementById("runstatus").classList.add("hidden");
+    manualmarkdown = true;
+    renderinstructions();
+  } else {
+    document.getElementById("terminalcontainer").classList.remove("hidden")
+    document.getElementById("markdowncontainer").classList.add("hidden")
+    document.getElementById("toggleinstructions").innerText = "Show instructions";
+    document.getElementById("rightlabel").innerText = "Program output:";
+    document.getElementById("clearterminal").classList.remove("hidden");
+    document.getElementById("runstatus").classList.remove("hidden");
+    manualmarkdown = false;
+  }
 }
 
 var loadFile = function(fileid, contents, savehistoryfile) {
@@ -844,7 +877,26 @@ var sendinputfromterminal = (function() {
   };
 })();
 
-var rendermarkdown = (function(delay) {
+var renderinstructions = function() {
+  var filenames = JSON.parse(loadLSc("files"));
+  var id = null;
+  for (var i in filenames)
+    if (filenames[i] == "instructions.md") {
+      id = i;
+      break;
+    }
+
+  if (!id) {
+    document.getElementById("markdownoutput").innerHtml = "no instructions found";
+    return;
+  }
+
+  var contents = loadLSc("files", i);
+  var rendered = DOMPurify.sanitize(marked.parse(contents));
+  document.getElementById("markdownoutput").innerHTML = rendered;
+}
+
+var rendermarkdown = (function() {
   var timer;
   var lastrender = 0;
   return function() {
@@ -853,8 +905,8 @@ var rendermarkdown = (function(delay) {
     if (timer)
       return;
     var render = function() {
-      var elem = document.getElementById(markdownvisible)
-      elem.innerHTML = DOMPurify.sanitize(marked.parse(editor.getValue()));
+      var rendered = DOMPurify.sanitize(marked.parse(editor.getValue()));
+      document.getElementById(markdownvisible).innerHTML = rendered;
       timer = null;
     }
     var now = Date.now();
@@ -1288,4 +1340,5 @@ window.onload = function() {
   addClickListenerById("cancelcomment", hidecomment);
   addClickListenerById("switchlayout", switchlayout);
   addClickListenerById("clearterminal", function() { term.clear(); });
+  addClickListenerById("toggleinstructions", toggleinstructions);
 }

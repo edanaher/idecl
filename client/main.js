@@ -887,7 +887,7 @@ var renderinstructions = function() {
     }
 
   if (!id) {
-    document.getElementById("markdownoutput").innerHtml = "no instructions found";
+    document.getElementById("markdownoutput").innerHTML = "no instructions found";
     return;
   }
 

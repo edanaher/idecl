@@ -131,6 +131,9 @@ rec {
       locations."/static/" = {
         alias = "${idecl-src}/client/";
       };
+      locations."/favicon.ico" = {
+        root = "${idecl-src}/client/";
+      };
       locations."/" = {
         proxyPass = "http://127.0.0.1:${builtins.toString idecl-port}";
         extraConfig = ''

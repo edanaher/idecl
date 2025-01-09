@@ -237,7 +237,7 @@ var logedit = function(type, position, data) {
     edits.pop();
   }
   edits.push([type, now - lastedittime, row, col, data]);
-  console.log(type, now - lastedittime, row, col, data, "/", edits.length);
+  //console.log(type, now - lastedittime, row, col, data, "/", edits.length);
   lastedittime = now;
   displayeditstate();
 }

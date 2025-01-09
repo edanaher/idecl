@@ -58,13 +58,11 @@ def compile(pid):
             if r.name in body:
                 continue
             # TODO: test nested inherits
-            print("Need to add ", r.name)
             parent = conn.execute(text("SELECT parent_id FROM projects WHERE id=:pid"), [{"pid": pid}]).first()
             file = r
             while file.inherited:
                 file = conn.execute(text("SELECT file_id, name, contents, inherited FROM files WHERE project_id=:pid AND file_id=:fileid"), [{"pid": parent.parent_id, "fileid": r.file_id}]).first()
                 parent = conn.execute(text("SELECT parent_id FROM projects WHERE id=:pid"), [{"pid": parent.parent_id}]).first()
-            print("Writing file", r.name)
             with open(os.path.join(tmp, r.name), "w") as f:
                 f.write(file.contents)
 

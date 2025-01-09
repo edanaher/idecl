@@ -114,8 +114,8 @@ local function runprogram(json)
     ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] checking for nextcompile")
     local position, err
     if not isnext then
-      ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] is going into the queue")
       position, err = state:rpush("compilequeue", compileid)
+      ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] is going into the queue in position " .. tostring(position + 1))
       position = position + 1
       local bytes, err = wb:send_text(cjson.encode({op = json.op, status = "#" .. tostring(position) .. " in queue..."}))
     end

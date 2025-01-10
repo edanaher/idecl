@@ -188,8 +188,10 @@ body[theme="dark"] #loadfiles {
   padding: 2px;
   margin: 2px;
   text-align: center;
-  /*background-color: #EEFFEE;*/
-  color: #333333;
+}
+body[theme="dark"] #comments {
+  border: 1px solid #666666;
+  color: #666666;
 }
 
 #commentbox {
@@ -201,6 +203,14 @@ body[theme="dark"] #loadfiles {
   border: 1px solid black;
 }
 #commentbox.hidden { display: none; }
+body[theme="dark"] #commentbox {
+  background-color: #555555;
+  border-color: #333333;
+}
+body[theme="dark"] #commentbody {
+  background: #333333;
+  color: white;
+}
 
 #maincontent {
   display: flex;
@@ -247,6 +257,9 @@ body[theme="dark"] #loadfiles {
 }
 #instructionscontainer.hidden { display: none; }
 #code.hidden { display: none; }
+body[theme="dark"] #instructionscontainer {
+  background-color: black;
+}
 
 #rightcontent {
   display: flex;
@@ -307,6 +320,9 @@ body[theme="dark"] #loadfiles {
 
 #markdownoutput {
   height: 0; /* it'll overflow fine into the markdowncontainer */
+}
+body[theme="dark"] #markdowncontainer {
+  background-color: black;
 }
 
 

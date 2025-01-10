@@ -64,7 +64,7 @@ Milestone 6: Full classroom
 - [ ] Hide implementation of specific methods from students
 - [X] Assignment (markdown) within the platform
 - [ ] Ability to pull in libraries
-- [ ] Dark mode
+- [X] Dark mode
 - [X] View as student (sudo? Associated student?)
 - [ ] Live shared editing
   - [ ] With shared cursors (https://github.com/convergencelabs/ace-collab-ext)

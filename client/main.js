@@ -484,7 +484,10 @@ var fileContents = function(projectid, fileid) {
   if (attrs && attrs.indexOf("i") != -1) {
     var par = loadLS("parent", projectid);
     var parfile = loadLS("files", projectid, fileid);
-    return fileContents(par.split("|")[0], parfile);
+    var parcontents = fileContents(par.split("|")[0], parfile);
+    if (parcontents)
+      return parcontents;
+    return loadLS("files", projectid, fileid);
   } else {
     return loadLS("files", projectid, fileid);
   }
@@ -576,7 +579,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
     if (contents && contents != true)
       sess = ace.createEditSession(contents);
     else
-      sess = ace.createEditSession(fileContents(projectId(), fileid));
+      sess = ace.createEditSession(fileContents(projectId(), fileid) || "");
     sess.setMode("ace/mode/java");
     sess.setUseWrapMode(true);
     sess.setOption("indentedSoftWrap", false);

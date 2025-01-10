@@ -8,6 +8,22 @@ body.doflex {
   margin-top: 0;
   margin-bottom: 0;
 }
+body[theme="dark"] {
+  background-color: #333333;
+  color: white;
+}
+body[theme="dark"] a {
+  color: #3366FF;
+}
+body[theme="dark"] a:visited {
+  color: #9966FF;
+}
+body[theme="dark"] button {
+  color: #FFFFFF;
+  background-color: #666666;
+  border-radius: 3px;
+}
+
 
 #filecontainer {
   vertical-align: top;
@@ -28,17 +44,18 @@ body.doflex {
   overflow: hidden;
 }
 
-#filelist .filename.readonly {
-  background-color: #CCCCCC;
+body[theme="dark"] #filelist .filename {
+  border: 1px solid #999999;
 }
 
-#filelist .filename.readonly.open {
-  background-color: #BBDDBB;
-}
+#filelist .filename.readonly { background-color: #CCCCCC; }
+body[theme="dark"] #filelist .filename.readonly { background-color: #666666; }
 
-#filelist .filename.open {
-  background-color: #CCFFCC;
-}
+#filelist .filename.readonly.open { background-color: #BBDDBB; }
+body[theme="dark"] #filelist .filename.readonly.open { background-color: #668866; }
+
+#filelist .filename.open { background-color: #CCFFCC; }
+body[theme="dark"] #filelist .filename.open { background-color: #114411; }
 
 #filelist .filename.histdeleted {
   background-color: #FFDDDD;
@@ -90,9 +107,19 @@ body.doflex {
   color: #004400;
 }
 
+body[theme="dark"] #savefiles {
+  border: 1px solid #999999;
+  background-color: #335533;
+  color: #99CC99;
+}
+
 #savefiles.dirty {
   background-color: #FFFFEE;
   color: #444400;
+}
+body[theme="dark"] #savefiles.dirty {
+  background-color: #667733;
+  color: #99CC99;
 }
 
 #loadfiles {
@@ -102,6 +129,11 @@ body.doflex {
   text-align:center;
   background-color: #EEFFEE;
   color: #004400;
+}
+body[theme="dark"] #loadfiles {
+  border: 1px solid #999999;
+  background-color: #335533;
+  color: #99CC99;
 }
 
 #historybuttons {

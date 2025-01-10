@@ -1211,6 +1211,34 @@ var initFiles = function() {
   setOutputType(attrs && attrs.indexOf("r") != -1);
 }
 
+var toggleDarkMode = function () {
+  var body = document.getElementsByTagName("body")[0];
+  console.log(term.options.theme);
+  if (body.getAttribute("theme") == "dark") {
+    document.getElementById("switchtheme").innerText = "dark mode";
+    localStorage.removeItem("theme");
+    body.removeAttribute("theme");
+    editor.setTheme("ace/theme/textmate");
+    term.options.theme = {
+      foreground: "black",
+      background: "white",
+      cursor: "gray",
+      selectionBackground: "lightgray"
+    };
+  } else {
+    document.getElementById("switchtheme").innerText = "light mode";
+    localStorage.setItem("theme", "dark");
+    body.setAttribute("theme", "dark");
+    editor.setTheme("ace/theme/twilight");
+    term.options.theme = {
+      foreground: "white",
+      background: "black",
+      cursor: "gray",
+      selectionBackground: "#444444"
+    };
+  }
+}
+
 var initAce = function() {
   editor = ace.edit("code");
   sessions = {}
@@ -1266,6 +1294,11 @@ var initTerminal = function() {
   });
 }
 
+var initDarkMode = function() {
+  if (localStorage.getItem("theme") == "dark")
+    toggleDarkMode();
+}
+
 var switchlayout = function() {
   var layouts = ["split", "fullscreencode", "fullscreenconsole"];
   var maincontent = document.getElementById("maincontent")
@@ -1309,6 +1342,7 @@ var webSocketConnect = function(message, onmessage) {
 window.onload = function() {
   initAce();
   initTerminal();
+  initDarkMode();
   upgradestore();
   if (!loadLSc("files"))
     loadFromServer(projectId(), true);
@@ -1339,6 +1373,7 @@ window.onload = function() {
   addClickListenerById("submitcomment", submitcomment);
   addClickListenerById("cancelcomment", hidecomment);
   addClickListenerById("switchlayout", switchlayout);
+  addClickListenerById("switchtheme", toggleDarkMode);
   addClickListenerById("clearterminal", function() { term.clear(); });
   addClickListenerById("toggleinstructions", toggleinstructions);
 }

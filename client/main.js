@@ -561,6 +561,16 @@ var toggleinstructions = function() {
   }
 }
 
+var setEditorLanguage = function(sess, filename) {
+  if (!filename)
+    filename = document.querySelector(".filename.open").innerText;
+  console.log(filename);
+  if (filename.endsWith(".md"))
+    sess.setMode("ace/mode/markdown");
+  else
+    sess.setMode("ace/mode/java");
+}
+
 var loadFile = function(fileid, contents, savehistoryfile) {
   var filenamediv;
   if (typeof(fileid) == "number") {
@@ -580,7 +590,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
       sess = ace.createEditSession(contents);
     else
       sess = ace.createEditSession(fileContents(projectId(), fileid) || "");
-    sess.setMode("ace/mode/java");
+    setEditorLanguage(sess, filenamediv.innerText);
     sess.setUseWrapMode(true);
     sess.setOption("indentedSoftWrap", false);
     sess.on("change", editorupdate);
@@ -637,7 +647,7 @@ var addFile = function() {
   div.classList.add("open");
 
   var sess = ace.createEditSession("");
-  sess.setMode("ace/mode/java");
+  setEditorLanguage(sess);
   sess.setUseWrapMode(true);
   sess.setOption("indentedSoftWrap", false);
   sess.on("change", editorupdate);
@@ -1188,7 +1198,7 @@ var initFiles = function() {
   }
 
   var sess = ace.createEditSession(loadLSc("files", lastfile));
-  sess.setMode("ace/mode/java");
+  setEditorLanguage(sess);
   sess.setUseWrapMode(true);
   sess.setOption("indentedSoftWrap", false);
   sess.on("change", editorupdate);

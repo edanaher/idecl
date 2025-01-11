@@ -82,7 +82,7 @@ rec {
   };
   xtermjs = pkgs.stdenv.mkDerivation rec {
     version = "3.2.3";
-    name = "dompurify-${version}";
+    name = "xterm-${version}";
 
     src = pkgs.fetchzip {
       url = "https://registry.npmjs.org/@xterm/xterm/-/xterm-5.5.0.tgz";
@@ -98,6 +98,7 @@ rec {
     installPhase = ''
       mkdir -p $out
       cp $src/lib/xterm.js $out
+      cp $src/css/xterm.css $out
       cp ${fit-src}/lib/addon-fit.js $out
     '';
   };

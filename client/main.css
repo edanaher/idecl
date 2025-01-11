@@ -182,6 +182,23 @@ body[theme="dark"] #loadfiles {
   flex: 1 1;
 }
 
+#helplink {
+  flex: 0 0;
+  border: 1px solid #333333;
+  padding: 2px;
+  margin: 2px;
+  text-align: center;
+}
+#filecontainer a {
+  text-decoration: none;
+  color: black;
+}
+body[theme="dark"] #helplink {
+  border: 1px solid #777777;
+  color: #777777;
+}
+body[theme="dark"] #helplink a { color: #999999; }
+
 #comments {
   flex: 0 0;
   border: 1px solid #333333;
@@ -190,8 +207,8 @@ body[theme="dark"] #loadfiles {
   text-align: center;
 }
 body[theme="dark"] #comments {
-  border: 1px solid #666666;
-  color: #666666;
+  border: 1px solid #777777;
+  color: #777777;
 }
 
 #commentbox {

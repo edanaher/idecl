@@ -1,3 +1,7 @@
+import os
+import shutil
+import subprocess
+
 from flask import abort, redirect, render_template, request, send_file, session
 from flask_login import login_required, current_user
 from sqlalchemy import text
@@ -110,6 +114,50 @@ def project(pid):
             canunpublish=has_permission(P.DELETEPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,
             cansubmit=row.cloned_as_assignment, submitted=not not row.submitted_id,
             published=not not row.tag_id )
+
+@app.route("/projects/<pid>/compare")
+@requires_permission(P.COMPAREPROJECT, "project")
+def compare_project(pid):
+    comparedir = f"/var/run/idecl/compare/{pid}"
+    try:
+        shutil.rmtree(comparedir)
+    except FileNotFoundError:
+        pass
+    os.makedirs(comparedir)
+    with engine.connect() as conn:
+        rows  = conn.execute(text("""
+            SELECT
+                projects.name, users.email, users.name AS user_name,
+                files.name AS file_name, files.contents
+            FROM projects
+            JOIN users ON projects.owner=users.id
+            JOIN files ON files.project_id = projects.id
+            WHERE projects.parent_id=:pid AND projects.cloned_as_assignment = TRUE
+            AND files.hidden = FALSE AND files.inherited = FALSE AND files.readonly = FALSE;
+        """), [{"pid": pid}]).all()
+    for row in rows:
+        try:
+            os.mkdir(comparedir + "/" + row.email)
+        except FileExistsError:
+            pass
+        with open(comparedir + "/" + row.email + "/" + row.file_name, "w") as f:
+            f.write(row.contents)
+
+    subprocess.run(["compare50", "*"], cwd=comparedir)
+
+    if os.path.isfile(comparedir + "/results/index.html"):
+        return redirect(f"/projects/{pid}/compare/results/index.html")
+
+    return "No differences found"
+
+@app.route("/projects/<pid>/compare/results/<path>")
+@requires_permission(P.COMPAREPROJECT, "project")
+def compare_project_results(pid, path):
+    file = f"/var/run/idecl/compare/{pid}/results/{path}"
+    if os.path.isfile(file):
+        with open(file) as f:
+            return f.read()
+    return 404, "Comparison not found"
 
 @app.route("/projects/<pid>/assignment", methods = ["POST"])
 @requires_permission(P.CLONEPROJECTASASSIGNMENT, "project")

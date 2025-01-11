@@ -101,7 +101,7 @@
       description = "daemon for idecl";
       after = [ "network.target" ];
       wantedBy = [ "multi-user.target" ];
-      path = with pkgs; [ docker gnutar outils coreutils zstd ];
+      path = with pkgs; [ docker gnutar outils coreutils zstd common.compare50 ];
       environment = {
         PYTHONPATH="${python-with-packages}/${python-with-packages.sitePackages}";
         HOME="/app";

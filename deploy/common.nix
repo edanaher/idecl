@@ -131,7 +131,62 @@ rec {
       cp $src/marked.min.js $out
     '';
   };
+  lib50 = pkgs.python3Packages.buildPythonApplication rec {
+    pname = "lib50";
+    version = "3.0.12";
 
+    src = pkgs.fetchPypi {
+      inherit pname version;
+      hash ="sha256-Fc4Hb1AbSeetK3gH1/dRCUfHGDlMzfzgF1cnK3Se01U=";
+    };
+
+    doCheck = false;
+  };
+  compare50 = pkgs.python3Packages.buildPythonApplication rec {
+    pname = "compare50";
+    version = "1.2.6";
+
+    src = pkgs.fetchPypi {
+      inherit pname version;
+      hash ="sha256-0v1DOwmw8GvsVgms/9J05zHws1qW9K0lUEKmBafkFAQ=";
+    };
+
+    # TODO: Do this properly.  But it works for now
+    dependencies = with pkgs.python3Packages; [
+      attrs
+      intervaltree
+      jinja2
+      numpy
+      pygments
+      setuptools
+      sortedcontainers
+      termcolor
+      tqdm
+      lib50
+      certifi
+      cffi
+      cryptography
+      idna
+      jellyfish
+      markupsafe
+      pexpect
+      ptyprocess
+      pyyaml
+      requests
+      urllib3
+      chardet
+    ];
+
+    pythonpath = builtins.foldl' (a: b: a + ":" + b) "$out/lib/python3.12/site-packages" (builtins.map (p: "${p}/lib/python3.12/site-packages") dependencies);
+
+    postInstall = ''
+      sed "s#python3#PYTHONPATH='${pythonpath}' ${pkgs.python3}/bin/python3#" $out/bin/compare50 -i
+      sed "1s#/usr/bin/env sh#/bin/sh#" $out/bin/compare50 -i
+    '';
+
+
+    doCheck = false;
+  };
   nginx-config = {
     enable = true;
     package = pkgs.openresty;

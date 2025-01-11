@@ -19,6 +19,7 @@ class Permissions(Enum):
     # This is hacky... possibly CLONEPROJECT with a parameter indicating type
     # of clone once generalized cloning is available?
     CLONEPROJECTASASSIGNMENT = 18
+    COMPAREPROJECT = 19
 
     LISTUSERS = 8
     VIEWUSER = 12

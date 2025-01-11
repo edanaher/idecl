@@ -64,7 +64,7 @@
               };
               systemd.services.nginx.serviceConfig.ProtectHome = false;
               services.nginx = common.nginx-config;
-              environment.systemPackages = [ pkgs.sqlite-interactive ];
+              environment.systemPackages = [ pkgs.sqlite-interactive common.compare50 ];
               systemd.services.idecl = let
                 python-with-packages = common.python-with-packages;
                 init-script = pkgs.writeShellScript "init-idecl" ''
@@ -81,7 +81,7 @@
                 description = "daemon for idecl";
                 after = [ "network.target" ];
                 wantedBy = [ "multi-user.target" ];
-                path = with pkgs; [ docker gnutar outils coreutils zstd ];
+                path = with pkgs; [ docker gnutar outils coreutils zstd common.compare50 ];
                 environment = {
                   PYTHONPATH="${python-with-packages}/${python-with-packages.sitePackages}";
                   HOME="/app";

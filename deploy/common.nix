@@ -80,6 +80,27 @@ rec {
       cp $src $out/hamcrest-core-${version}.jar
     '';
   };
+  xtermjs = pkgs.stdenv.mkDerivation rec {
+    version = "3.2.3";
+    name = "dompurify-${version}";
+
+    src = pkgs.fetchzip {
+      url = "https://registry.npmjs.org/@xterm/xterm/-/xterm-5.5.0.tgz";
+      hash = "sha256-mz+qSQCSLryOmuBvuH99yZiqoT8dTZINc9qSkIhRdLc=";
+    };
+
+    fit-src = pkgs.fetchzip {
+      url = "https://registry.npmjs.org/@xterm/addon-fit/-/addon-fit-0.10.0.tgz";
+      hash = "sha256-w/yw7E9bGeivI10vnE2auwGNIhBnHx22HnUooHRH9Ng=";
+    };
+
+    buildPhase = "true";
+    installPhase = ''
+      mkdir -p $out
+      cp $src/lib/xterm.js $out
+      cp ${fit-src}/lib/addon-fit.js $out
+    '';
+  };
   dompurify = pkgs.stdenv.mkDerivation rec {
     version = "3.2.3";
     name = "dompurify-${version}";
@@ -127,6 +148,9 @@ rec {
       };
       locations."/static/marked/" = {
         alias = "${marked}/";
+      };
+      locations."/static/xterm/" = {
+        alias = "${xtermjs}/";
       };
       locations."/static/" = {
         alias = "${idecl-src}/client/";

@@ -17,7 +17,7 @@ Milestone 2: Usable for writing unit tests to copy to another platform.
 - [X] Authentication
 - [X] Basic host security
   - [X] sandboxing programs
-  - [ ] stdin restricted to known pids (this should show up for free later?
+  - [X] stdin restricted to known pids (this should show up for free later?
 - [X] Unit test creation and running.
 
 Milestone 2.5?: UX
@@ -59,6 +59,7 @@ Milestone 5: MVP Classroom
 
 Milestone 6: Full classroom
 - [ ] History to help detect cheating
+- [ ] Handle transient offline times gracefully
 - [ ] UI to show student status, easily look at code
 - [X] Hide tests or other files from students
 - [ ] Hide implementation of specific methods from students

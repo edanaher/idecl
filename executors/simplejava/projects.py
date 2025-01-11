@@ -115,10 +115,12 @@ def project(pid):
             cansubmit=row.cloned_as_assignment, submitted=not not row.submitted_id,
             published=not not row.tag_id )
 
+COMPARE_ROOT = "/app/compare"
+
 @app.route("/projects/<pid>/compare")
 @requires_permission(P.COMPAREPROJECT, "project")
 def compare_project(pid):
-    comparedir = f"/var/run/idecl/compare/{pid}"
+    comparedir = f"{COMPARE_ROOT}/{pid}"
     try:
         shutil.rmtree(comparedir)
     except FileNotFoundError:
@@ -148,12 +150,12 @@ def compare_project(pid):
     if os.path.isfile(comparedir + "/results/index.html"):
         return redirect(f"/projects/{pid}/compare/results/index.html")
 
-    return "No differences found"
+    return "No similarites found"
 
 @app.route("/projects/<pid>/compare/results/<path>")
 @requires_permission(P.COMPAREPROJECT, "project")
 def compare_project_results(pid, path):
-    file = f"/var/run/idecl/compare/{pid}/results/{path}"
+    file = f"{COMPARE_ROOT}/{pid}/results/{path}"
     if os.path.isfile(file):
         with open(file) as f:
             return f.read()

@@ -158,6 +158,7 @@ rec {
       intervaltree
       jinja2
       numpy
+      packaging
       pygments
       setuptools
       sortedcontainers

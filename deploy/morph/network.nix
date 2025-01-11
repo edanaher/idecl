@@ -56,7 +56,7 @@
     networking.hostName = name;
     system.stateVersion = "24.11";
 
-    environment.systemPackages = with pkgs; [ screen sqlite-interactive ];
+    environment.systemPackages = with pkgs; [ screen sqlite-interactive common.compare50 ];
 
 
     deployment.healthChecks = {

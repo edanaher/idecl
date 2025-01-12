@@ -165,7 +165,7 @@ def compare_project(pid):
         with open(comparedir + "/" + row.email + "/" + row.file_name, "w") as f:
             f.write(row.contents)
 
-    subprocess.run(["compare50", "*", "-d", "base"], cwd=comparedir)
+    subprocess.run(["compare50", "*", "-d", "base", "-p", "structure", "text", "exact", "nocomments", "misspellings"], cwd=comparedir)
 
     if os.path.isfile(comparedir + "/results/index.html"):
         return redirect(f"/projects/{pid}/compare/results/index.html")

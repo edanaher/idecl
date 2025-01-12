@@ -109,10 +109,12 @@ def project(pid):
             project_name=row.name,
             classroom_id=row.classroom_id,
             # TODO: Cloning a student's project would be nice for experimenting.  Enable it later once behavior is clearer.
+            # TODO: these permissions should also check on the project.
             canclone=has_permission(P.ADDPROJECT, row.classroom_id) and not row.cloned_as_assignment,
             canpublish=has_permission(P.ADDPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,
             canunpublish=has_permission(P.DELETEPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,
             cansubmit=row.cloned_as_assignment, submitted=not not row.submitted_id,
+            cancompare=has_permission(P.COMPAREPROJECT, row.classroom_id, pid) and not not row.tag_id,
             published=not not row.tag_id )
 
 COMPARE_ROOT = "/app/compare"

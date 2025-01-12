@@ -429,3 +429,7 @@ span.tag {
   display: inline-block;
   margin-left: 4px;
 }
+
+#compare50.hidden {
+  display: none;
+}

@@ -1086,6 +1086,7 @@ var cloneProjectInit = function(assignment) {
 // TODO: dedupe these
 var publish = function() {
   var publish_button = this;
+  var compare50 = document.getElementById("compare50");
   if (this.hasAttribute("published")) {
     var xhr = new XMLHttpRequest();
     xhr.open("DELETE", "/projects/" + projectId() + "/tags/1", true);
@@ -1093,6 +1094,8 @@ var publish = function() {
       publish_button.disabled = false;
       publish_button.innerText = "publish project";
       publish_button.removeAttribute("published");
+      if (compare50)
+        compare50.classList.add("hidden");
     };
     this.innerText = "unpublishing..."
     this.disabled = true;
@@ -1104,6 +1107,8 @@ var publish = function() {
       publish_button.disabled = false;
       publish_button.innerText = "unpublish project";
       publish_button.setAttribute("published", "");
+      if (compare50)
+        compare50.classList.remove("hidden");
     };
     this.innerText = "publishing..."
     this.disabled = true;
@@ -1136,6 +1141,10 @@ var submit = function() {
     this.disabled = true;
     xhr.send();
   }
+}
+
+var compare50 = function() {
+  document.location.href = document.location + "/compare"
 }
 
 var upgradestore = function() {
@@ -1374,6 +1383,7 @@ window.onload = function() {
   addClickListenerById("cloneproject", function() { cloneProjectInit(false); });
   addClickListenerById("publish", publish);
   addClickListenerById("submit", submit);
+  addClickListenerById("compare50", compare50);
   addClickListenerById("addfile", addFile);
   addClickListenerById("removefile", removeFile);
   addClickListenerById("savefiles", saveToServer);

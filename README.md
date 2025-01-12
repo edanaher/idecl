@@ -107,6 +107,9 @@ Milestone 8(?): Fully offline work
 
 Bonus:
 - [ ] Cheating detection (MOSS, behavior like typing a lot with no backspaces)
+  - [X] Compare50 for MOSS-style similarity detection.
+  - [ ] Suspicious history checking (e.g., pasting in new blocks, deleting pasted comments)
+  - [ ] winnowing detection for historical code as well (online winnowing to a db?  Should work...)
 - [ ] Integration with github for storing student code
 - [ ] Persistent filesystem/container per student (maybe in a milestone?  Not sure if this is needed)
 - [ ] Performance optimizations

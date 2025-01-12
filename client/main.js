@@ -763,7 +763,8 @@ var loadFromServer = function(pid) {
       sessions = [];
     }
 
-    // TODO: load history
+    if (serverResponse.history)
+      saveLSc("edits", serverResponse.history);
 
     // Do this somewhere better?
     filenames = {};

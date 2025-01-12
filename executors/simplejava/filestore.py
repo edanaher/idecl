@@ -56,7 +56,11 @@ def load_project(pid):
         """), [{"pid": pid}]).all()
         if (len(rows) == 0):
             return "{}"
-
+        history_row = conn.execute(text("SELECT history FROM history_full WHERE project_id=:pid"),[{"pid": pid}]).first()
         parent = conn.execute(text("SELECT parent_id FROM projects WHERE id=:pid"), [{"pid": pid}]).first()
 
-    return json.dumps({"files": {r.file_id: {"name": r.name, "contents": r.contents, "attrs": attrsToString(r)} for r in rows}, "parent": parent.parent_id})
+    response = {"files": {r.file_id: {"name": r.name, "contents": r.contents, "attrs": attrsToString(r)} for r in rows},
+            "parent": parent.parent_id}
+    if history_row and history_row.history:
+        response["history"] = history_row.history
+    return json.dumps(response)

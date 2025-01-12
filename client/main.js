@@ -713,6 +713,7 @@ var saveToServer = function() {
       "contents": loadLSc("files", i),
       "attrs": loadLSc("attrs", i) || ""
   };
+  postdata["history"] = loadLSc("edits");
   // TODO: save history
   xhr.send(JSON.stringify(postdata));
 }

@@ -128,3 +128,12 @@ comments = Table(
     Column("contents", String),
     Column("created", Integer),
 )
+
+history_full = Table(
+    "history_full",
+    metadata_obj,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("project_id", Integer),
+    Column("history", String),
+    UniqueConstraint("project_id", name="uniq_history_full_project_id"),
+)

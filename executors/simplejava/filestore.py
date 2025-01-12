@@ -23,6 +23,9 @@ def save_project(pid):
                   "hidden": "h" in filedata[k].get("attrs", ""),
                   "inherited": "i" in filedata[k].get("attrs", ""),
                   "readonly": "r" in filedata[k].get("attrs", "")} for k in filedata])
+        history = data.get("history")
+        if history:
+            conn.execute(text("INSERT INTO history_full (project_id, history) VALUES (:pid, :history) ON CONFLICT DO UPDATE SET history=:history"),[{"pid": pid, "history": history}])
         conn.commit()
 
     return "Success"

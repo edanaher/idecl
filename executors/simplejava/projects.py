@@ -127,6 +127,13 @@ def compare_project(pid):
         pass
     os.makedirs(comparedir)
     with engine.connect() as conn:
+        base_files  = conn.execute(text("""
+            SELECT
+                files.name AS file_name, files.contents
+            FROM projects
+            JOIN files ON files.project_id = projects.id
+            WHERE projects.id=:pid
+        """), [{"pid": pid}]).all()
         rows  = conn.execute(text("""
             SELECT
                 projects.name, users.email, users.name AS user_name,
@@ -137,6 +144,17 @@ def compare_project(pid):
             WHERE projects.parent_id=:pid AND projects.cloned_as_assignment = TRUE
             AND files.hidden = FALSE AND files.inherited = FALSE AND files.readonly = FALSE;
         """), [{"pid": pid}]).all()
+    try:
+        os.mkdir(comparedir + "/base")
+    except FileExistsError:
+        pass
+    for row in base_files:
+        try:
+            os.mkdir(comparedir + "/base/" + os.path.dirname(row.file_name))
+        except FileExistsError:
+            pass
+        with open(comparedir + "/" + "base" + "/" + row.file_name, "w") as f:
+            f.write(row.contents)
     for row in rows:
         try:
             os.mkdir(comparedir + "/" + row.email)
@@ -145,7 +163,7 @@ def compare_project(pid):
         with open(comparedir + "/" + row.email + "/" + row.file_name, "w") as f:
             f.write(row.contents)
 
-    subprocess.run(["compare50", "*"], cwd=comparedir)
+    subprocess.run(["compare50", "*", "-d", "base"], cwd=comparedir)
 
     if os.path.isfile(comparedir + "/results/index.html"):
         return redirect(f"/projects/{pid}/compare/results/index.html")

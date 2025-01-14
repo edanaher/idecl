@@ -675,6 +675,10 @@ var removeFile = function() {
   var fileid = parseInt(div.getAttribute("fileid"));
   var filename = div.innerText;
 
+  var attrs = loadLSc("attrs", fileid);
+  if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
+    return;
+
   if (!confirm("Are you sure you want to delete " + filename + "?"))
     return;
 

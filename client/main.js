@@ -327,7 +327,8 @@ var checkHistoryReplay = function() {
     alert("History fail");
 }
 
-var historymove = function(adjust) {
+var historymove_timer;
+var historymove = function(adjust, delay) {
   if (!edits)
     return;
   var histlen = edits.length;
@@ -441,6 +442,19 @@ var historymove = function(adjust) {
     return;
   }
   displayeditstate();
+  var newdelay = delay > 100 ? delay * 2 / 3 : delay > 10 ? delay * 0.95 : 10;
+  historymove_timer = setTimeout(historymove, newdelay, adjust, newdelay);
+}
+
+var start_historymove = function(adjust) {
+  historymove(adjust, 500);
+}
+
+var stop_historymove = function(adjust) {
+  if (historymove_timer) {
+    clearTimeout(historymove_timer);
+    historymove_timer = null;
+  }
 }
 
 var promptForSave = function(e) { e.preventDefault() }
@@ -1369,6 +1383,12 @@ var addClickListenerById = function(id, f) {
     elem.addEventListener("click", f);
 }
 
+var addListenerById = function(id, e, f) {
+  var elem = document.getElementById(id);
+  if (elem)
+    elem.addEventListener(e, f);
+}
+
 var webSocketConnect = function(message, onmessage) {
   var websocket
   if (location.protocol == "https:")
@@ -1420,8 +1440,12 @@ window.onload = function() {
   document.addEventListener("visibilitychange", pagehidden);
   addClickListenerById("loadfiles", function() { loadFromServer() });
   addClickListenerById("resetfiles", resetFiles);
-  addClickListenerById("historyback", function() { historymove(-1); });
-  addClickListenerById("historyforward", function() { historymove(1); });
+  addListenerById("historyback", "mousedown", function() { start_historymove(-1); });
+  addListenerById("historyback", "mouseup", stop_historymove);
+  addListenerById("historyback", "mouseleave", stop_historymove);
+  addListenerById("historyforward", "mousedown", function() { start_historymove(1); });
+  addListenerById("historyforward", "mouseup", stop_historymove);
+  addListenerById("historyforward", "mouseleave", stop_historymove);
   addClickListenerById("comments", showcomment);
   addClickListenerById("submitcomment", submitcomment);
   addClickListenerById("cancelcomment", hidecomment);

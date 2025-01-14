@@ -137,3 +137,14 @@ history_full = Table(
     Column("history", String),
     UniqueConstraint("project_id", name="uniq_history_full_project_id"),
 )
+
+project_test_results = Table(
+    "project_test_results",
+    metadata_obj,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("project_id", Integer),
+    Column("success", Integer),
+    Column("total", Integer),
+    Column("raw_results", String),
+    Column("created", Integer),
+)

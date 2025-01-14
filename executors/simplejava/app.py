@@ -4,6 +4,7 @@ from functools import reduce
 from sqlalchemy import text
 import json
 import os
+import re
 import select
 import shutil
 import subprocess
@@ -99,7 +100,7 @@ def compile(pid):
         else:
             proc = subprocess.run(["docker", "run", "--rm", "--name", container_name, "-m128m", "--ulimit", "cpu=10", f"-v{tmp}:/app", f"-v{dir_path}/junit:/junit", "--net", "none", "idecl-java-runner", "javac", "-cp", "/app", "/app/Main.java"], capture_output=True, text=True, timeout=30)
         if proc.returncode != 0:
-            return json.dumps({"error": f"0\nError compiling {'tests' if testing else 'program'}:\n" + proc.stderr})
+            return json.dumps({"error": f"Error compiling {'tests' if testing else 'program'}:\n" + proc.stderr})
 
         # Add new compile to the cache
         proc = subprocess.run(["/bin/sh", "-c", f"cd {tmp} && tar --zstd -c ."], capture_output=True, text=False, timeout=30)
@@ -114,6 +115,30 @@ def compile(pid):
     os.mkfifo(tmp + "/stdin.fifo")
 
     return json.dumps(result)
+
+@app.route("/projects/<pid>/tests/save", methods=["POST"])
+@login_required
+def save_test_results(pid):
+    body = request.json
+    finalline = body.get("finalline", "")
+    print("Saving test result for ", pid, ": ", finalline, flush=True)
+
+    passed = None
+    total = None
+    allpassed = re.search(r"^OK \(([0-9]*) tests?\)\n*$", finalline)
+    if allpassed:
+        passed = int(allpassed.group(1))
+        total = passed
+    partial = re.search(r"^Tests run: *([0-9]*), *Failures: *([0-9]*)\n*$", finalline)
+    if partial:
+        total = int(partial.group(1))
+        passed = total - int(partial.group(2))
+    with engine.connect() as conn:
+        conn.execute(text("INSERT INTO project_test_results (project_id, success, total, raw_results, created) VALUES (:pid, :passed, :total, :raw, :now)"), [{"pid": pid, "passed": passed, "total": total, "raw": finalline, "now": int(time.time())}])
+        conn.commit()
+
+
+    return ""
 
 
 @app.route("/login")

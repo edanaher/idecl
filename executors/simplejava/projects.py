@@ -83,7 +83,6 @@ def newproject(classroom):
         conn.commit()
     return str(project.id)
 
-
 @app.route("/projects/<pid>")
 @requires_permission(P.VIEWPROJECT, "project")
 def project(pid):

@@ -215,10 +215,14 @@ local function runprogram(json)
   local running = ngx_pipe.spawn(command, {merge_stderr = true})
   ngx.thread.spawn(handle_input, compile_result.path, compile_result.container)
 
+  local finalline = ""
   while true do
     local output, err = running:stdout_read_any(4096)
     if output then
       wb:send_text(cjson.encode({output = output}))
+      if json.test then
+        finalline = string.gsub(finalline .. output, "^.*\n([^\n][^\n]*\n*)$", "%1")
+      end
     end
     if err == "closed" then
       break
@@ -228,6 +232,13 @@ local function runprogram(json)
     end
     -- In case of badness, don't spam the client too hard.
     ngx.sleep(0.1)
+  end
+  if json.test then
+    ngx.location.capture("/projects/" .. tostring(json.pid) .. "/tests/save", {
+      body = cjson.encode({finalline = finalline}),
+      method = ngx.HTTP_POST,
+      headers = {["content-type"]="application/json"}
+    })
   end
   wb:send_text(cjson.encode({output = output, complete = true, status="complete"}))
 end

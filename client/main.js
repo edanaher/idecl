@@ -579,6 +579,10 @@ var setEditorLanguage = function(sess, filename) {
 
 var loadFile = function(fileid, contents, savehistoryfile) {
   var filenamediv;
+  if (contents == true) {
+    contents = null;
+    savehistoryfile = true
+  }
   if (typeof(fileid) == "number") {
     filenamediv = document.querySelector("#filelist .filename[fileid=\"" + fileid + "\"]");
   } else {
@@ -592,7 +596,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
   saveLSc("lastfile", fileid);
   var sess = sessions[fileid]
   if (!sess) {
-    if (contents && contents != true)
+    if (contents)
       sess = ace.createEditSession(contents);
     else
       sess = ace.createEditSession(fileContents(projectId(), fileid) || "");
@@ -603,12 +607,12 @@ var loadFile = function(fileid, contents, savehistoryfile) {
     sess.on("changeSelection", cursorupdate);
     sessions[fileid] = sess;
   }
-  if (!contents)
+  if (!savehistoryfile)
     logedit("l", sess.selection.getCursor(), [parseInt(oldfileid), parseInt(fileid)]);
   editor.setSession(sess);
   displayeditstate();
   filenamediv.classList.add("open");
-  if (currenthistory != -1 && (contents === true || savehistoryfile == true))
+  if (currenthistory != -1 && savehistoryfile == true)
     currenthistoryfile = parseInt(fileid);
   if (currenthistory == -1) {
     var attrs = loadLSc("attrs", fileid);

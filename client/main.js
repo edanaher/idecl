@@ -753,8 +753,8 @@ var loadFromServer = function(pid) {
       // or local save, bootstrap it.
       if (!loadLSc("files")) {
         bootstrapStorage();
-        saveToServer();
         initFiles();
+        saveToServer();
       }
       else
         loadbutton.innerText = "no server save";

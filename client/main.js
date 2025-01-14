@@ -334,12 +334,17 @@ var historymove = function(adjust) {
   if (currenthistory == -1 && adjust > 0 || currenthistory == 0 && adjust < 0)
     return;
   if (currenthistory == -1) {
+    currenthistoryfile = 0;
     saveFile();
     currenthistory = edits.length - 1;
-    currenthistoryfile = parseInt(document.querySelector(".filename.open").getAttribute("fileid"));
-  } else {
-    loadFile(currenthistoryfile, true);
+    for (var i = currenthistory; i >= 0; i--)
+      if (edits[i][0] == "l") {
+        currenthistoryfile = edits[i][4][1];
+        console.log(edits[i]);
+        break;
+      }
   }
+  loadFile(currenthistoryfile, true);
   if (adjust > 0)
     currenthistory += adjust;
   editor.setReadOnly(true);
@@ -381,7 +386,16 @@ var historymove = function(adjust) {
       editor.gotoLine(edit[2] + 1, edit[3]);
       editor.insert(edit[4]);
     } else if (edit[0] == "l") {
-      loadFile(edit[4][0], true);
+      for (var i = currenthistory - 1; i >= 0; i--)
+        if (edits[i][0] == "l") {
+          currenthistoryfile = edits[i][4][1];
+          console.log(edits[i]);
+          break;
+        }
+      var prevfile = edit[4][0]
+      if (i >= 0 && edits[i][1] != prevfile)
+        prevfile = edits[i][4][1]
+      loadFile(prevfile, true);
     } else if (edit[0] == "a") {
       var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
       filenamediv.classList.add("histdeleted");

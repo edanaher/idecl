@@ -454,20 +454,26 @@ var renameFile = function(elem) {
   editbox.focus();
 
   var finishEdit = function() {
-    var newname = editbox.value;
+    var newname = editbox.value.trim();
     elem.removeChild(editbox);
-    elem.innerText = editbox.value;
-    elem.setAttribute("title", editbox.value);
     elem.classList.remove("editing");
+
+    var files = JSON.parse(loadLSc("files"));
+    var fileid = elem.getAttribute("fileid")
+    for (var i in files)
+      if (files[i] == newname && fileid != i)
+        newname = name;
+    if (newname == "")
+      newname = name;
+    if (newname.length > 64)
+      newname = name;
+
+    elem.innerText = newname;
+    elem.setAttribute("title", newname);
 
     if (newname == name)
       return;
-
-    var files = JSON.parse(loadLSc("files"));
-    // TODO: we now store the id on the fildid attr.  Use it.
-    for (var i in files)
-      if (files[i] == name)
-        files[i] = newname;
+    files[fileid] = newname;
     saveLSc("files", JSON.stringify(files));
 
     logedit("n", editor.session.selection.getCursor(), [elem.getAttribute("fileid"), name, newname]);

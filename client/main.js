@@ -338,22 +338,31 @@ var historymove = function(adjust, delay) {
     currenthistoryfile = 0;
     saveFile();
     currenthistory = edits.length - 1;
-    for (var i = currenthistory; i >= 0; i--)
+    for (var i = currenthistory; i >= 0; i--) {
       if (edits[i][0] == "l") {
         currenthistoryfile = edits[i][4][1];
         //console.log(edits[i]);
         break;
       }
+      if (edits[i][0] == "r") {
+        var filelist = document.getElementById("filelist");
+        currenthistoryfile = parseInt(filelist.children[0].getAttribute("fileid"));
+        break;
+      }
+    }
     editor.setOption("behavioursEnabled", false);
     editor.setOption("enableAutoIndent", false);
   }
-  loadFile(currenthistoryfile, true);
   if (adjust > 0)
     currenthistory += adjust;
   editor.setReadOnly(true);
 
   var edit = edits[currenthistory];
   //console.log("edit is", edit);
+  // Load up the currently active file.  Unless it was removed.
+  //console.log(currenthistoryfile);
+  if (edit[0] != "r")
+    loadFile(currenthistoryfile, true);
   if (adjust > 0) {
     if (edit[0] == "m") {
       editor.gotoLine(edit[2] + 1, edit[3]);
@@ -390,14 +399,20 @@ var historymove = function(adjust, delay) {
       editor.gotoLine(edit[2] + 1, edit[3]);
       editor.insert(edit[4]);
     } else if (edit[0] == "l") {
-      for (var i = currenthistory - 1; i >= 0; i--)
+      for (var i = currenthistory - 1; i >= 0; i--) {
         if (edits[i][0] == "l") {
           currenthistoryfile = edits[i][4][1];
           break;
         }
+        if (edits[i][0] == "r") {
+          var filelist = document.getElementById("filelist");
+          currenthistoryfile = parseInt(filelist.children[0].getAttribute("fileid"));
+          break;
+        }
+      }
       var prevfile = edit[4][0]
       if (i >= 0 && edits[i][1] != prevfile) {
-        console.log("history load file mismatch on ", i, ";", prevfile, "vs", edits[i][1]);
+        console.log("history load file mismatch on ", i, ";", prevfile, "vs", edits[i][4][1]);
         prevfile = edits[i][4][1]
       }
       loadFile(prevfile, true);

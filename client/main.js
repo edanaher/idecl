@@ -341,9 +341,11 @@ var historymove = function(adjust, delay) {
     for (var i = currenthistory; i >= 0; i--)
       if (edits[i][0] == "l") {
         currenthistoryfile = edits[i][4][1];
-        console.log(edits[i]);
+        //console.log(edits[i]);
         break;
       }
+    editor.setOption("behavioursEnabled", false);
+    editor.setOption("enableAutoIndent", false);
   }
   loadFile(currenthistoryfile, true);
   if (adjust > 0)
@@ -351,6 +353,7 @@ var historymove = function(adjust, delay) {
   editor.setReadOnly(true);
 
   var edit = edits[currenthistory];
+  //console.log("edit is", edit);
   if (adjust > 0) {
     if (edit[0] == "m") {
       editor.gotoLine(edit[2] + 1, edit[3]);
@@ -390,12 +393,13 @@ var historymove = function(adjust, delay) {
       for (var i = currenthistory - 1; i >= 0; i--)
         if (edits[i][0] == "l") {
           currenthistoryfile = edits[i][4][1];
-          console.log(edits[i]);
           break;
         }
       var prevfile = edit[4][0]
-      if (i >= 0 && edits[i][1] != prevfile)
+      if (i >= 0 && edits[i][1] != prevfile) {
+        console.log("history load file mismatch on ", i, ";", prevfile, "vs", edits[i][1]);
         prevfile = edits[i][4][1]
+      }
       loadFile(prevfile, true);
     } else if (edit[0] == "a") {
       var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
@@ -438,6 +442,8 @@ var historymove = function(adjust, delay) {
     checkHistoryReplay();
     currenthistory = -1;
     editor.setReadOnly(false);
+    editor.setOption("behavioursEnabled", true);
+    editor.setOption("enableAutoIndent", true);
     displayeditstate();
     return;
   }
@@ -598,7 +604,6 @@ var toggleinstructions = function() {
 var setEditorLanguage = function(sess, filename) {
   if (!filename)
     filename = document.querySelector(".filename.open").innerText;
-  console.log(filename);
   if (filename.endsWith(".md"))
     sess.setMode("ace/mode/markdown");
   else
@@ -1279,7 +1284,6 @@ var initFiles = function() {
 
 var toggleDarkMode = function () {
   var body = document.getElementsByTagName("body")[0];
-  console.log(term.options.theme);
   if (body.getAttribute("theme") == "dark") {
     document.getElementById("switchtheme").innerText = "dark mode";
     localStorage.removeItem("theme");

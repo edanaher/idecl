@@ -968,7 +968,12 @@ var rendermarkdown = (function() {
       return;
     var render = function() {
       var rendered = DOMPurify.sanitize(marked.parse(editor.getValue()));
-      document.getElementById(markdownvisible).innerHTML = rendered;
+      // This can break on history :(
+      var elem = document.getElementById(markdownvisible);
+      if (elem)
+        elem.innerHTML = rendered;
+      else
+        console.log("Missing markdown elem:", markdownvisible);
       timer = null;
     }
     var now = Date.now();

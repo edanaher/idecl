@@ -27,6 +27,7 @@
       <button id="publish" {{"published" if published else ""}}>{{ "unpublish project" if published else "publish project" }}</button>
       {% endif %}
       {% if cancompare %}
+        <button id="viewsubmissions"{% if not published %}class="hidden"{% endif %}>View submissions</button>
         <button id="compare50"{% if not published %}class="hidden"{% endif %}>Compare submissions</button>
       {% endif %}
       {% if cansubmit %}

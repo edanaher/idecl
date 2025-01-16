@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import shutil
 import subprocess
@@ -9,6 +10,11 @@ from sqlalchemy import text
 from app import app
 from db import engine
 from permissions import requires_permission, has_permission, Permissions as P
+
+@app.template_filter("formatdate")
+def _formatdate(date):
+    return datetime.fromtimestamp(date).strftime("%Y-%m-%d %H:%M:%S")
+
 
 @app.route("/classrooms")
 @login_required
@@ -237,3 +243,21 @@ def delete_project(pid):
         conn.commit()
 
     return "Success";
+
+@app.route("/projects/<pid>/submissions")
+@requires_permission(P.COMPAREPROJECT, "project")
+def assignment_results(pid):
+    with engine.connect() as conn:
+        project_row = conn.execute(text("SELECT name, id FROM projects WHERE id=:pid"), [{"pid": pid}]).first()
+        classroom_row = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms JOIN projects ON projects.classroom_id=classrooms.id WHERE projects.id=:pid"), [{"pid": pid}]).first()
+        rows = conn.execute(text("""
+            SELECT projects.name, projects.id,
+                   test_results.success, test_results.total, test_results.created,
+                   users.email, users.name AS username
+            FROM projects
+            LEFT JOIN (SELECT project_id, success, total, created, RANK() OVER (PARTITION BY project_id ORDER BY created DESC) as rank FROM project_test_results) AS test_results ON projects.id = test_results.project_id
+            LEFT JOIN users ON projects.owner == users.id
+            WHERE (rank=1 OR rank IS NULL) AND parent_id=:pid AND cloned_as_assignment=TRUE
+        """), [{"pid": pid}]).all()
+
+    return render_template("assignment_results.html", classroom_id=classroom_row.id, classroom_name=classroom_row.name, project_id=pid, project_name=project_row.name, loggedinas=current_user, canmanageusers=has_permission(P.LISTUSERS), results=rows)

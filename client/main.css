@@ -433,3 +433,15 @@ span.tag {
 #compare50.hidden {
   display: none;
 }
+
+#viewsubmissions.hidden {
+  display: none;
+}
+
+#assignment-results {
+  border: 1px solid;
+}
+
+#assignment-results tr:nth-child(odd) {
+  background-color: #DDDDDD;
+}

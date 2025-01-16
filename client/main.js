@@ -1156,6 +1156,7 @@ var cloneProjectInit = function(assignment) {
 var publish = function() {
   var publish_button = this;
   var compare50 = document.getElementById("compare50");
+  var viewsubmissions = document.getElementById("viewsubmissions");
   if (this.hasAttribute("published")) {
     var xhr = new XMLHttpRequest();
     xhr.open("DELETE", "/projects/" + projectId() + "/tags/1", true);
@@ -1165,6 +1166,8 @@ var publish = function() {
       publish_button.removeAttribute("published");
       if (compare50)
         compare50.classList.add("hidden");
+      if (viewsubmissions)
+        viewsubmissions.classList.add("hidden");
     };
     this.innerText = "unpublishing..."
     this.disabled = true;
@@ -1178,6 +1181,8 @@ var publish = function() {
       publish_button.setAttribute("published", "");
       if (compare50)
         compare50.classList.remove("hidden");
+      if (viewsubmissions)
+        viewsubmissions.classList.remove("hidden");
     };
     this.innerText = "publishing..."
     this.disabled = true;
@@ -1214,6 +1219,10 @@ var submit = function() {
 
 var compare50 = function() {
   document.location.href = document.location + "/compare"
+}
+
+var viewsubmissions = function() {
+  document.location.href = document.location + "/submissions"
 }
 
 var upgradestore = function() {
@@ -1458,6 +1467,7 @@ window.onload = function() {
   addClickListenerById("publish", publish);
   addClickListenerById("submit", submit);
   addClickListenerById("compare50", compare50);
+  addClickListenerById("viewsubmissions", viewsubmissions);
   addClickListenerById("addfile", addFile);
   addClickListenerById("removefile", removeFile);
   addClickListenerById("savefiles", saveToServer);

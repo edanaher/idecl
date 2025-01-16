@@ -248,11 +248,14 @@ def assignment_results(pid):
         rows = conn.execute(text("""
             SELECT projects.name, projects.id,
                    test_results.success, test_results.total, test_results.created,
-                   users.email, users.name AS username
+                   users.email, users.name AS username,
+                   SUM(LENGTH(files.contents) - LENGTH(REPLACE(contents, X'0A', ''))) AS lines
             FROM projects
             LEFT JOIN (SELECT project_id, success, total, created, RANK() OVER (PARTITION BY project_id ORDER BY created DESC) as rank FROM project_test_results) AS test_results ON projects.id = test_results.project_id
             LEFT JOIN users ON projects.owner == users.id
+            LEFT JOIN files ON files.project_id = projects.id AND NOT files.hidden AND NOT files.readonly AND NOT files.inherited
             WHERE (rank=1 OR rank IS NULL) AND parent_id=:pid AND cloned_as_assignment=TRUE
+            GROUP BY projects.id;
         """), [{"pid": pid}]).all()
 
     return render_template("assignment_results.html", classroom_id=classroom_row.id, classroom_name=classroom_row.name, project_id=pid, project_name=project_row.name, loggedinas=current_user, canmanageusers=has_permission(P.LISTUSERS), results=rows)

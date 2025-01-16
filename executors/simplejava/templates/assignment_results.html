@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+  <link rel="stylesheet" href="/static/main.css"></script>
+  <script>
+    var pad = function(n) {
+      if (n == 0)
+        return "00";
+      if (n < 10)
+        return "0" + n;
+      return n
+    }
+    window.onload = function() {
+      var timestamps = document.getElementsByClassName("timestamp");
+      for (var i = 0; i < timestamps.length; i++) {
+        console.log(timestamps[i].innerText);
+        var d = new Date(parseInt(timestamps[i].innerText) * 1000);
+        timestamps[i].innerText = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+
+      }
+
+    }
+  </script>
+  <div id="logo" style="display:inline-block; font-size:larger; font-style: italic; font-color: #330000;"><a href="/">idecl</a></div>
+  <div id="classroomname"><a href="/classrooms/{{ classroom_id }}/projects">{{ classroom_name }}</a></div> &gt;
+  <div id="projectname"><a href="/projects/{{ project_id }}">{{ project_name }}</a> submissions</div>
+  {% if canmanageusers %}
+  <a href="/users">Manage users</a>
+  {% endif %}
+  <div id="loggedinas">{{ current_user.email }}
+    {% if current_user.id != current_user.euid %}
+    viewing as {{ current_user.eemail }}
+    <button id="view-as-self">X</button>
+    {% endif %}
+  </div>
+  <h4 style="margin-bottom: 0px;">Submissions:</h4>
+  <table id="assignment-results">
+    <tr><th>Student</th><th>Test results</th><th>Last test run time</th></tr>
+    {% for result in results %}
+    <tr>
+      <td><a href="/projects/{{ result.id }}">{{ result.username or result.email or result.name }}</a></td>
+      {% if result.created %}
+        <td>{{ result.success }} / {{ result.total }}</td>
+        <td class="timestamp">{{ result.created }}</td>
+      {% else %}
+        <td>-</td>
+        <td>-</td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+  </table>
+</html>
+

@@ -11,11 +11,6 @@ from app import app
 from db import engine
 from permissions import requires_permission, has_permission, Permissions as P
 
-@app.template_filter("formatdate")
-def _formatdate(date):
-    return datetime.fromtimestamp(date).strftime("%Y-%m-%d %H:%M:%S")
-
-
 @app.route("/classrooms")
 @login_required
 def classrooms():

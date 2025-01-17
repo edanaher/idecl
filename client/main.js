@@ -480,7 +480,7 @@ var stop_historymove = function(adjust) {
 
 var load_sibling = function() {
   var pid = document.getElementById("siblingsselect").value;
-  console.log("pid");
+  saveLS("lastfile", pid, loadLSc("lastfile"));
   document.location.href = "/projects/" + pid;
 }
 

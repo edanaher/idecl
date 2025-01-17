@@ -8,6 +8,9 @@ body.doflex {
   margin-top: 0;
   margin-bottom: 0;
 }
+body {
+  background-color: #F6F6F6;
+}
 body[theme="dark"] {
   background-color: #333333;
   color: white;

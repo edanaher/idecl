@@ -1,6 +1,6 @@
 <!doctype html>
 <html>
-  <link rel="stylesheet" href="/static/main.css"></script>
+  <link rel="stylesheet" href="/static/main.css" />
   <script>
     var deleteProject = function() {
       var deleteButton = this;
@@ -99,8 +99,18 @@
   </div>
   <h4 style="margin-bottom: 0px;">Projects:</h4>
   <ul id="projectlist" style="margin-top: 4px;">
+    {% set ns = namespace() %}
+    {% set ns.curparent = -1 %}
     {% for project in projects %}
     {% if project.canview or project.cancloneassignment == "1" or candeleteproject %}
+      {% if ns.curparent == -1 and project.parent_id %}
+        <ul class="projectsublist">
+        {% set ns.curparent = project.parent_id %}
+      {% endif %}
+      {% if ns.curparent != -1 and not project.parent_id %}
+        </ul>
+        {% set ns.curparent = -1 %}
+      {% endif %}
       <li>
         {% if project.canview %}
           <a href="/projects/{{ project.id }}">{{ project.name }}</a>
@@ -117,14 +127,17 @@
         {% endif %}
 
         {% if project.cancloneassignment == "1" %}
-          <button class="cloneassignment" project-id="{{ project.id }}">Clone project as assignment</div>
+          <button class="cloneassignment" project-id="{{ project.id }}">Clone project as assignment</button>
         {% endif %}
         {% if candeleteproject %}
-        <button class="delete-project" project-id="{{ project.id }}" project-name="{{ project.name }}">-</div>
+        <button class="delete-project" project-id="{{ project.id }}" project-name="{{ project.name }}">-</button>
         {% endif %}
       </li>
     {% endif %}
     {% endfor %}
+    {% if ns.curparent != -1 %}
+      </ul>
+    {% endif %}
   </ul>
   {% if canaddproject %}
   <button id="addproject">New project</button>

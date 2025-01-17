@@ -84,6 +84,23 @@
           xhr.send();
         });
       }
+      var sublists = document.getElementsByClassName("projectsublist");
+      for (var i = 0; i < sublists.length; i++) {
+        var sublist = sublists[i];
+        var par = sublist.previousElementSibling;;
+        var expandbutton = document.createElement("button");
+        expandbutton.classList.add("expand");
+        expandbutton.innerText = ">";
+        expandbutton.addEventListener("click", function() {
+          var sublist = this.parentNode.nextElementSibling;
+          sublist.classList.toggle("hidden");
+          if (sublist.classList.contains("hidden"))
+            this.innerText = ">"
+          else
+            this.innerText = "v"
+        });
+        par.insertBefore(expandbutton, par.firstChild);
+      }
     }
   </script>
   <div id="logo" style="display:inline-block; font-size:larger; font-style: italic; font-color: #330000;"><a href="/">idecl</a></div>
@@ -104,7 +121,7 @@
     {% for project in projects %}
     {% if project.canview or project.cancloneassignment == "1" or candeleteproject %}
       {% if ns.curparent == -1 and project.parent_id %}
-        <ul class="projectsublist">
+        <ul class="projectsublist hidden">
         {% set ns.curparent = project.parent_id %}
       {% endif %}
       {% if ns.curparent != -1 and not project.parent_id %}

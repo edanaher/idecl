@@ -92,7 +92,7 @@ def project(pid):
     # TODO: check permissions on classroom
     with engine.connect() as conn:
         row  = conn.execute(text("""
-            SELECT projects.name, projects.cloned_as_assignment,
+            SELECT projects.name, projects.cloned_as_assignment, projects.parent_id,
                 classrooms.name AS classroom, classrooms.id AS classroom_id,
                 tags.id AS tag_id,
                 submitted.id AS submitted_id
@@ -104,10 +104,20 @@ def project(pid):
             LEFT JOIN tags AS submitted ON submitted_pt.tag_id=submitted.id AND submitted.name = 'submitted'
             WHERE projects.id=:pid AND (tags.name='published' OR tags.name IS NULL)
         """), [{"pid": pid}]).first()
+        siblings = None
+        if row.cloned_as_assignment and has_permission(P.COMPAREPROJECT, row.classroom_id, row.parent_id):
+            siblings = conn.execute(text("""
+                SELECT COALESCE(users.name, users.email, projects.name) AS name, projects.id
+                FROM projects
+                JOIN users ON projects.owner = users.id
+                WHERE projects.parent_id=:pid
+            """), [{"pid": row.parent_id}]).all()
+
     if row == None:
         return redirect(f"/classrooms/{classroom}/projects")
     return render_template("editor.html",
             classroom_name=row.classroom,
+            project_id=int(pid),
             project_name=row.name,
             classroom_id=row.classroom_id,
             # TODO: Cloning a student's project would be nice for experimenting.  Enable it later once behavior is clearer.
@@ -117,7 +127,8 @@ def project(pid):
             canunpublish=has_permission(P.DELETEPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,
             cansubmit=row.cloned_as_assignment, submitted=not not row.submitted_id,
             cancompare=has_permission(P.COMPAREPROJECT, row.classroom_id, pid) and not not row.tag_id,
-            published=not not row.tag_id )
+            published=not not row.tag_id,
+            siblings=siblings)
 
 COMPARE_ROOT = "/app/compare"
 

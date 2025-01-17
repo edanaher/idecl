@@ -54,7 +54,7 @@ with engine.connect() as conn:
 def has_permission(perm, classroom_id = None, project_id = None):
     with engine.connect() as conn:
         classroom_constraint = "users_roles.classroom_id = " + str(classroom_id) if classroom_id else "FALSE"
-        project_constraint = "users_roles.project_id = " + project_id if project_id else "FALSE"
+        project_constraint = "users_roles.project_id = " + str(project_id) if project_id else "FALSE"
         valid = conn.execute(text(f"""
             SELECT *
             FROM roles_permissions

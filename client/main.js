@@ -478,6 +478,12 @@ var stop_historymove = function(adjust) {
   }
 }
 
+var load_sibling = function() {
+  var pid = document.getElementById("siblingsselect").value;
+  console.log("pid");
+  document.location.href = "/projects/" + pid;
+}
+
 var promptForSave = function(e) { e.preventDefault() }
 
 var markDirty = function() {
@@ -1480,6 +1486,7 @@ window.onload = function() {
   addListenerById("historyforward", "mousedown", function() { start_historymove(1); });
   addListenerById("historyforward", "mouseup", stop_historymove);
   addListenerById("historyforward", "mouseleave", stop_historymove);
+  addListenerById("siblingsselect", "change", load_sibling);
   addClickListenerById("comments", showcomment);
   addClickListenerById("submitcomment", submitcomment);
   addClickListenerById("cancelcomment", hidecomment);

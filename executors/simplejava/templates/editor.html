@@ -62,7 +62,16 @@
           <div id="historystate">0/0</div>
           <div id="historyforward">&gt;</div>
         </div>
-        <!--div id="resetfiles">reset</div-->
+        {% if siblings %}
+          <div id="siblings">
+            <select id="siblingsselect">
+              {% for sibling in siblings %}
+              <option value={{sibling.id}} {% if sibling.id == project_id %}selected{% endif %}>{{sibling.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        {% endif %}
+          <!--div id="resetfiles">reset</div-->
         <div id="navbarpadding"></div>
         <a href="https://github.com/edanaher/idecl/blob/main/docs/student.md"><div id="helplink">Help</div></a>
         <div id="comments">Comments</div>

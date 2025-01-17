@@ -180,6 +180,10 @@ body[theme="dark"] #loadfiles {
   color: #440000;
 }
 
+#siblings {
+  overflow: hidden;
+}
+
 #navbarpadding {
   display: flex;
   flex: 1 1;

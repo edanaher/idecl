@@ -117,10 +117,11 @@
   <h4 style="margin-bottom: 0px;">Projects:</h4>
   <ul id="projectlist" style="margin-top: 4px;">
     {% set ns = namespace() %}
+    {% set ns.lastproject = -1 %}
     {% set ns.curparent = -1 %}
     {% for project in projects %}
     {% if project.canview or project.cancloneassignment == "1" or candeleteproject %}
-      {% if ns.curparent == -1 and project.parent_id %}
+      {% if ns.curparent == -1 and project.parent_id == ns.lastparent %}
         <ul class="projectsublist hidden">
         {% set ns.curparent = project.parent_id %}
       {% endif %}
@@ -128,6 +129,7 @@
         </ul>
         {% set ns.curparent = -1 %}
       {% endif %}
+      {% set ns.lastparent = project.id %}
       <li>
         {% if project.canview %}
           <a href="/projects/{{ project.id }}">{{ project.name }}</a>

@@ -28,6 +28,8 @@ def save_project(pid):
             conn.execute(text("INSERT INTO history_full (project_id, history) VALUES (:pid, :history) ON CONFLICT DO UPDATE SET history=:history"),[{"pid": pid, "history": history}])
         conn.commit()
 
+    print(f"Saving project {pid}, file lengths are { {k: len(v['contents']) for k, v in data['files'].items()} }", flush=True)
+
     return "Success"
 
 def attrsToString(row):

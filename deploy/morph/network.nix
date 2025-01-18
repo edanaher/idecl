@@ -43,7 +43,8 @@
           replicas:
             - url: s3://edanaher-idecl/litestream-prod-bak
               retention: 720h
-              sync-interval: 5m
+              sync-interval: 10m
+              snapshot-interval: 48h
       '';
   in {
     imports = lib.optional (builtins.pathExists ./do-userdata.nix) ./do-userdata.nix ++ [

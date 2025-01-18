@@ -169,6 +169,7 @@ local function runprogram(json)
           ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] removing " .. tostring(stale) .. " from slot " .. tostring(i))
           state:delete("nowcompiling:" .. tostring(i))
         end
+        retries = 0
       end
     end
     lock:lock("compile")
@@ -190,8 +191,16 @@ local function runprogram(json)
     method=ngx.HTTP_POST,
     headers={["Content-Type"]="application/json"}
   })
-  ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] releasing slot " .. tostring(ready))
-  state:delete("nowcompiling:" .. tostring(ready))
+
+  lock:lock("compile")
+  local curinslot = state:get("nowcompiling:" .. tostring(ready))
+  if curinslot == compileid then
+    ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] releasing slot " .. tostring(ready))
+    state:delete("nowcompiling:" .. tostring(ready))
+  else
+    ngx.log(ngx.ERR, "compile [" .. tostring(compileid) .. "] FAILED releasing slot " .. tostring(ready) .. " taken by " .. tostring(curinslot))
+  end
+  lock:unlock("compile")
 
 
   local compile_result = cjson.decode(compile.body)

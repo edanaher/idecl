@@ -111,7 +111,7 @@
       serviceConfig = {
         WorkingDirectory = "${idecl-src}/executors/simplejava";
         ExecStartPre = "${init-script}";
-        ExecStart = "/bin/sh -c 'source /app/secrets.sh && ${pkgs.python3Packages.gunicorn}/bin/gunicorn app:app --threads 4 --workers 2 --bind 0.0.0.0:${builtins.toString idecl-port}'";
+        ExecStart = "/bin/sh -c 'source /app/secrets.sh && ${pkgs.python3Packages.gunicorn}/bin/gunicorn app:app --threads 8 --workers 2 --bind 0.0.0.0:${builtins.toString idecl-port}'";
       };
     };
   };

@@ -257,7 +257,7 @@ autosavestate = {
   timer: null
 };
 var autosave = function() {
-  saveToServer();
+  saveToServerIfDirty();
   autosavestate.forcetime = null;
   autosavestate.timer = null;
 }
@@ -786,9 +786,14 @@ var saveToServer = function() {
   xhr.send(JSON.stringify(postdata));
 }
 
+var saveToServerIfDirty = function() {
+  if (document.getElementById("savefiles").classList.contains("dirty"))
+    saveToServer();
+}
+
 var pagehidden = function() {
   if (document.visibilityState == "hidden")
-    saveToServer();
+    saveToServerIfDirty();
 }
 var loadFromServer = function(pid) {
   if (pid === undefined)

@@ -263,6 +263,8 @@ var autosave = function() {
 }
 
 var triggerautosave = function() {
+  if (currenthistory != -1)
+    return;
   if (autosavestate.timer) {
     clearTimeout(autosavestate.timer);
     autosavestate.timer = setTimeout(autosave, Math.min(5000, autosavestate.forcetime - Date.now()));
@@ -273,6 +275,8 @@ var triggerautosave = function() {
 }
 
 var editorupdate = function(delta) {
+  if (currenthistory != -1)
+    return;
   var action = delta.action[0];
   var text = delta.lines.join("\n");
   var type = delta.action[0] == "r" ? "d" : delta.action[0];
@@ -495,6 +499,8 @@ var load_sibling = function() {
 var promptForSave = function(e) { e.preventDefault() }
 
 var markDirty = function() {
+  if (currenthistory != -1)
+    return;
   document.getElementById("savefiles").classList.add("dirty");
   window.addEventListener("beforeunload", promptForSave);
   if (markdownvisible)

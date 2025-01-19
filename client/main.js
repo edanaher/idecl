@@ -349,6 +349,10 @@ var historymove = function(adjust, delay) {
         currenthistoryfile = parseInt(filelist.children[0].getAttribute("fileid"));
         break;
       }
+      if (edits[i][0] == "a") {
+        currenthistoryfile = edits[i][4][1];
+        break;
+      }
     }
     editor.setOption("behavioursEnabled", false);
     editor.setOption("enableAutoIndent", false);
@@ -375,7 +379,7 @@ var historymove = function(adjust, delay) {
     } else if (edit[0] == "s") {
       editor.selection.setRange(new ace.Range(edit[2], edit[3], edit[4].row, edit[4].column));
     } else if (edit[0] == "l") {
-      loadFile(edit[4][1]);
+      loadFile(edit[4][1], true);
       editor.gotoLine(edit[2] + 1, edit[3]);
     } else if (edit[0] == "a") {
       var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
@@ -409,11 +413,15 @@ var historymove = function(adjust, delay) {
           currenthistoryfile = parseInt(filelist.children[0].getAttribute("fileid"));
           break;
         }
+        if (edits[i][0] == "a") {
+          currenthistoryfile = edits[i][4][1];
+          break;
+        }
       }
       var prevfile = edit[4][0]
-      if (i >= 0 && edits[i][1] != prevfile) {
-        console.log("history load file mismatch on ", i, ";", prevfile, "vs", edits[i][4][1]);
-        prevfile = edits[i][4][1]
+      if (i >= 0 && prevfile != currenthistoryfile) {
+        console.log("history load file mismatch on ", i, ";", prevfile, "vs", currenthistoryfile, "from", edits[i]);
+        prevfile = currenthistoryfile;
       }
       loadFile(prevfile, true);
     } else if (edit[0] == "a") {
@@ -796,6 +804,10 @@ var pagehidden = function() {
     saveToServerIfDirty();
 }
 var loadFromServer = function(pid) {
+  if (currenthistory != -1) {
+    alert("Cannot load from server while viewing history");
+    return
+  }
   if (pid === undefined)
     pid = projectId();
   var loadbutton = document.getElementById("loadfiles");

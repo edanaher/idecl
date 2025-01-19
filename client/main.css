@@ -45,6 +45,7 @@ body[theme="dark"] button {
   padding: 2px;
   margin: 2px;
   overflow: hidden;
+  cursor: default;
 }
 
 body[theme="dark"] #filelist .filename {
@@ -89,6 +90,11 @@ body[theme="dark"] #filelist .filename.open { background-color: #114411; }
   margin: 2px;
   width: 20px;
   text-align: center;
+  cursor: default;
+}
+
+body[theme="dark"] #addfile {
+  border: 1px solid #999999;
 }
 
 #removefile {
@@ -99,6 +105,11 @@ body[theme="dark"] #filelist .filename.open { background-color: #114411; }
   position: absolute;
   right: 0px;
   top: 0px;
+  cursor: default;
+}
+
+body[theme="dark"] #removefile {
+  border: 1px solid #999999;
 }
 
 #savefiles {
@@ -108,6 +119,7 @@ body[theme="dark"] #filelist .filename.open { background-color: #114411; }
   text-align:center;
   background-color: #EEFFEE;
   color: #004400;
+  cursor: default;
 }
 
 body[theme="dark"] #savefiles {
@@ -132,6 +144,7 @@ body[theme="dark"] #savefiles.dirty {
   text-align:center;
   background-color: #EEFFEE;
   color: #004400;
+  cursor: default;
 }
 #loadfiles.stale {
   background-color: #FFCCCC;
@@ -156,6 +169,11 @@ body[theme="dark"] #loadfiles.stale {
   margin: 2px;
   width: 20px;
   text-align: center;
+  cursor: default;
+}
+
+body[theme="dark"] #historyback {
+  border: 1px solid #999999;
 }
 
 #historystate {
@@ -176,6 +194,11 @@ body[theme="dark"] #loadfiles.stale {
   position: absolute;
   right: 0px;
   top: 0px;
+  cursor: default;
+}
+
+body[theme="dark"] #historyforward {
+  border: 1px solid #999999;
 }
 
 

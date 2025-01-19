@@ -226,6 +226,7 @@ body[theme="dark"] #historyforward {
   padding: 2px;
   margin: 2px;
   text-align: center;
+  cursor: default;
 }
 #filecontainer a {
   text-decoration: none;
@@ -243,6 +244,7 @@ body[theme="dark"] #helplink a { color: #999999; }
   padding: 2px;
   margin: 2px;
   text-align: center;
+  cursor: default;
 }
 body[theme="dark"] #comments {
   border: 1px solid #777777;

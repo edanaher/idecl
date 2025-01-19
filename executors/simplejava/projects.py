@@ -262,11 +262,14 @@ def assignment_results(pid):
             SELECT projects.name, projects.id,
                    test_results.success, test_results.total, test_results.created,
                    users.email, users.name AS username,
-                   SUM(LENGTH(files.contents) - LENGTH(REPLACE(contents, X'0A', ''))) AS lines
+                   SUM(LENGTH(files.contents) - LENGTH(REPLACE(contents, X'0A', ''))) AS lines,
+                   COALESCE(GROUP_CONCAT(tags.name), "") AS tags
             FROM projects
             LEFT JOIN (SELECT project_id, success, total, created, RANK() OVER (PARTITION BY project_id ORDER BY created DESC) as rank FROM project_test_results) AS test_results ON projects.id = test_results.project_id
             LEFT JOIN users ON projects.owner == users.id
             LEFT JOIN files ON files.project_id = projects.id AND NOT files.hidden AND NOT files.readonly AND NOT files.inherited
+            LEFT JOIN projects_tags ON projects.id = projects_tags.project_id
+            LEFT JOIN tags ON projects_tags.tag_id = tags.id
             WHERE (rank=1 OR rank IS NULL) AND parent_id=:pid AND cloned_as_assignment=TRUE
             GROUP BY projects.id;
         """), [{"pid": pid}]).all()

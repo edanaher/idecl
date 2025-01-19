@@ -34,7 +34,7 @@
   </div>
   <h4 style="margin-bottom: 0px;">Submissions:</h4>
   <table id="assignment-results">
-    <tr><th>Student</th><th>Test results</th><th>Last test run time</th><th>Total lines in files</th></tr>
+    <tr><th>Student</th><th>Test results</th><th>Last test run time</th><th>Total lines in files</th><th>Tags</th></tr>
     {% for result in results %}
     <tr>
       <td><a href="/projects/{{ result.id }}">{{ result.username or result.email or result.name }}</a></td>
@@ -46,6 +46,7 @@
         <td>-</td>
       {% endif %}
       <td>{{ result.lines }}</td>
+      <td>{{ result.tags }}</td>
     </tr>
     {% endfor %}
   </table>

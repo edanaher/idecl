@@ -22,6 +22,8 @@ The plus and minus buttons below the list of files allow you to add and delete f
 
 The save and load buttons allow you to save and load from the server.  All changes are automatically saved on your computer, and saved to the server within a short time.  If the save button is yellow, your changes have not yet been saved to the server and will not be visible to your teacher; you can click it or wait a few seconds for it to turn green.  Additionally, if you try to leave the page without saving to the server, you will get a warning about unsaved work.  If you ignore this warning, you will not lose work, but it won't be visible to your teacher until you save.
 
+If you are working across multiple computers, you need to remember to load the newest code whenever you switch.  To help with this, the load button will turn red if the server code is newer than your local code.  This detection is not foolproof, but should be a good reminder of when you need to load your work.
+
 #### History
 
 Below save and load are two arrow buttons and a pair of numbers.  These let you go back in your history to see files as they previously existed.  However, this file is incomplete and buggy; it should not lose data, but may not give you a true history of your file.  Hopefully this will be fixed in the next couple weeks.

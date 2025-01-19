@@ -133,10 +133,18 @@ body[theme="dark"] #savefiles.dirty {
   background-color: #EEFFEE;
   color: #004400;
 }
+#loadfiles.stale {
+  background-color: #FFCCCC;
+  color: #442200;
+}
 body[theme="dark"] #loadfiles {
   border: 1px solid #999999;
   background-color: #335533;
   color: #99CC99;
+}
+body[theme="dark"] #loadfiles.stale {
+  background-color: #552222;
+  color: #DD8888;
 }
 
 #historybuttons {

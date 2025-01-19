@@ -768,6 +768,7 @@ var removeFile = function() {
 var saveToServer = function() {
   saveFile();
   var savebutton = document.getElementById("savefiles");
+  var loadbutton = document.getElementById("loadfiles");
   savebutton.innerText = "Saving..."
   var xhr = new XMLHttpRequest();
   xhr.open("POST", baseURL() + "save", true);
@@ -780,6 +781,8 @@ var saveToServer = function() {
         savebutton.innerText = "save";
         document.getElementById("savefiles").classList.remove("dirty");
         window.removeEventListener("beforeunload", promptForSave);
+        loadbutton.classList.remove("stale");
+        loadbutton.removeAttribute("title");
       }
     }
   };
@@ -801,7 +804,8 @@ var saveToServer = function() {
 }
 
 var saveToServerIfDirty = function() {
-  if (document.getElementById("savefiles").classList.contains("dirty"))
+  if (document.getElementById("savefiles").classList.contains("dirty") &&
+     !document.getElementById("loadfiles").classList.contains("stale"))
     saveToServer();
 }
 
@@ -874,6 +878,8 @@ var loadFromServer = function(pid) {
     if (pid == projectId()) {
       initFiles();
       loadbutton.innerText = "load";
+      loadbutton.classList.remove("stale");
+      loadbutton.removeAttribute("title");
       document.getElementById("savefiles").classList.remove("dirty");
       window.removeEventListener("beforeunload", promptForSave);
     }
@@ -1094,6 +1100,32 @@ public class TestNum
   }
 }`);
   upgradestore();
+}
+
+// TODO: dudupe with loadFromServer
+var checkLocalStale = function() {
+  pid = projectId();
+  var loadbutton = document.getElementById("loadfiles");
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", "/projects/" + pid + "/load", true);
+  xhr.onerror = function() {
+    console.log("Error talking to server to check staleness");
+  }
+  xhr.onload = function() {
+    var serverResponse = JSON.parse(xhr.response);
+    var serverHistory = serverResponse.history || {}
+    if (!history)
+      return;
+
+    var localHistory = loadLS("edits", pid);
+    if (serverHistory.length > localHistory.length) {
+      loadbutton.classList.add("stale");
+      loadbutton.setAttribute("title", "newer version detected on server");
+    }
+  }
+  xhr.send();
+
+  return
 }
 
 var resetFiles = function() {
@@ -1478,6 +1510,7 @@ window.onload = function() {
   initTerminal();
   initDarkMode();
   upgradestore();
+  checkLocalStale();
   if (!loadLSc("files"))
     loadFromServer(projectId(), true);
   else {

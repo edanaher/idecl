@@ -190,6 +190,7 @@ var postinsertposition = function(edit) {
 //   [r]emove file
 //   re[n]ame file
 //  *e[x]ecute file
+//   *[P]age load (userid, sessionid, historyid)
 var logedit = function(type, position, data) {
   if (currenthistory != -1)
     return;

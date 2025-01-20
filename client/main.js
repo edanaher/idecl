@@ -331,6 +331,25 @@ var checkHistoryReplay = function() {
     alert("History fail");
 }
 
+var setCurrentHistoryFile = function(start) {
+  for (var i = start; i >= 0; i--) {
+    if (edits[i][0] == "l") {
+      currenthistoryfile = edits[i][4][1];
+      //console.log(edits[i]);
+      break;
+    }
+    if (edits[i][0] == "r") {
+      var filelist = document.getElementById("filelist");
+      currenthistoryfile = parseInt(filelist.children[0].getAttribute("fileid"));
+      break;
+    }
+    if (edits[i][0] == "a") {
+      currenthistoryfile = edits[i][4][1];
+      break;
+    }
+  }
+}
+
 var historymove_timer;
 var historymove = function(adjust, delay) {
   if (!edits)
@@ -342,22 +361,7 @@ var historymove = function(adjust, delay) {
     currenthistoryfile = 0;
     saveFile();
     currenthistory = edits.length - 1;
-    for (var i = currenthistory; i >= 0; i--) {
-      if (edits[i][0] == "l") {
-        currenthistoryfile = edits[i][4][1];
-        //console.log(edits[i]);
-        break;
-      }
-      if (edits[i][0] == "r") {
-        var filelist = document.getElementById("filelist");
-        currenthistoryfile = parseInt(filelist.children[0].getAttribute("fileid"));
-        break;
-      }
-      if (edits[i][0] == "a") {
-        currenthistoryfile = edits[i][4][1];
-        break;
-      }
-    }
+    setCurrentHistoryFile(currenthistory);
     editor.setOption("behavioursEnabled", false);
     editor.setOption("enableAutoIndent", false);
   }
@@ -407,21 +411,7 @@ var historymove = function(adjust, delay) {
       editor.gotoLine(edit[2] + 1, edit[3]);
       editor.insert(edit[4]);
     } else if (edit[0] == "l") {
-      for (var i = currenthistory - 1; i >= 0; i--) {
-        if (edits[i][0] == "l") {
-          currenthistoryfile = edits[i][4][1];
-          break;
-        }
-        if (edits[i][0] == "r") {
-          var filelist = document.getElementById("filelist");
-          currenthistoryfile = parseInt(filelist.children[0].getAttribute("fileid"));
-          break;
-        }
-        if (edits[i][0] == "a") {
-          currenthistoryfile = edits[i][4][1];
-          break;
-        }
-      }
+      setCurrentHistoryFile(currenthistory - 1);
       var prevfile = edit[4][0]
       if (i >= 0 && prevfile != currenthistoryfile) {
         console.log("history load file mismatch on ", i, ";", prevfile, "vs", currenthistoryfile, "from", edits[i]);
@@ -1118,7 +1108,7 @@ var checkLocalStale = function() {
       return;
 
     var localHistory = loadLS("edits", pid);
-    if (serverHistory.length > localHistory.length) {
+    if ((serverHistory && !localHistory) || (serverHistory && (serverHistory.length > localHistory.length))) {
       loadbutton.classList.add("stale");
       loadbutton.setAttribute("title", "newer version detected on server");
     }
@@ -1340,10 +1330,27 @@ var initFiles = function() {
       div.classList.add("readonly");
     filelist.appendChild(div);
   }
+
+  edits = loadLSc("edits");
+  if (edits)
+    edits = deserializeEdits(edits);
+  else
+    edits = [["m", 0, 0, 0]];
+  displayeditstate();
+
   if (!opened && filelist.children.length > 0) {
-    filelist.children[0].classList.add("open")
-    lastfile = filelist.children[0].getAttribute("fileid");
+    currenthistoryfile = -1;
+    setCurrentHistoryFile(edits.length - 1);
+    console.log("Found history file", currenthistoryfile, "from", edits);
+    if (currenthistoryfile != -1)
+      lastfile = currenthistoryfile;
+    else
+      lastfile = 0;
+    filelist.children[lastfile].classList.add("open")
+    lastfile = filelist.children[lastfile].getAttribute("fileid");
   }
+  saveLSc("lastfile", lastfile);
+  logedit("l", editor.session.selection.getCursor(), [-1, parseInt(lastfile)]);
 
   var sess = ace.createEditSession(loadLSc("files", lastfile));
   setEditorLanguage(sess);
@@ -1359,12 +1366,6 @@ var initFiles = function() {
   else
     editor.setReadOnly(false);
 
-  edits = loadLSc("edits");
-  if (edits)
-    edits = deserializeEdits(edits);
-  else
-    edits = [["m", 0, 0, 0]];
-  displayeditstate();
 
   filenames = document.getElementsByClassName("filename");
   for (var i = 0; i < filenames.length; i++)

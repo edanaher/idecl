@@ -66,9 +66,19 @@ body[theme="dark"] #filelist .filename.open { background-color: #114411; }
   color: #666666;
 }
 
+body[theme="dark"] #filelist .filename.histdeleted {
+  background-color: #551111;
+  color: white;
+}
+
 #filelist .filename.histdeleted.open {
   background-color: #FFFFDD;
   color: #333333;
+}
+
+body[theme="dark"] #filelist .filename.histdeleted.open {
+  background-color: #553311;
+  color: white;
 }
 
 #filelist .filename.histundeleted {
@@ -76,10 +86,22 @@ body[theme="dark"] #filelist .filename.open { background-color: #114411; }
   color: #666666;
 }
 
+body[theme="dark"] #filelist .filename.histundeleted {
+  background-color: #551111;
+  color: white;
+}
+
 #filelist .filename.histundeleted.open {
   background-color: #EEFFDD;
   color: #333333;
 }
+
+
+body[theme="dark"] #filelist .filename.histundeleted.open {
+  background-color: #553311;
+  color: white;
+}
+
 
 #filebottom {
   position: relative;

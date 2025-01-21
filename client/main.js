@@ -1550,6 +1550,6 @@ window.onload = function() {
   addClickListenerById("cancelcomment", hidecomment);
   addClickListenerById("switchlayout", switchlayout);
   addClickListenerById("switchtheme", toggleDarkMode);
-  addClickListenerById("clearterminal", function() { term.clear(); });
+  addClickListenerById("clearterminal", function() { term.write("\x1b[2J\x1b[3J\x1b[H"); });
   addClickListenerById("toggleinstructions", toggleinstructions);
 }

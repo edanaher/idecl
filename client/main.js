@@ -970,7 +970,7 @@ var sendinputfromterminal = (function() {
   var buffer = "";
   return function(content) {
     if (content == "\r") {
-      websocket.send(JSON.stringify({"input": buffer + content}));
+      websocket.send(JSON.stringify({"input": buffer + "\n"}));
       buffer = "";
     } else if (content == "\x7f") {
       buffer = buffer.slice(0, buffer.length - 1);

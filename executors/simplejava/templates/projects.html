@@ -121,11 +121,11 @@
     {% set ns.curparent = -1 %}
     {% for project in projects %}
     {% if project.canview or project.cancloneassignment == "1" or candeleteproject %}
-      {% if ns.curparent == -1 and project.parent_id == ns.lastparent %}
+      {% if ns.curparent == -1 and project.parent_id == ns.lastparent and project.cloned_as_assignment %}
         <ul class="projectsublist hidden">
         {% set ns.curparent = project.parent_id %}
       {% endif %}
-      {% if ns.curparent != -1 and not project.parent_id %}
+      {% if ns.curparent != -1 and (not project.parent_id or not project.cloned_as_assignment) %}
         </ul>
         {% set ns.curparent = -1 %}
       {% endif %}

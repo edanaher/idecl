@@ -37,7 +37,7 @@ def projects(classroom):
     with engine.connect() as conn:
         classroom_row = conn.execute(text("SELECT id, name FROM classrooms WHERE id=:classroom"), [{"classroom": classroom}]).first()
         projects = conn.execute(text("""
-            SELECT massed_projects.id, massed_projects.parent_id, massed_projects.name,
+            SELECT massed_projects.id, massed_projects.parent_id, massed_projects.name, massed_projects.cloned_as_assignment,
                    GROUP_CONCAT(cancloneassignment AND (cloned_as_assignment IS NULL)) AS cancloneassignment,
                    GROUP_CONCAT(canview) AS canview,
                    GROUP_CONCAT(DISTINCT display_tags.name) AS tags
@@ -68,7 +68,11 @@ def projects(classroom):
             LEFT JOIN projects_tags AS display_pt ON display_pt.project_id=massed_projects.id
             LEFT JOIN tags AS display_tags ON display_pt.tag_id=display_tags.id
             GROUP BY massed_projects.id
-            ORDER BY COALESCE(massed_projects.parent_id, massed_projects.id) ASC, massed_projects.id ASC
+            ORDER BY COALESCE(
+                        CASE WHEN massed_projects.cloned_as_assignment
+                        THEN massed_projects.parent_id
+                        ELSE NULL END,
+                     massed_projects.id) ASC, massed_projects.id ASC
             ;
         """), [{"classroom": classroom, "perm": P.LISTPROJECT.value, "user": current_user.euid, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value, "perm_view": P.VIEWPROJECT.value}]).all()
     return render_template("projects.html", classroom=classroom_row, projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT))

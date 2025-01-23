@@ -32,6 +32,10 @@ def save_project(pid):
 
     return "Success"
 
+@app.route("/clearstorage")
+def clearstorage():
+    return '<!DOCTYPE html><html><head><script>function clearstorage() { localStorage.clear(); alert("Cleared local storage"); }</script></head><body><button onclick="clearstorage()">Clear local storage</button></body></html>'
+
 def attrsToString(row):
     result = ""
     if row.hidden:

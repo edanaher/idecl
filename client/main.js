@@ -1346,9 +1346,8 @@ var initFiles = function() {
     if (currenthistoryfile != -1)
       lastfile = currenthistoryfile;
     else
-      lastfile = 0;
-    filelist.children[lastfile].classList.add("open")
-    lastfile = filelist.children[lastfile].getAttribute("fileid");
+      lastfile = document.getElementById("filelist").childNodes[0].getAttribute("fileid");
+    document.querySelector('#filelist .filename[fileid="' + lastfile + '"]').classList.add("open");
   }
   saveLSc("lastfile", lastfile);
   logedit("l", editor.session.selection.getCursor(), [-1, parseInt(lastfile)]);

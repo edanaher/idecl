@@ -213,9 +213,9 @@ local function runprogram(json)
     return ngx.exit(444)
   end
   local bytes, err = wb:send_text(cjson.encode({status="running"}))
-  local command = {ngx.var.docker_bin, "run", "--rm", "--name", compile_result.container, "-m128m", "--ulimit", "cpu=10", "-v", compile_result.path .. ":/app", "--net", "none", "--", "idecl-java-runner", "/bin/sh", "-c", "java -cp /app Main <> /app/stdin.fifo"}
+  local command = {ngx.var.docker_bin, "run", "--rm", "--name", compile_result.container, "-m128m", "--ulimit", "cpu=10", "-v", compile_result.path .. ":/app", "--net", "none", "--", "idecl-java-runner", "/bin/sh", "-c", "timeout 1h java -cp /app Main <> /app/stdin.fifo"}
   if json.test then
-    command = {ngx.var.docker_bin, "run", "--rm", "--name", compile_result.container, "-m128m", "--ulimit", "cpu=10", "-v", compile_result.path .. ":/app", "-v", ngx.var.junit_path .. ":/junit", "-v", ngx.var.hamcrest_path .. ":/hamcrest","--net", "none", "idecl-java-runner", "java", "-cp", "/junit/junit-4.13.2.jar:/hamcrest/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"}
+    command = {ngx.var.docker_bin, "run", "--rm", "--name", compile_result.container, "-m128m", "--ulimit", "cpu=10", "-v", compile_result.path .. ":/app", "-v", ngx.var.junit_path .. ":/junit", "-v", ngx.var.hamcrest_path .. ":/hamcrest","--net", "none", "idecl-java-runner", "timeout", "10s", "java", "-cp", "/junit/junit-4.13.2.jar:/hamcrest/hamcrest-core-1.3.jar:/app:/junit", "org.junit.runner.JUnitCore"}
     for _, t in ipairs(compile_result.tests) do
       local classname = t:gsub("/", "."):gsub(".java$", "")
       table.insert(command, classname)

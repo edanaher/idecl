@@ -2,6 +2,7 @@ from datetime import datetime
 import os
 import shutil
 import subprocess
+import time
 
 from flask import abort, redirect, render_template, request, send_file, session
 from flask_login import login_required, current_user
@@ -234,7 +235,7 @@ def clone_project_as_assignment(pid):
 @requires_permission(P.ADDPROJECTTAG, "project")
 def add_project_tag(pid, tid):
     with engine.connect() as conn:
-        row  = conn.execute(text("INSERT INTO projects_tags (project_id, tag_id) VALUES (:pid, :tid)"), [{"pid": pid, "tid": tid}])
+        row  = conn.execute(text("INSERT INTO projects_tags (project_id, tag_id, created) VALUES (:pid, :tid, :now)"), [{"pid": pid, "tid": tid, "now": int(time.time())}])
         conn.commit()
     return "Success"
 
@@ -267,7 +268,9 @@ def assignment_results(pid):
                    test_results.success, test_results.total, test_results.created,
                    users.email, users.name AS username,
                    SUM(LENGTH(files.contents) - LENGTH(REPLACE(contents, X'0A', ''))) AS lines,
-                   COALESCE(GROUP_CONCAT(tags.name), "") AS tags
+                   COALESCE(GROUP_CONCAT(
+                        tags.name || ' at ' || COALESCE(DATETIME(projects_tags.created, 'unixepoch'), 'UNKNOWN')),
+                      "") AS tags
             FROM projects
             LEFT JOIN (SELECT project_id, success, total, created, RANK() OVER (PARTITION BY project_id ORDER BY created DESC) as rank FROM project_test_results) AS test_results ON projects.id = test_results.project_id
             LEFT JOIN users ON projects.owner == users.id

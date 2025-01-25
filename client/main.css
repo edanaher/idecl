@@ -243,6 +243,26 @@ body[theme="dark"] #historyforward {
   color: #440000;
 }
 
+#submittedbool {
+  text-align: center;
+  font-style: italic;
+  color: #333333;
+}
+
+#submittedtime {
+  text-align: center;
+  font-style: italic;
+  color: #333333;
+}
+
+#submittedbool.hidden {
+  display: none;
+}
+
+#submittedtime.hidden {
+  display: none;
+}
+
 #siblings {
   overflow: hidden;
 }

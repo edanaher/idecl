@@ -63,6 +63,8 @@
           <div id="historyforward">&gt;</div>
         </div>
         <div id="historydate" class="hidden"></div>
+        <div id="submittedbool" {% if not submitted %} class="hidden" {% endif %} >Submitted</div>
+        <div id="submittedtime" class="timestamp{% if not submitted %} hidden {% endif %}" >{{submitted_at}}</div>
         {% if siblings %}
           <div id="siblings">
             <select id="siblingsselect">

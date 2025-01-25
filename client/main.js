@@ -1282,6 +1282,8 @@ var submit = function() {
       submit_button.disabled = false;
       submit_button.innerText = "submit project";
       submit_button.removeAttribute("submitted");
+      document.getElementById("submittedbool").classList.add("hidden");
+      document.getElementById("submittedtime").classList.add("hidden");
     };
     this.innerText = "unsubmitting..."
     this.disabled = true;
@@ -1293,6 +1295,10 @@ var submit = function() {
       submit_button.disabled = false;
       submit_button.innerText = "unsubmit project";
       submit_button.setAttribute("submitted", "");
+      document.getElementById("submittedbool").classList.remove("hidden");
+      document.getElementById("submittedtime").classList.remove("hidden");
+      document.getElementById("submittedtime").innerText = formattime(new Date());
+
     };
     this.innerText = "submitting..."
     this.disabled = true;
@@ -1537,10 +1543,36 @@ var webSocketConnect = function(message, onmessage) {
   return websocket;
 }
 
+var pad = function(n) {
+  if (n == 0)
+    return "00";
+  if (n < 10)
+    return "0" + n;
+  return n
+}
+
+var formattime = function(d) {
+  return pad(d.getMonth() + 1) + "/" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+}
+
+var displaytimestamps = function() {
+  var timestamps = document.getElementsByClassName("timestamp");
+  for (var i = 0; i < timestamps.length; i++) {
+    var text = timestamps[i].innerText;
+    if (text == "None")
+      timestamps[i].innerText = "unknown time";
+    else {
+      var d = new Date(parseInt(text) * 1000);
+      timestamps[i].innerText = formattime(d);
+    }
+  }
+}
+
 window.onload = function() {
   initAce();
   initTerminal();
   initDarkMode();
+  displaytimestamps();
   upgradestore();
   checkLocalStale();
   if (!loadLSc("files"))

@@ -100,7 +100,8 @@ def project(pid):
             SELECT projects.name, projects.cloned_as_assignment, projects.parent_id,
                 classrooms.name AS classroom, classrooms.id AS classroom_id,
                 tags.id AS tag_id,
-                submitted.id AS submitted_id
+                submitted.id AS submitted_id,
+                submitted_pt.created AS submitted_created
             FROM projects
             JOIN classrooms ON classrooms.id=projects.classroom_id
             LEFT JOIN projects_tags ON projects_tags.project_id=projects.id
@@ -130,7 +131,7 @@ def project(pid):
             canclone=has_permission(P.ADDPROJECT, row.classroom_id) and not row.cloned_as_assignment,
             canpublish=has_permission(P.ADDPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,
             canunpublish=has_permission(P.DELETEPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,
-            cansubmit=row.cloned_as_assignment, submitted=not not row.submitted_id,
+            cansubmit=row.cloned_as_assignment, submitted=not not row.submitted_id, submitted_at = row.submitted_created,
             cancompare=has_permission(P.COMPAREPROJECT, row.classroom_id, pid) and not not row.tag_id,
             published=not not row.tag_id,
             siblings=siblings)

@@ -223,6 +223,16 @@ body[theme="dark"] #historyforward {
   border: 1px solid #999999;
 }
 
+#historydate {
+  text-align: center;
+  font-style: italic;
+  color: #333333;
+}
+
+#historydate.hidden {
+  display: none;
+}
+
 
 #resetfiles {
   border: 1px solid black;

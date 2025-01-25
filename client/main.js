@@ -55,13 +55,31 @@ var lastedittime = 0;
 var edits = [["m", 0, 0, 0]];
 var currenthistory = -1;
 var currenthistoryfile = -1;
+var currenthistorytime = -1;
+
+var padtime = function(n) {
+  if (n < 10)
+    return "0" + n;
+  return n;
+}
 
 var displayeditstate = function() {
   var disp = document.getElementById("historystate");
+  var histdatediv = document.getElementById("historydate");
   var cur = currenthistory == -1 ? edits.length - 1: currenthistory;
-  if (!edits)
+  if (!edits) {
     disp.innerText = "";
+    histdatediv.classList.add("hidden");
+  }
   disp.innerText = cur + "/" + (edits.length - 1);
+
+  if (currenthistory == -1)
+    histdatediv.classList.add("hidden");
+  else {
+    histdatediv.classList.remove("hidden");
+    var histdate = new Date(currenthistorytime);
+    histdatediv.innerText = (histdate.getMonth() + 1) + "/" + padtime(histdate.getDate()) + " " + padtime(histdate.getHours()) + ":" + padtime(histdate.getMinutes()) + ":" + padtime(histdate.getSeconds());
+  }
 }
 
 var serializeInt = function(n) {
@@ -351,6 +369,16 @@ var setCurrentHistoryFile = function(start) {
   }
 }
 
+var getAbsoluteHistoryTime = function() {
+  var offset = 0;
+  for (var i = currenthistory; i > 0; i--) {
+    // Any absolute time will be bigger than 1B seconds.
+    if (edits[i][1] > 1000000000000)
+      return edits[i][1] + offset;
+    offset += edits[i][1];
+  }
+}
+
 var historymove_timer;
 var historymove = function(adjust, delay) {
   if (!edits)
@@ -371,9 +399,9 @@ var historymove = function(adjust, delay) {
   editor.setReadOnly(true);
 
   var edit = edits[currenthistory];
+  //console.log("currenthistoryfile was", currenthistoryfile);
   //console.log("edit is", edit);
   // Load up the currently active file.  Unless it was removed.
-  //console.log(currenthistoryfile);
   if (edit[0] != "r")
     loadFile(currenthistoryfile, true);
   if (adjust > 0) {
@@ -451,6 +479,7 @@ var historymove = function(adjust, delay) {
       editor.gotoLine(prevedit[2] + 1, prevedit[3]);
     }
   }
+  //console.log("currenthistoryfile is", currenthistoryfile);
 
   while (edits.length > histlen)
     edits.pop();
@@ -465,6 +494,8 @@ var historymove = function(adjust, delay) {
     displayeditstate();
     return;
   }
+  currenthistorytime = getAbsoluteHistoryTime();
+
   displayeditstate();
   var newdelay = delay > 100 ? delay * 2 / 3 : delay > 10 ? delay * 0.95 : 10;
   historymove_timer = setTimeout(historymove, newdelay, adjust, newdelay);

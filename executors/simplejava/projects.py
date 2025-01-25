@@ -264,13 +264,14 @@ def assignment_results(pid):
     with engine.connect() as conn:
         project_row = conn.execute(text("SELECT name, id FROM projects WHERE id=:pid"), [{"pid": pid}]).first()
         classroom_row = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms JOIN projects ON projects.classroom_id=classrooms.id WHERE projects.id=:pid"), [{"pid": pid}]).first()
+        # TODO: handle timezones properly instead of hardcoding -0500
         rows = conn.execute(text("""
             SELECT projects.name, projects.id,
                    test_results.success, test_results.total, test_results.created,
                    users.email, users.name AS username,
                    SUM(LENGTH(files.contents) - LENGTH(REPLACE(contents, X'0A', ''))) AS lines,
                    COALESCE(GROUP_CONCAT(
-                        tags.name || ' at ' || COALESCE(DATETIME(projects_tags.created, 'unixepoch'), 'UNKNOWN')),
+                        tags.name || ' at ' || COALESCE(DATETIME(projects_tags.created - 3600*5, 'unixepoch'), 'UNKNOWN')),
                       "") AS tags
             FROM projects
             LEFT JOIN (SELECT project_id, success, total, created, RANK() OVER (PARTITION BY project_id ORDER BY created DESC) as rank FROM project_test_results) AS test_results ON projects.id = test_results.project_id

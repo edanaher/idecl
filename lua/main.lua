@@ -15,6 +15,7 @@ if false then
   end
   state:delete("compilequeue")
 end
+local program_killed = false;
 
 
 local wb, err = server:new{
@@ -68,6 +69,7 @@ local function handle_input(path, name)
       end
       if json.kill then
         ngx_pipe.spawn({ngx.var.docker_bin, "kill", name}, {merge_stderr = true})
+        program_killed = true;
       end
     end
     ngx.sleep(0.1)
@@ -241,6 +243,12 @@ local function runprogram(json)
     end
     -- In case of badness, don't spam the client too hard.
     ngx.sleep(0.1)
+  end
+  local ok, reason, status = running:wait()
+  ngx.log(ngx.ERR, "result of running", ok, " ", reason, " ", status)
+  if reason == "exit" and status == 137 and not program_killed then
+    wb:send_text(cjson.encode({output="\n===Program timed out===\n", status="timed out", complete=true}))
+    return
   end
   if json.test then
     ngx.location.capture("/projects/" .. tostring(json.pid) .. "/tests/save", {

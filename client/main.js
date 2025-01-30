@@ -534,6 +534,8 @@ var markDirty = function() {
 }
 
 var renameFile = function(elem) {
+  if (currenthistory != -1)
+    return;
   if (elem.classList.contains("editing"))
     return
   var attrs = loadLSc("attrs", elem.getAttribute("fileid"));

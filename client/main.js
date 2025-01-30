@@ -35,7 +35,11 @@ var saveLS = function(type, project, file, contents) {
     file = undefined
   }
   var key = type + "|" + project + (file === undefined ? "" : "|" + file);
-  return localStorage.setItem(key, contents);
+  try {
+    return localStorage.setItem(key, contents);
+  } catch (error) {
+    logError(null, error);
+  }
 }
 
 var saveLSc = function(type, file, contents) {
@@ -905,7 +909,7 @@ var loadFromServer = function(pid) {
       document.getElementById("savefiles").classList.remove("dirty");
       window.removeEventListener("beforeunload", promptForSave);
     }
-  }
+  };
   xhr.send();
   loadbutton.innerText = "loading";
 

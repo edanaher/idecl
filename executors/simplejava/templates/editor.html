@@ -47,6 +47,10 @@
         <button id="cancelcomment">cancel</button>
       </div>
     </div>
+    <div id="errorbox" class="hidden">
+      <div id="errorcontents"></div>
+      <button id="closeerror">close</button>
+    </div>
     <div id="maincontent" layout="split">
       <div id="filecontainer">
         <div id="filelist">
@@ -76,6 +80,7 @@
         {% endif %}
           <!--div id="resetfiles">reset</div-->
         <div id="navbarpadding"></div>
+        <div id="errorbutton" class="hidden">Error</div>
         <a href="https://github.com/edanaher/idecl/blob/main/docs/student.md"><div id="helplink">Help</div></a>
         <div id="comments">Comments</div>
       </div>

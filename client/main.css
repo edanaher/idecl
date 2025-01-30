@@ -293,6 +293,40 @@ body[theme="dark"] #helplink {
 }
 body[theme="dark"] #helplink a { color: #999999; }
 
+#errorbutton {
+  flex: 0 0;
+  border: 1px solid #333333;
+  padding: 2px;
+  margin: 2px;
+  text-align: center;
+  cursor: default;
+  color: #663333;
+  background-color: #FFCCCC;
+}
+body[theme="dark"] #errorbutton {
+  border: 1px solid #777777;
+  color: #FFCCCC;
+  background-color: #993333;
+}
+#errorbutton.hidden {
+  display: none;
+}
+
+#errorbox {
+  position: absolute;
+  bottom: 80px;
+  z-index: 99;
+  background-color: #FFCCCC;
+  padding: 8px;
+  border: 1px solid #FF9999;
+}
+#errorbox.hidden { display: none; }
+body[theme="dark"] #errorbox {
+  background-color: #885555;
+  border-color: #333333;
+  border: 1px solid #FF4444;
+}
+
 #comments {
   flex: 0 0;
   border: 1px solid #333333;

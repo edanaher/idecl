@@ -460,7 +460,7 @@ var historymove = function(adjust, delay) {
       div.innerText = edit[4][1];
       div.classList.add("filename");
       div.setAttribute("fileid", edit[4][0]);
-      div.addEventListener("click", loadFile);
+      div.addEventListener("click", werr(loadFile));
       filelist.appendChild(div);
       div.classList.add("histundeleted");
 
@@ -524,7 +524,7 @@ var markDirty = function() {
   if (currenthistory != -1)
     return;
   document.getElementById("savefiles").classList.add("dirty");
-  window.addEventListener("beforeunload", promptForSave);
+  window.addEventListener("beforeunload", werr(promptForSave));
   if (markdownvisible)
     rendermarkdown();
 }
@@ -569,11 +569,11 @@ var renameFile = function(elem) {
 
     logedit("n", editor.session.selection.getCursor(), [elem.getAttribute("fileid"), name, newname]);
   };
-  editbox.addEventListener("blur", finishEdit);
-  editbox.addEventListener("beforeinput", function(e) {
+  editbox.addEventListener("blur", werr(finishEdit));
+  editbox.addEventListener("beforeinput", werr(function(e) {
     if (e.inputType == "insertLineBreak")
       finishEdit();
-  });
+  }));
 }
 
 var fileContents = function(projectid, fileid) {
@@ -757,7 +757,7 @@ var addFile = function() {
 
   logedit("a", sess.selection.getCursor(), [parseInt(oldfileid), nextId, newfile]);
 
-  div.addEventListener("click", loadFile);
+  div.addEventListener("click", werr(loadFile));
 }
 
 var removeFile = function() {
@@ -980,6 +980,13 @@ var sendinput = function() {
 
 var showcomment = function() {
   document.getElementById("commentbox").classList.remove("hidden");
+}
+
+var showerrors = function() {
+  document.getElementById("errorbox").classList.remove("hidden");
+}
+var hideerrors = function() {
+  document.getElementById("errorbox").classList.add("hidden");
 }
 
 var hidecomment = function() {
@@ -1406,7 +1413,7 @@ var initFiles = function() {
 
   filenames = document.getElementsByClassName("filename");
   for (var i = 0; i < filenames.length; i++)
-    filenames[i].addEventListener("click", loadFile);
+    filenames[i].addEventListener("click", werr(loadFile));
   setOutputType(attrs && attrs.indexOf("r") != -1);
 }
 
@@ -1512,13 +1519,13 @@ var switchlayout = function() {
 var addClickListenerById = function(id, f) {
   var elem = document.getElementById(id);
   if (elem)
-    elem.addEventListener("click", f);
+    elem.addEventListener("click", werr(f));
 }
 
 var addListenerById = function(id, e, f) {
   var elem = document.getElementById(id);
   if (elem)
-    elem.addEventListener(e, f);
+    elem.addEventListener(e, werr(f));
 }
 
 var webSocketConnect = function(message, onmessage) {
@@ -1568,50 +1575,72 @@ var displaytimestamps = function() {
   }
 }
 
-window.onload = function() {
-  initAce();
-  initTerminal();
-  initDarkMode();
-  displaytimestamps();
-  upgradestore();
-  checkLocalStale();
-  if (!loadLSc("files"))
-    loadFromServer(projectId(), true);
-  else {
-    initFiles();
+var logError = function(error) {
+  console.log(error);
+  document.getElementById("errorbutton").classList.remove("hidden");
+  document.getElementById("errorcontents").innerHTML += error + "<br>";
+}
+
+var werr = function(f) {
+  return function() {
+    try {
+      f.call(this)
+    } catch(error) {
+      logError(error);
+    }
   }
-  addClickListenerById("run", runcode);
-  addClickListenerById("runtests", runtests);
-  //document.getElementById("sendinput").addEventListener("click", sendinput);
-  addClickListenerById("view-as-self", function() {
-      document.cookie = "sudo=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
-      window.location.replace("/");
-  });
-  editor.on("blur", saveFile);
-  editor.on("change", markDirty);
-  addClickListenerById("cloneproject", function() { cloneProjectInit(false); });
-  addClickListenerById("publish", publish);
-  addClickListenerById("submit", submit);
-  addClickListenerById("compare50", compare50);
-  addClickListenerById("viewsubmissions", viewsubmissions);
-  addClickListenerById("addfile", addFile);
-  addClickListenerById("removefile", removeFile);
-  addClickListenerById("savefiles", saveToServer);
-  document.addEventListener("visibilitychange", pagehidden);
-  addClickListenerById("loadfiles", function() { loadFromServer() });
-  addClickListenerById("resetfiles", resetFiles);
-  addListenerById("historyback", "mousedown", function() { start_historymove(-1); });
-  addListenerById("historyback", "mouseup", stop_historymove);
-  addListenerById("historyback", "mouseleave", stop_historymove);
-  addListenerById("historyforward", "mousedown", function() { start_historymove(1); });
-  addListenerById("historyforward", "mouseup", stop_historymove);
-  addListenerById("historyforward", "mouseleave", stop_historymove);
-  addListenerById("siblingsselect", "change", load_sibling);
-  addClickListenerById("comments", showcomment);
-  addClickListenerById("submitcomment", submitcomment);
-  addClickListenerById("cancelcomment", hidecomment);
-  addClickListenerById("switchlayout", switchlayout);
-  addClickListenerById("switchtheme", toggleDarkMode);
-  addClickListenerById("clearterminal", function() { term.write("\x1b[2J\x1b[3J\x1b[H"); });
-  addClickListenerById("toggleinstructions", toggleinstructions);
+}
+
+window.onload = function() {
+  try {
+    initAce();
+    initTerminal();
+    initDarkMode();
+    displaytimestamps();
+    upgradestore();
+    checkLocalStale();
+    if (!loadLSc("files"))
+      loadFromServer(projectId(), true);
+    else {
+      initFiles();
+    }
+    addClickListenerById("run", runcode);
+    addClickListenerById("runtests", runtests);
+    //document.getElementById("sendinput").addEventListener("click", sendinput);
+    addClickListenerById("view-as-self", function() {
+        document.cookie = "sudo=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+        window.location.replace("/");
+    });
+    editor.on("blur", saveFile);
+    editor.on("change", markDirty);
+    addClickListenerById("cloneproject", function() { cloneProjectInit(false); });
+    addClickListenerById("publish", publish);
+    addClickListenerById("submit", submit);
+    addClickListenerById("compare50", compare50);
+    addClickListenerById("viewsubmissions", viewsubmissions);
+    addClickListenerById("addfile", addFile);
+    addClickListenerById("removefile", removeFile);
+    addClickListenerById("savefiles", saveToServer);
+    document.addEventListener("visibilitychange", werr(pagehidden));
+    addClickListenerById("loadfiles", function() { loadFromServer() });
+    addClickListenerById("resetfiles", resetFiles);
+    addListenerById("historyback", "mousedown", function() { start_historymove(-1); });
+    addListenerById("historyback", "mouseup", stop_historymove);
+    addListenerById("historyback", "mouseleave", stop_historymove);
+    addListenerById("historyforward", "mousedown", function() { start_historymove(1); });
+    addListenerById("historyforward", "mouseup", stop_historymove);
+    addListenerById("historyforward", "mouseleave", stop_historymove);
+    addListenerById("siblingsselect", "change", load_sibling);
+    addClickListenerById("errorbutton", showerrors);
+    addClickListenerById("closeerror", hideerrors);
+    addClickListenerById("comments", showcomment);
+    addClickListenerById("submitcomment", submitcomment);
+    addClickListenerById("cancelcomment", hidecomment);
+    addClickListenerById("switchlayout", switchlayout);
+    addClickListenerById("switchtheme", toggleDarkMode);
+    addClickListenerById("clearterminal", function() { term.write("\x1b[2J\x1b[3J\x1b[H"); });
+    addClickListenerById("toggleinstructions", toggleinstructions);
+  } catch (error) {
+    logError(error);
+  }
 }

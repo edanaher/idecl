@@ -528,7 +528,7 @@ var markDirty = function() {
   if (currenthistory != -1)
     return;
   document.getElementById("savefiles").classList.add("dirty");
-  window.addEventListener("beforeunload", werr(promptForSave));
+  window.addEventListener("beforeunload", promptForSave);
   if (markdownvisible)
     rendermarkdown();
 }

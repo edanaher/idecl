@@ -1575,10 +1575,29 @@ var displaytimestamps = function() {
   }
 }
 
-var logError = function(error) {
+var logError = function(ths, error) {
   console.log(error);
   document.getElementById("errorbutton").classList.remove("hidden");
   document.getElementById("errorcontents").innerHTML += error + "<br>";
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "/internal/logerror", true);
+  xhr.setRequestHeader("Content-Type", "application/json");
+  var data = {};
+  if (ths.id)
+    data.elementid = ths.id;
+  var lastfile = loadLSc("lastfile")
+  try {
+    var fileid = document.querySelector(".filename.open").getAttribute("fileid");
+    data.openfile = fileid;
+  } catch (error) {}
+
+  var postdata =  {
+    "project": projectId(),
+    "error": error.message,
+    "stacktrace": error.stack,
+    "data": data
+  }
+  xhr.send(JSON.stringify(postdata));
 }
 
 var werr = function(f) {
@@ -1586,7 +1605,7 @@ var werr = function(f) {
     try {
       f.call(this)
     } catch(error) {
-      logError(error);
+      logError(this, error);
     }
   }
 }

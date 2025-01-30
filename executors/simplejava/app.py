@@ -194,6 +194,25 @@ def addcomment():
         conn.commit()
     return ""
 
+@app.route("/internal/logerror", methods=["POST"])
+@login_required
+def log_error():
+    data = request.json
+    user = current_user.get_id()
+    project = data.get("project")
+    user_agent = request.headers.get("User-Agent")
+    error = data.get("error")
+    stacktrace = data.get("stacktrace")
+    internaldata = data.get("data")
+
+    print("Error: ", repr(user), repr(project), repr(user_agent), repr(error), repr(stacktrace), repr(internaldata), flush=True)
+
+    with engine.connect() as conn:
+        conn.execute(text("INSERT INTO client_errors (user_id, project_id, user_agent, error, stacktrace, data, created) VALUES (:user, :project, :user_agent, :error, :stacktrace, :data, :now)"), [{"user": user, "project": project, "user_agent": user_agent, "error": error, "stacktrace": stacktrace, "data": json.dumps(internaldata), "now": int(time.time())}])
+        conn.commit()
+
+    return ""
+
 import oauth
 import filestore
 import projects

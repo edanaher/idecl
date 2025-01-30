@@ -150,3 +150,16 @@ project_test_results = Table(
     Column("raw_results", String),
     Column("created", Integer),
 )
+
+client_errors = Table(
+    "client_errors",
+    metadata_obj,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("user_id", Integer),
+    Column("project_id", Integer),
+    Column("user_agent", Integer),
+    Column("error", String),
+    Column("stacktrace", String),
+    Column("data", String),
+    Column("created", Integer),
+)

@@ -132,7 +132,13 @@
       {% set ns.lastparent = project.id %}
       <li>
         {% if project.canview %}
-          <a href="/projects/{{ project.id }}">{{ project.name }}</a>
+          <a href="/projects/{{ project.id }}">
+            {%- if project.username and project.email -%}
+              {{ project.name | replace(project.email, project.username) -}}
+            {% else -%}
+              {{ project.name -}}
+            {% endif -%}
+          </a>
         {% else %}
           {{ project.name }}
         {% endif %}

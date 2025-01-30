@@ -1605,9 +1605,9 @@ var logError = function(ths, error) {
 }
 
 var werr = function(f) {
-  return function() {
+  return function(arg) {
     try {
-      f.call(this)
+      f.call(this, arg)
     } catch(error) {
       logError(this, error);
     }

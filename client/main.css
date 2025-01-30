@@ -228,6 +228,9 @@ body[theme="dark"] #historyforward {
   font-style: italic;
   color: #333333;
 }
+body[theme="dark"] #historydate {
+  color: #AAAAAA;
+}
 
 #historydate.hidden {
   display: none;

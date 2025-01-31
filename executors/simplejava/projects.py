@@ -282,7 +282,8 @@ def assignment_results(pid):
             LEFT JOIN projects_tags ON projects.id = projects_tags.project_id
             LEFT JOIN tags ON projects_tags.tag_id = tags.id
             WHERE (rank=1 OR rank IS NULL) AND parent_id=:pid AND cloned_as_assignment=TRUE
-            GROUP BY projects.id;
+            GROUP BY projects.id
+            ORDER BY COALESCE(users.name, users.email);
         """), [{"pid": pid}]).all()
 
     return render_template("assignment_results.html", classroom_id=classroom_row.id, classroom_name=classroom_row.name, project_id=pid, project_name=project_row.name, loggedinas=current_user, canmanageusers=has_permission(P.LISTUSERS), results=rows)

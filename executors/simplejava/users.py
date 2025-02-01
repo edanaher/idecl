@@ -13,7 +13,7 @@ from permissions import Permissions as P, has_permission, requires_permission
 @requires_permission(P.LISTUSERS)
 def users():
     with engine.connect() as conn:
-        users = conn.execute(text("SELECT id, email, name FROM users WHERE deactivated <> 1 OR deactivated IS NULL")).all()
+        users = conn.execute(text("SELECT id, email, name FROM users WHERE deactivated <> 1 OR deactivated IS NULL ORDER BY COALESCE(name, email)")).all()
         classrooms = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms"), [{"uid": current_user.euid}]).all()
         inactive_users = conn.execute(text("SELECT id, email, name FROM users WHERE deactivated = 1")).all()
     return render_template("users.html", users=users, inactive_users=inactive_users, classrooms=classrooms, current_user=current_user, canaddusers=has_permission(P.ADDUSER), candeactivateusers=has_permission(P.DEACTIVATEUSER), canreactivateusers=has_permission(P.REACTIVATEUSER))

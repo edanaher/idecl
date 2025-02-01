@@ -20,7 +20,8 @@ with engine.connect() as conn:
         conn.commit()
 
 with engine.connect() as conn:
-    conn.execute(text("INSERT INTO tags (id, name) VALUES (2, :name) ON CONFLICT DO NOTHING"), [{"name": "submitted"}])
-    conn.execute(text("INSERT INTO tags (id, name) VALUES (3, :name) ON CONFLICT DO NOTHING"), [{"name": "owner"}])
-    conn.execute(text("INSERT INTO tags (id, name) VALUES (4, :name) ON CONFLICT DO NOTHING"), [{"name": "type"}])
+    conn.execute(text("INSERT INTO tags (id, name, display) VALUES (1, :name, TRUE) ON CONFLICT DO UPDATE SET  name=:name, display=TRUE"), [{"name": "published"}])
+    conn.execute(text("INSERT INTO tags (id, name, display) VALUES (2, :name, TRUE) ON CONFLICT DO UPDATE SET  name=:name, display=TRUE"), [{"name": "submitted"}])
+    conn.execute(text("INSERT INTO tags (id, name, display) VALUES (3, :name, FALSE) ON CONFLICT DO UPDATE SET  name=:name, display=FALSE"), [{"name": "owner"}])
+    conn.execute(text("INSERT INTO tags (id, name, display) VALUES (4, :name, FALSE) ON CONFLICT DO UPDATE SET  name=:name, display=FALSE"), [{"name": "type"}])
     conn.commit()

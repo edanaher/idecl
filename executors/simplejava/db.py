@@ -75,6 +75,7 @@ tags_table = Table(
     metadata_obj,
     Column("id", Integer, primary_key=True),
     Column("name", String, nullable=False),
+    Column("display", Boolean),
     UniqueConstraint("name", name="uniq_tags_name")
 )
 

@@ -42,7 +42,7 @@ def projects(classroom):
                    users.email, users.name AS username,
                    GROUP_CONCAT(cancloneassignment AND (cloned_as_assignment IS NULL)) AS cancloneassignment,
                    GROUP_CONCAT(canview) AS canview,
-                   GROUP_CONCAT(DISTINCT display_tags.name) AS tags
+                   GROUP_CONCAT(DISTINCT (display_tags.name || (CASE WHEN display_pt.value IS NULL THEN "" ELSE "=" || display_pt.value END))) AS tags
             FROM (
                 SELECT projects.id, projects.parent_id, projects.name, projects.owner,
                        GROUP_CONCAT(rp_cloneassignment.id) AND (already_cloned.id IS NULL) AS cancloneassignment,
@@ -68,7 +68,7 @@ def projects(classroom):
                 SELECT projects.id, projects.parent_id, projects.name, projects.owner, NULL, cloned_as_assignment, TRUE FROM projects WHERE owner=:user AND projects.classroom_id=:classroom
             ) AS massed_projects
             LEFT JOIN projects_tags AS display_pt ON display_pt.project_id=massed_projects.id
-            LEFT JOIN tags AS display_tags ON display_pt.tag_id=display_tags.id
+            LEFT JOIN tags AS display_tags ON display_pt.tag_id=display_tags.id AND display_tags.display
             LEFT JOIN users ON users.id = massed_projects.owner
             GROUP BY massed_projects.id
             ORDER BY COALESCE(
@@ -214,6 +214,7 @@ def clone_project_as_assignment(pid):
         newname = projectrow.name + " - " + current_user.get_eemail()
         clone_id = conn.execute(text("INSERT INTO projects (name, classroom_id, owner, parent_id, cloned_as_assignment) VALUES (:name, :classroom, :uid, :parent_id, :t) RETURNING id"), [{"uid": current_user.euid, "classroom": projectrow.classroom_id, "name": newname, "parent_id": int(pid), "t": True}]).first().id
         conn.execute(text("INSERT INTO projects_tags (project_id, tag_id, value, created) VALUES (:pid, (SELECT id FROM tags WHERE name='owner'), :uid, :now)"), [{"pid": clone_id, "uid": str(current_user.euid), "now": int(time.time())}])
+        conn.execute(text("INSERT INTO projects_tags (project_id, tag_id, value, created) VALUES (:pid, (SELECT id FROM tags WHERE name='type'), 'submission', :now)"), [{"pid": clone_id, "now": int(time.time())}])
 
 
         clone_files = conn.execute(text("SELECT files.id, files.name, files.contents, files.file_id FROM files LEFT JOIN files AS elim_templates ON (files.project_id = elim_templates.project_id AND 'template/' || files.name = elim_templates.name) WHERE files.project_id=:pid AND elim_templates.id IS NULL"), [{"pid": int(pid)}]).all()
@@ -264,6 +265,7 @@ def delete_project_tag(pid, tid):
 @requires_permission(P.DELETEPROJECT, "project")
 def delete_project(pid):
     with engine.connect() as conn:
+        conn.execute(text("DELETE FROM projects_tags WHERE project_id=:pid"), [{"pid": pid}])
         conn.execute(text("DELETE FROM files WHERE project_id=:pid"), [{"pid": pid}])
         conn.execute(text("DELETE FROM projects WHERE id=:pid"), [{"pid": pid}])
         conn.commit()

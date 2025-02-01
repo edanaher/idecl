@@ -44,6 +44,7 @@ roles_permissions = Table(
     Column("role_id", Integer, ForeignKey("roles.id", name="fk_roles_permissions_role_id"), nullable=False),
     Column("permission_id", Integer, nullable=False), # Implicit "table" in app
     Column("tag_id", Integer, ForeignKey("tags.id", name="fk_users_roles_tag_id"), nullable=True),
+    Column("tag_value", String, nullable=True),
     UniqueConstraint("role_id", "permission_id", "tag_id", name="uniq_roles_permissions_role_id_permission_id_tag_id")
 )
 
@@ -93,6 +94,7 @@ projects_tags = Table(
     Column("id", Integer, primary_key=True),
     Column("project_id", Integer, ForeignKey("projects.id", name="fk_projects_tags_project_id"), nullable=False),
     Column("tag_id", Integer, ForeignKey("tags.id", name="fk_projects_tags_tag_id"), nullable=False),
+    Column("value", String),
     Column("created", Integer),
     UniqueConstraint("project_id", "tag_id", name="uniq_projects_tags_project_id_tag_id")
 )

@@ -21,4 +21,6 @@ with engine.connect() as conn:
 
 with engine.connect() as conn:
     conn.execute(text("INSERT INTO tags (id, name) VALUES (2, :name) ON CONFLICT DO NOTHING"), [{"name": "submitted"}])
+    conn.execute(text("INSERT INTO tags (id, name) VALUES (3, :name) ON CONFLICT DO NOTHING"), [{"name": "owner"}])
+    conn.execute(text("INSERT INTO tags (id, name) VALUES (4, :name) ON CONFLICT DO NOTHING"), [{"name": "type"}])
     conn.commit()

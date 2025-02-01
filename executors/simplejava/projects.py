@@ -68,7 +68,7 @@ def projects(classroom):
                 SELECT projects.id, projects.parent_id, projects.name, projects.owner, NULL, cloned_as_assignment, TRUE FROM projects WHERE owner=:user AND projects.classroom_id=:classroom
             ) AS massed_projects
             LEFT JOIN projects_tags AS display_pt ON display_pt.project_id=massed_projects.id
-            LEFT JOIN tags AS display_tags ON display_pt.tag_id=display_tags.id AND display_tags.display
+            LEFT JOIN tags AS display_tags ON display_pt.tag_id=display_tags.id AND (:all_tags OR display_tags.display)
             LEFT JOIN users ON users.id = massed_projects.owner
             GROUP BY massed_projects.id
             ORDER BY COALESCE(
@@ -77,9 +77,8 @@ def projects(classroom):
                         ELSE NULL END,
                      massed_projects.id) ASC, username ASC, massed_projects.id ASC
             ;
-        """), [{"classroom": classroom, "perm": P.LISTPROJECT.value, "user": current_user.euid, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value, "perm_view": P.VIEWPROJECT.value}]).all()
+        """), [{"classroom": classroom, "perm": P.LISTPROJECT.value, "user": current_user.euid, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value, "perm_view": P.VIEWPROJECT.value, "all_tags": request.args.get("all_tags") == "1"}]).all()
     return render_template("projects.html", classroom=classroom_row, projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT))
-
 @app.route("/classrooms/<classroom>/projects", methods=["POST"])
 @requires_permission(P.ADDPROJECT, "classroom")
 def newproject(classroom):

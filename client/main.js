@@ -803,9 +803,19 @@ var saveToServer = function() {
   xhr.setRequestHeader("Content-Type", "application/json");
   xhr.onprogress = function() {
     if (xhr.readyState === XMLHttpRequest.DONE || xhr.readyState === XMLHttpRequest.LOADING) {
-      if(xhr.status != 200)
+      if(xhr.status != 200) {
         savebutton.innerText = "Error talking to server";
-      else {
+        var postdata =  {
+          "project": projectId(),
+          "error": "Error saving file to server",
+          "stacktrace": null,
+          "data":  {
+            "status": xhr.status,
+            "body": xhr.response
+          }
+        };
+        sendError(postdata);
+      } else {
         savebutton.innerText = "save";
         document.getElementById("savefiles").classList.remove("dirty");
         window.removeEventListener("beforeunload", promptForSave);
@@ -1581,13 +1591,17 @@ var displaytimestamps = function() {
   }
 }
 
+var sendError = function(postdata) {
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "/internal/logerror", true);
+  xhr.setRequestHeader("Content-Type", "application/json");
+  xhr.send(JSON.stringify(postdata));
+}
+
 var logError = function(ths, error) {
   console.log(error);
   document.getElementById("errorbutton").classList.remove("hidden");
   document.getElementById("errorcontents").innerHTML += error + "<br>";
-  var xhr = new XMLHttpRequest();
-  xhr.open("POST", "/internal/logerror", true);
-  xhr.setRequestHeader("Content-Type", "application/json");
   var data = {};
   if (ths.id)
     data.elementid = ths.id;
@@ -1603,7 +1617,7 @@ var logError = function(ths, error) {
     "stacktrace": error.stack,
     "data": data
   }
-  xhr.send(JSON.stringify(postdata));
+  sendError(postdata);
 }
 
 var werr = function(f) {

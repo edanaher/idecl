@@ -213,6 +213,12 @@ def log_error():
 
     return ""
 
+@app.after_request
+def after_request(response):
+    timestamp = time.strftime('[%Y-%b-%d %H:%M:%S]')
+    app.logger.error('%s %s %s %s %s %s %s', timestamp, request.headers.get("X-Forwarded-For"), current_user.get_id() or 0, request.method, request.scheme, request.full_path, response.status)
+    return response
+
 import oauth
 import filestore
 import projects

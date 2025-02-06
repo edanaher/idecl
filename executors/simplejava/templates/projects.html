@@ -120,7 +120,7 @@
     {% set ns.lastproject = -1 %}
     {% set ns.curparent = -1 %}
     {% for project in projects %}
-    {% if project.canview or project.cancloneassignment == "1" or candeleteproject %}
+    {% if project.canview or project.canclone == 1 or candeleteproject %}
       {% if ns.curparent == -1 and project.parent_id == ns.lastparent and project.cloned_as_assignment %}
         <ul class="projectsublist hidden">
         {% set ns.curparent = project.parent_id %}
@@ -151,7 +151,7 @@
           {% endfor %}
         {% endif %}
 
-        {% if project.cancloneassignment == "1" %}
+        {% if project.canclone == 1 %}
           <button class="cloneassignment" project-id="{{ project.id }}">Clone project as assignment</button>
         {% endif %}
         {% if candeleteproject %}

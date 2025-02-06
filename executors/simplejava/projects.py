@@ -32,52 +32,72 @@ def newclassroom():
         conn.commit()
     return str(classroom.id)
 
+
 @app.route("/classrooms/<classroom>/projects")
 @requires_permission(P.GETCLASSROOM, "classroom")
 def projects(classroom):
     with engine.connect() as conn:
         classroom_row = conn.execute(text("SELECT id, name FROM classrooms WHERE id=:classroom"), [{"classroom": classroom}]).first()
         projects = conn.execute(text("""
-            SELECT massed_projects.id, massed_projects.parent_id, massed_projects.name, massed_projects.cloned_as_assignment,
-                   users.email, users.name AS username,
-                   GROUP_CONCAT(cancloneassignment AND (cloned_as_assignment IS NULL)) AS cancloneassignment,
-                   GROUP_CONCAT(canview) AS canview,
-                   GROUP_CONCAT(DISTINCT (display_tags.name || (CASE WHEN display_pt.value IS NULL THEN "" ELSE "=" || display_pt.value END))) AS tags
-            FROM (
-                SELECT projects.id, projects.parent_id, projects.name, projects.owner,
-                       GROUP_CONCAT(rp_cloneassignment.id) AND (already_cloned.id IS NULL) AS cancloneassignment,
-                       projects.cloned_as_assignment,
-                       GROUP_CONCAT(rp_view.id) AS canview
-                FROM projects
-                LEFT JOIN users_roles ON ((projects.id = users_roles.project_id OR users_roles.project_id IS NULL)
-                                          AND (users_roles.classroom_id IS NULL or users_roles.classroom_id=:classroom))
-                LEFT JOIN roles_permissions ON (users_roles.role_id = roles_permissions.role_id)
-                LEFT JOIN projects_tags ON (roles_permissions.tag_id = projects_tags.tag_id AND projects_tags.project_id=projects.id)
-                LEFT JOIN classrooms_tags ON (roles_permissions.tag_id = projects_tags.tag_id AND classrooms_tags.classroom_id=:classroom)
-                LEFT JOIN roles_permissions AS rp_cloneassignment ON (users_roles.role_id = rp_cloneassignment.role_id AND rp_cloneassignment.permission_id=:perm_cloneassignment)
-                LEFT JOIN roles_permissions AS rp_view ON (users_roles.role_id = rp_view.role_id AND rp_view.permission_id=:perm_view)
-                LEFT JOIN projects AS already_cloned ON (already_cloned.parent_id=projects.id AND already_cloned.owner=:user AND already_cloned.cloned_as_assignment=TRUE)
-                WHERE projects.classroom_id=:classroom
-                AND users_roles.user_id=:user
-                AND roles_permissions.permission_id=:perm
-                AND (roles_permissions.tag_id IS NULL
-                     OR classrooms_tags.id IS NOT NULL
-                     OR projects_tags.id IS NOT NULL)
-                GROUP BY projects.id
-                UNION
-                SELECT projects.id, projects.parent_id, projects.name, projects.owner, NULL, cloned_as_assignment, TRUE FROM projects WHERE owner=:user AND projects.classroom_id=:classroom
-            ) AS massed_projects
-            LEFT JOIN projects_tags AS display_pt ON display_pt.project_id=massed_projects.id
-            LEFT JOIN tags AS display_tags ON display_pt.tag_id=display_tags.id AND (:all_tags OR display_tags.display)
-            LEFT JOIN users ON users.id = massed_projects.owner
-            GROUP BY massed_projects.id
-            ORDER BY COALESCE(
-                        CASE WHEN massed_projects.cloned_as_assignment
-                        THEN massed_projects.parent_id
-                        ELSE NULL END,
-                     massed_projects.id) ASC, username ASC, massed_projects.id ASC
-            ;
-        """), [{"classroom": classroom, "perm": P.LISTPROJECT.value, "user": current_user.euid, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value, "perm_view": P.VIEWPROJECT.value, "all_tags": request.args.get("all_tags") == "1"}]).all()
+            with
+            listableprojects as (
+              select projects.id, projects.parent_id, projects.name, projects.cloned_as_assignment, projects.classroom_id
+              from projects
+              join users_roles on (projects.id = users_roles.project_id or users_roles.project_id is null)
+                               and (users_roles.classroom_id is null or users_roles.classroom_id=:classroom)
+              join roles_permissions on users_roles.role_id = roles_permissions.role_id
+              left join projects_tags on roles_permissions.tag_id = projects_tags.tag_id and projects_tags.project_id = projects.id and
+                                         (roles_permissions.tag_value is null or replace(roles_permissions.tag_value, '${user.id}', :user) = projects_tags.value)
+              left join classrooms_tags on roles_permissions.tag_id = classrooms_tags.tag_id and classrooms_tags.classroom_id = projects.classroom_id
+              where projects.classroom_id=:classroom
+                and roles_permissions.permission_id=:perm_list
+                and users_roles.user_id=:user
+                --and projects.id=86
+                and (roles_permissions.tag_id is null or classrooms_tags.id is not null or projects_tags.id is not null)
+            ),
+            listableprojectswithcanview as (
+              select projects.*, roles_permissions.id and (roles_permissions.tag_id is null or classrooms_tags.id is not null or projects_tags.id is not null) as canview
+              from listableprojects as projects
+              join users_roles on (projects.id = users_roles.project_id or users_roles.project_id is null)
+                               and (users_roles.classroom_id is null or users_roles.classroom_id=:classroom)
+                               and users_roles.user_id=:user
+              join roles_permissions on users_roles.role_id = roles_permissions.role_id and roles_permissions.permission_id=:perm_view
+              left join projects_tags on roles_permissions.tag_id = projects_tags.tag_id and projects_tags.project_id = projects.id and
+                                         (roles_permissions.tag_value is null or replace(roles_permissions.tag_value, '${user.id}', :user) = projects_tags.value)
+              left join classrooms_tags on roles_permissions.tag_id = classrooms_tags.tag_id and classrooms_tags.classroom_id = projects.classroom_id
+            ),
+            listableprojectswithcloneable as (
+              select projects.*, roles_permissions.id and (roles_permissions.tag_id is null or classrooms_tags.id is not null or projects_tags.id is not null) and cloned_as_assignment is null as cloneable
+              from listableprojectswithcanview as projects
+              join users_roles on (projects.id = users_roles.project_id or users_roles.project_id is null)
+                               and (users_roles.classroom_id is null or users_roles.classroom_id=:classroom)
+                               and users_roles.user_id=:user
+              join roles_permissions on users_roles.role_id = roles_permissions.role_id and roles_permissions.permission_id=:perm_cloneassignment
+              left join projects_tags on roles_permissions.tag_id = projects_tags.tag_id and projects_tags.project_id = projects.id and
+                                         (roles_permissions.tag_value is null or replace(roles_permissions.tag_value, '${user.id}', :user) = projects_tags.value)
+              left join classrooms_tags on roles_permissions.tag_id = classrooms_tags.tag_id and classrooms_tags.classroom_id = projects.classroom_id
+            ),
+            projectlist as (
+              select projects.*, max(projects_tags.id) is null and cloneable as canclone
+              from listableprojectswithcloneable as projects
+              left join projects as already_cloned on already_cloned.parent_id = projects.id and already_cloned.cloned_as_assignment = true
+              left join projects_tags on projects_tags.tag_id = (select id from tags where name = 'owner') and projects_tags.project_id = already_cloned.id and projects_tags.value = :user
+              group by projects.id
+            ),
+            projectlistwithusers as (
+              select projects.*, users.name as username, users.email
+              from projectlist as projects
+              left join projects_tags on projects_tags.project_id = projects.id and projects_tags.tag_id = (select id from tags where name = 'owner')
+              left join users on users.id = projects_tags.value
+              where canview=true or canclone=true
+            )
+            select projects.*, group_concat(distinct (tags.name || (case when projects_tags.value is null then '' else '=' || projects_tags.value END))) as tags
+            from projectlistwithusers as projects
+            left join projects_tags on projects_tags.project_id = projects.id
+            left join tags on projects_tags.tag_id = tags.id and (:all_tags or tags.display)
+            group by projects.id
+            order by coalesce(case when projects.cloned_as_assignment then projects.parent_id else null end, projects.id) asc, username asc, projects.id asc
+        """), [{"classroom": classroom, "perm_list": P.LISTPROJECT.value, "user": current_user.euid, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value, "perm_view": P.VIEWPROJECT.value, "all_tags": request.args.get("all_tags") == "1"}]).all()
     return render_template("projects.html", classroom=classroom_row, projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT))
 @app.route("/classrooms/<classroom>/projects", methods=["POST"])
 @requires_permission(P.ADDPROJECT, "classroom")

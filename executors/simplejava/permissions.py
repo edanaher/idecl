@@ -35,17 +35,19 @@ class Permissions(Enum):
 
 
 STUDENT_PERMISSIONS = [
-    (Permissions.GETCLASSROOM, None),
-    (Permissions.LISTPROJECT, "published"),
-    (Permissions.CLONEPROJECTASASSIGNMENT, "published")
+    (Permissions.GETCLASSROOM, None, None),
+    (Permissions.LISTPROJECT, "published", None),
+    (Permissions.CLONEPROJECTASASSIGNMENT, "published", None),
+    (Permissions.LISTPROJECT, "owner", "${user.id}"),
+    (Permissions.VIEWPROJECT, "owner", "${user.id}"),
+    (Permissions.EDITPROJECT, "owner", "${user.id}")
 ]
 
 
 with engine.connect() as conn:
     conn.execute(text("DELETE FROM roles_permissions"))
     conn.execute(text("INSERT INTO roles_permissions (role_id, permission_id) VALUES ((SELECT id FROM roles WHERE name='teacher'), :permission) ON CONFLICT DO NOTHING"), [{"permission": p.value} for _, p in Permissions.__members__.items()])
-    conn.execute(text("INSERT INTO tags (name) VALUES (:name) ON CONFLICT DO NOTHING"), [{"name": t} for (p, t) in STUDENT_PERMISSIONS if t])
-    conn.execute(text("INSERT INTO roles_permissions (role_id, permission_id, tag_id) VALUES ((SELECT id FROM roles WHERE name='student'), :permission, (SELECT id FROM tags WHERE name=:tag)) ON CONFLICT DO NOTHING"), [{"permission": p.value, "tag": t} for (p, t) in STUDENT_PERMISSIONS])
+    conn.execute(text("INSERT INTO roles_permissions (role_id, permission_id, tag_id, tag_value) VALUES ((SELECT id FROM roles WHERE name='student'), :permission, (SELECT id FROM tags WHERE name=:tag), :tag_value) ON CONFLICT DO NOTHING"), [{"permission": p.value, "tag": t, "tag_value": tv} for (p, t, tv) in STUDENT_PERMISSIONS])
     conn.commit()
 
 # TODO: Right now, a tag on a role means the project or class in question has

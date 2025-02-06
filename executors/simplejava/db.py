@@ -85,6 +85,7 @@ classrooms_tags = Table(
     Column("id", Integer, primary_key=True),
     Column("classroom_id", Integer, ForeignKey("classrooms.id", name="fk_classrooms_tags_classroom_id"), nullable=False),
     Column("tag_id", Integer, ForeignKey("tags.id", name="fk_classrooms_tags_tag_id"), nullable=False),
+    Column("value", String),
     Column("created", Integer),
     UniqueConstraint("classroom_id", "tag_id", name="uniq_classroomclassroomss_tago_classroom_id_tag_id")
 )

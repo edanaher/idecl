@@ -385,7 +385,7 @@ var getAbsoluteHistoryTime = function() {
 
 var historymove_timer;
 var historymove = function(adjust, delay) {
-  if (!edits)
+  if (!edits || edits.length == 0)
     return;
   var histlen = edits.length;
   if (currenthistory == -1 && adjust > 0 || currenthistory == 0 && adjust < 0)

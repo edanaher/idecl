@@ -447,7 +447,7 @@ var historymove = function(adjust, delay) {
       setCurrentHistoryFile(currenthistory - 1);
       var prevfile = edit[4][0]
       if (/*i >= 0 && */prevfile != currenthistoryfile) {
-        console.log("history load file mismatch on ", /*i, */";", prevfile, "vs", currenthistoryfile, "from", edits[i]);
+        console.log("history load file mismatch on ", /*i, */";", prevfile, "vs", currenthistoryfile, "from"/*, edits[i]*/);
         prevfile = currenthistoryfile;
       }
       loadFile(prevfile, true);

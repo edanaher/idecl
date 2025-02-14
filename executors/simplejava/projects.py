@@ -311,7 +311,7 @@ def assignment_results(pid):
             LEFT JOIN users ON projects.owner == users.id
             LEFT JOIN files ON files.project_id = projects.id AND NOT files.hidden AND NOT files.readonly AND NOT files.inherited
             LEFT JOIN projects_tags ON projects.id = projects_tags.project_id
-            LEFT JOIN tags ON projects_tags.tag_id = tags.id
+            LEFT JOIN tags ON projects_tags.tag_id = tags.id AND tags.display = true
             WHERE (rank=1 OR rank IS NULL) AND parent_id=:pid AND cloned_as_assignment=TRUE
             GROUP BY projects.id
             ORDER BY COALESCE(users.name, users.email);

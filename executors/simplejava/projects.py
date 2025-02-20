@@ -98,7 +98,8 @@ def projects(classroom):
             group by projects.id
             order by coalesce(case when projects.cloned_as_assignment then projects.parent_id else null end, projects.id) asc, username asc, projects.id asc
         """), [{"classroom": classroom, "perm_list": P.LISTPROJECT.value, "user": current_user.euid, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value, "perm_view": P.VIEWPROJECT.value, "all_tags": request.args.get("all_tags") == "1"}]).all()
-    return render_template("projects.html", classroom=classroom_row, projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT))
+    return render_template("projects.html", classroom=classroom_row, projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT), canaddsandbox=has_permission(P.ACTION))
+
 @app.route("/classrooms/<classroom>/projects", methods=["POST"])
 @requires_permission(P.ADDPROJECT, "classroom")
 def newproject(classroom):

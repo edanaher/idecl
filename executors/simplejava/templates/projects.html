@@ -69,6 +69,37 @@
 
       })
       {% endif %}
+      {% if canaddsandbox %}
+      document.getElementById("addsandbox").addEventListener("click", function() {
+        var name = prompt("What is the new sandbox called?");
+        if (!name)
+          return;
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", document.location.toString().replace(/\/[^/]*$/, "") + "/actions/0", true);
+        xhr.onload = function() {
+          var pid = JSON.parse(xhr.response).pid;
+          var a = document.createElement("a");
+          a.href = "/projects/" + pid;
+          a.innerText = name;
+          var b = document.createElement("button");
+          b.classList.add("delete-project");
+          b.setAttribute("project-id", pid);
+          b.setAttribute("project-name", name);
+          b.addEventListener("click", deleteProject);
+          b.innerText = "-";
+          var li = document.createElement("li");
+          li.appendChild(a);
+          {% if candeleteproject %}
+          li.appendChild(b);
+          {% endif %}
+          var ul = document.getElementById("projectlist");
+          ul.appendChild(li);
+        };
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify({"name": name}));
+
+      })
+      {% endif %}
       cloneelemes = document.getElementsByClassName("cloneassignment")
       for (var i = 0; i < cloneelemes.length; i++) {
         var elem = cloneelemes[i];
@@ -166,6 +197,9 @@
   </ul>
   {% if canaddproject %}
   <button id="addproject">New project</button>
+  {% endif %}
+  {% if canaddsandbox %}
+  <button id="addsandbox">New sandbox</button>
   {% endif %}
 </html>
 

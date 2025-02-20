@@ -220,6 +220,7 @@ def after_request(response):
     return response
 
 import oauth
+import actions
 import filestore
 import projects
 import users

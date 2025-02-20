@@ -33,6 +33,8 @@ class Permissions(Enum):
     ADDPROJECTTAG = 16
     DELETEPROJECTTAG = 17
 
+    ACTION = 20 # TODO: parameterize on action
+
 
 STUDENT_PERMISSIONS = [
     (Permissions.GETCLASSROOM, None, None),

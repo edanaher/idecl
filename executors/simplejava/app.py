@@ -74,7 +74,7 @@ def compile(pid):
 
     if testing and not tests:
         shutil.rmtree(tmp)
-        return json.dumps({"error": "No tests found; tests should start with Test or end with Test or Tests.  E.g., TestNum.java, NumTest.java, or NumTests.java"})
+        return json.dumps({"error": "No tests found; tests should start with Test or end with Test or Tests.  E.g., TestNum.java, NumTest.java, or NumTests.java\n"})
 
     # Caching!  This hash function is not quite safe, but good enough to test.
     proc = subprocess.run(["/bin/sh", "-c", f"cd {tmp}" " && { ls; cat *; } | sha256sum | cut -c1-64 | xargs echo -n"], capture_output=True, text=False, timeout=30)

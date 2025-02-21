@@ -21,6 +21,14 @@ actions = [
              "contents": "import java.io.*;\n\npublic class Main {\n  public static void main(String args[]) {\n    System.out.println(\"Hello world\");\n  }\n}"
            }
         ]
+    }, {
+        "name": "submit",
+        "type": "update_project",
+        "tags": {"add": {"submitted": None}},
+    }, {
+        "name": "unsubmit",
+        "type": "update_project",
+        "tags": {"remove": ["submitted"]},
     }
 ]
 
@@ -53,4 +61,24 @@ def classroom_action(cid, aid):
 
     return json.dumps({"pid": project.id})
 
+@app.route("/projects/<pid>/actions/<aid>", methods=["POST"])
+@requires_permission(P.ACTION, "project")
+def project_action(pid, aid):
+    body = request.json
+    aid = int(aid)
+    if aid >= len(actions):
+        abort(400, "Invalid action")
 
+    action = actions[aid]
+
+    if action["type"] == "update_project":
+        with engine.connect() as conn:
+            for t, v in action["tags"].get("add", {}).items():
+                v = v and v.replace("${user.id}", str(current_user.get_eid()))
+                conn.execute(text("INSERT INTO projects_tags (project_id, tag_id, value, created) VALUES (:pid, (SELECT id FROM tags WHERE name=:tag), :value, :now)"), [{"pid": pid, "tag": t, "value": v, "now": int(time.time())}])
+
+            for t in action["tags"].get("remove", []):
+                conn.execute(text("DELETE FROM projects_tags WHERE project_id=:pid AND tag_id=(SELECT id FROM tags WHERE name=:tag)"), [{"pid": pid, "tag": t}])
+            conn.commit()
+
+    return "Success"

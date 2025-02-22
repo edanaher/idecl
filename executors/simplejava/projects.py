@@ -300,22 +300,38 @@ def assignment_results(pid):
         classroom_row = conn.execute(text("SELECT classrooms.id, classrooms.name FROM classrooms JOIN projects ON projects.classroom_id=classrooms.id WHERE projects.id=:pid"), [{"pid": pid}]).first()
         # TODO: handle timezones properly instead of hardcoding -0500
         rows = conn.execute(text("""
-            SELECT projects.name, projects.id,
-                   test_results.success, test_results.total, test_results.created,
-                   users.email, users.name AS username,
-                   SUM(LENGTH(files.contents) - LENGTH(REPLACE(contents, X'0A', ''))) AS lines,
-                   COALESCE(GROUP_CONCAT(
-                        tags.name || ' at ' || COALESCE(DATETIME(projects_tags.created - 3600*5, 'unixepoch'), 'UNKNOWN')),
-                      "") AS tags
-            FROM projects
-            LEFT JOIN (SELECT project_id, success, total, created, RANK() OVER (PARTITION BY project_id ORDER BY created DESC) as rank FROM project_test_results) AS test_results ON projects.id = test_results.project_id
-            LEFT JOIN users ON projects.owner == users.id
-            LEFT JOIN files ON files.project_id = projects.id AND NOT files.hidden AND NOT files.readonly AND NOT files.inherited
-            LEFT JOIN projects_tags ON projects.id = projects_tags.project_id
-            LEFT JOIN tags ON projects_tags.tag_id = tags.id AND tags.display = true
-            WHERE (rank=1 OR rank IS NULL) AND parent_id=:pid AND cloned_as_assignment=TRUE
-            GROUP BY projects.id
-            ORDER BY COALESCE(users.name, users.email);
+            with submissions as (
+              select projects.name, projects.id,
+                     users.email, users.name as username,
+                     test_results.success, test_results.total, test_results.created
+              from projects
+              left join users on projects.owner == users.id
+              left join (select project_id, success, total, created, rank() over (partition by project_id order by created desc) as rank from project_test_results) as test_results on projects.id = test_results.project_id
+              where (rank=1 or rank is null) and parent_id=:pid and cloned_as_assignment=true
+              group by projects.id
+              order by coalesce(users.name, users.email)
+            ),
+            lengths as (
+              select submissions.*,
+                     sum(length(files.contents) - length(replace(contents, x'0a', ''))) as lines
+              from submissions
+              left join files on files.project_id = submissions.id and not files.hidden and not files.readonly and not files.inherited
+              group by submissions.id
+            ),
+            tagged as (
+              select lengths.*,
+                     coalesce(group_concat(
+                          tags.name || ' at ' || coalesce(datetime(projects_tags.created - 3600*5, 'unixepoch'), 'unknown')),
+                        '') as tags
+              from lengths
+              left join projects_tags on lengths.id = projects_tags.project_id
+              left join tags on projects_tags.tag_id = tags.id and tags.display = true
+              group by lengths.id
+              order by coalesce(username, email)
+
+            )
+            select * from tagged;
+
         """), [{"pid": pid}]).all()
 
     return render_template("assignment_results.html", classroom_id=classroom_row.id, classroom_name=classroom_row.name, project_id=pid, project_name=project_row.name, loggedinas=current_user, canmanageusers=has_permission(P.LISTUSERS), results=rows)

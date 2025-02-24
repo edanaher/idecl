@@ -18,6 +18,7 @@ class Permissions(Enum):
     EDITPROJECT = 15
     # This is hacky... possibly CLONEPROJECT with a parameter indicating type
     # of clone once generalized cloning is available?
+    # Response: Yep - this will be an action.
     CLONEPROJECTASASSIGNMENT = 18
     COMPAREPROJECT = 19
 
@@ -42,7 +43,9 @@ STUDENT_PERMISSIONS = [
     (Permissions.CLONEPROJECTASASSIGNMENT, "published", None),
     (Permissions.LISTPROJECT, "owner", "${user.id}"),
     (Permissions.VIEWPROJECT, "owner", "${user.id}"),
-    (Permissions.EDITPROJECT, "owner", "${user.id}")
+    (Permissions.EDITPROJECT, "owner", "${user.id}"),
+    (Permissions.ADDPROJECTTAG, "owner", "${user.id}"),
+    (Permissions.DELETEPROJECTTAG, "owner", "${user.id}")
 ]
 
 
@@ -59,23 +62,22 @@ def has_permission(perm, classroom_id = None, project_id = None):
     with engine.connect() as conn:
         classroom_constraint = "users_roles.classroom_id = " + str(classroom_id) if classroom_id else "FALSE"
         project_constraint = "users_roles.project_id = " + str(project_id) if project_id else "FALSE"
-        valid = conn.execute(text(f"""
-            SELECT *
-            FROM roles_permissions
-            JOIN users_roles USING (role_id)
-            LEFT JOIN projects_tags ON (roles_permissions.tag_id = projects_tags.tag_id AND projects_tags.project_id=:project)
-            LEFT JOIN classrooms_tags ON (roles_permissions.tag_id = projects_tags.tag_id AND classrooms_tags.classroom_id=:classroom)
-            WHERE user_id=:uid AND permission_id = :perm
-            AND (users_roles.classroom_id IS NULL OR users_roles.classroom_id=:classroom)
-            AND (users_roles.project_id IS NULL OR users_roles.project_id=:project)
+        valid = conn.execute(text("""
+            select *
+            from users_roles
+            join roles_permissions on users_roles.role_id = roles_permissions.role_id
+                                   and (users_roles.classroom_id is null or users_roles.classroom_id = :classroom)
+                                   and (users_roles.project_id is null or users_roles.project_id = :project)
+            left join projects_tags on (roles_permissions.tag_id = projects_tags.tag_id and projects_tags.project_id=:project)
+                                    and (roles_permissions.tag_value is null or replace(roles_permissions.tag_value, '${user.id}', :uid) = projects_tags.value)
+            left join classrooms_tags on (roles_permissions.tag_id = classrooms_tags.tag_id and classrooms_tags.classroom_id=:classroom)
+                                    and (roles_permissions.tag_value is null or replace(roles_permissions.tag_value, '${user.id}', :uid) = classrooms_tags.value)
+            WHERE users_roles.user_id=:uid AND permission_id = :perm
             AND (roles_permissions.tag_id IS NULL OR
                  classrooms_tags.id IS NOT NULL OR
-                 projects_tags.id IS NOT NULL);
+                 projects_tags.id IS NOT NULL)
         """), [{"uid": current_user.euid, "perm": perm.value, "classroom":classroom_id, "project":project_id}]).first()
-        if project_id:
-            owner = conn.execute(text(f"SELECT owner FROM projects WHERE id=:project"), [{"project": project_id}]).first().owner
-            if owner and owner == current_user.euid:
-                return True
+    print("Valid is ", repr(valid), flush=True)
     return valid is not None
 
 def requires_permission(perm, checktype = None):

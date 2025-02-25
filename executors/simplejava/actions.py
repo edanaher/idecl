@@ -32,9 +32,9 @@ actions = [
     }
 ]
 
-@app.route("/classrooms/<cid>/actions/<aid>", methods=["POST"])
+@app.route("/classrooms/<classroom>/actions/<aid>", methods=["POST"])
 @requires_permission(P.ACTION, "classroom")
-def classroom_action(cid, aid):
+def classroom_action(classroom, aid):
     body = request.json
     aid = int(aid)
     if aid >= len(actions):
@@ -44,7 +44,7 @@ def classroom_action(cid, aid):
 
     if action["type"] == "create_project":
         with engine.connect() as conn:
-            project = conn.execute(text("INSERT INTO projects (name, classroom_id, owner) VALUES (:name, :classroom, :uid) RETURNING id"), [{"uid": current_user.euid, "classroom": cid, "name": body["name"]}]).first()
+            project = conn.execute(text("INSERT INTO projects (name, classroom_id, owner) VALUES (:name, :classroom, :uid) RETURNING id"), [{"uid": current_user.euid, "classroom": classroom, "name": body["name"]}]).first()
             for t, v in action["tags"].items():
                 v = v.replace("${user.id}", str(current_user.get_eid()))
                 conn.execute(text("INSERT INTO projects_tags (project_id, tag_id, value, created) VALUES (:pid, (SELECT id FROM tags WHERE name=:tag), :value, :now) RETURNING id"), [{"pid": project.id, "tag": t, "value": v, "now": int(time.time())}]).first()

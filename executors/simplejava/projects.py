@@ -98,7 +98,7 @@ def projects(classroom):
             group by projects.id
             order by coalesce(case when projects.cloned_as_assignment then projects.parent_id else null end, projects.id) asc, username asc, projects.id asc
         """), [{"classroom": classroom, "perm_list": P.LISTPROJECT.value, "user": current_user.euid, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value, "perm_view": P.VIEWPROJECT.value, "all_tags": request.args.get("all_tags") == "1"}]).all()
-    return render_template("projects.html", classroom=classroom_row, projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT), canaddsandbox=has_permission(P.ACTION))
+    return render_template("projects.html", classroom=classroom_row, projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT), canaddsandbox=has_permission(P.ACTION, classroom_row.id, None, 0))
 
 @app.route("/classrooms/<classroom>/projects", methods=["POST"])
 @requires_permission(P.ADDPROJECT, "classroom")
@@ -331,7 +331,6 @@ def assignment_results(pid):
 
             )
             select * from tagged;
-
         """), [{"pid": pid}]).all()
 
     return render_template("assignment_results.html", classroom_id=classroom_row.id, classroom_name=classroom_row.name, project_id=pid, project_name=project_row.name, loggedinas=current_user, canmanageusers=has_permission(P.LISTUSERS), results=rows)

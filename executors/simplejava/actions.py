@@ -25,10 +25,21 @@ actions = [
         "name": "submit",
         "type": "update_project",
         "tags": {"add": {"submitted": None}},
+        "requires": {
+            "tags": {
+                "include": { "type": "submission" },
+                "exclude": { "submitted": None }
+            }
+        }
     }, {
         "name": "unsubmit",
         "type": "update_project",
         "tags": {"remove": ["submitted"]},
+        "requires": {
+            "tags": {
+                "include": { "type": "submission", "submitted": None }
+            }
+        }
     }
 ]
 
@@ -73,6 +84,15 @@ def project_action(pid, aid):
 
     if action["type"] == "update_project":
         with engine.connect() as conn:
+            for t, v in action.get("requires").get("tags", {}).get("include", {}).items():
+                row = conn.execute(text("select id from projects_tags where project_id=:pid and tag_id=(select id from tags where name=:tag) and (value=:value or :value IS NULL)"), {"pid": pid, "tag": t, "value": v}).first()
+                if not row:
+                    abort(400, f"Action requires tag {t}{f'={v}' if v else ''} to be assigned to project")
+            for t, v in action.get("requires").get("tags", {}).get("exclude", {}).items():
+                row = conn.execute(text("select id from projects_tags where project_id=:pid and tag_id=(select id from tags where name=:tag) and (value=:value or :value IS NULL)"), {"pid": pid, "tag": t, "value": v}).first()
+                if row:
+                    abort(400, f"Action requires tag {t}{f'={v}' if v else ''} not to be assigned to project")
+
             for t, v in action["tags"].get("add", {}).items():
                 v = v and v.replace("${user.id}", str(current_user.get_eid()))
                 conn.execute(text("INSERT INTO projects_tags (project_id, tag_id, value, created) VALUES (:pid, (SELECT id FROM tags WHERE name=:tag), :value, :now)"), [{"pid": pid, "tag": t, "value": v, "now": int(time.time())}])

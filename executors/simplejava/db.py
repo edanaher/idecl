@@ -46,7 +46,7 @@ roles_permissions = Table(
     Column("detail", Integer, nullable=True),
     Column("tag_id", Integer, ForeignKey("tags.id", name="fk_users_roles_tag_id"), nullable=True),
     Column("tag_value", String, nullable=True),
-    UniqueConstraint("role_id", "permission_id", "tag_id", name="uniq_roles_permissions_role_id_permission_id_tag_id")
+    UniqueConstraint("role_id", "permission_id", "tag_id", "detail", name="uniq_roles_permissions_role_id_permission_id_tag_id")
 )
 
 

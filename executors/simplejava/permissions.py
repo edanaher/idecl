@@ -44,12 +44,14 @@ STUDENT_PERMISSIONS = [
     (Permissions.LISTPROJECT, "owner", "${user.id}"),
     (Permissions.VIEWPROJECT, "owner", "${user.id}"),
     (Permissions.EDITPROJECT, "owner", "${user.id}"),
-    (Permissions.ADDPROJECTTAG, "owner", "${user.id}"),
-    (Permissions.DELETEPROJECTTAG, "owner", "${user.id}")
+#    (Permissions.ADDPROJECTTAG, "owner", "${user.id}"),
+#    (Permissions.DELETEPROJECTTAG, "owner", "${user.id}")
 ]
 
 STUDENT_ACTIONS = [
    (0, None, None),
+   (1, "owner", "${user.id}"),
+   (2, "owner", "${user.id}")
 ]
 
 
@@ -58,7 +60,7 @@ with engine.connect() as conn:
     conn.execute(text("INSERT INTO roles_permissions (role_id, permission_id) VALUES ((SELECT id FROM roles WHERE name='teacher'), :permission) ON CONFLICT DO NOTHING"), [{"permission": p.value} for _, p in Permissions.__members__.items() if p != Permissions.ACTION])
     conn.execute(text("INSERT INTO roles_permissions (role_id, permission_id, detail) VALUES ((SELECT id FROM roles WHERE name='teacher'), :permission, :action) ON CONFLICT DO NOTHING"), [{"permission": Permissions.ACTION.value, "action": a} for a in range(3)])
     conn.execute(text("INSERT INTO roles_permissions (role_id, permission_id, tag_id, tag_value) VALUES ((SELECT id FROM roles WHERE name='student'), :permission, (SELECT id FROM tags WHERE name=:tag), :tag_value) ON CONFLICT DO NOTHING"), [{"permission": p.value, "tag": t, "tag_value": tv} for (p, t, tv) in STUDENT_PERMISSIONS])
-    conn.execute(text("INSERT INTO roles_permissions (role_id, permission_id, detail) VALUES ((SELECT id FROM roles WHERE name='student'), :permission, :action) ON CONFLICT DO NOTHING"), [{"permission": Permissions.ACTION.value, "action": a} for a in [0]])
+    conn.execute(text("INSERT INTO roles_permissions (role_id, permission_id, tag_id, tag_value, detail) VALUES ((SELECT id FROM roles WHERE name='student'), :permission, (SELECT id FROM tags WHERE name=:tag), :tag_value, :action) ON CONFLICT DO NOTHING"), [{"permission": Permissions.ACTION.value, "tag": t, "tag_value": tv, "action": a} for a, t, tv in STUDENT_ACTIONS])
     conn.commit()
 
 # TODO: Right now, a tag on a role means the project or class in question has

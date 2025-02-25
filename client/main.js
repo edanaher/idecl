@@ -1300,7 +1300,8 @@ var submit = function() {
   var submit_button = this;
   if (this.hasAttribute("submitted")) {
     var xhr = new XMLHttpRequest();
-    xhr.open("DELETE", "/projects/" + projectId() + "/tags/2", true);
+    xhr.open("POST", "/projects/" + projectId() + "/actions/2", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
     xhr.onload = function() {
       submit_button.disabled = false;
       submit_button.innerText = "submit project";
@@ -1310,10 +1311,11 @@ var submit = function() {
     };
     this.innerText = "unsubmitting..."
     this.disabled = true;
-    xhr.send();
+    xhr.send("{}");
   } else {
     var xhr = new XMLHttpRequest();
-    xhr.open("PUT", "/projects/" + projectId() + "/tags/2", true);
+    xhr.open("POST", "/projects/" + projectId() + "/actions/1", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
     xhr.onload = function() {
       submit_button.disabled = false;
       submit_button.innerText = "unsubmit project";
@@ -1321,11 +1323,10 @@ var submit = function() {
       document.getElementById("submittedbool").classList.remove("hidden");
       document.getElementById("submittedtime").classList.remove("hidden");
       document.getElementById("submittedtime").innerText = formattime(new Date());
-
     };
     this.innerText = "submitting..."
     this.disabled = true;
-    xhr.send();
+    xhr.send("{}");
   }
 }
 

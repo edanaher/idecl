@@ -4,6 +4,7 @@ var projectId = function() {
   p = document.URL.match(/projects\/([0-9]*)/)
   return p && parseInt(p[1]);
 }
+var db;
 var localFileStore = function(filename) {
   var p = projectId();
   var prefix = "files|"
@@ -1366,6 +1367,17 @@ var upgradestore = function() {
     }
   }
 
+  if (version < 2) {
+    var trans = db.transaction(["files"], "readwrite");
+    var dbfiles = trans.objectStore("files");
+    var files = JSON.parse(loadLSc("files"));
+    for (var i in files) {
+      var contents = loadLSc("files", i);
+      dbfiles.add(contents, projectId() + "." + i);
+    }
+  }
+
+
   localStorage.setItem("version", 1);
 }
 
@@ -1631,13 +1643,35 @@ var werr = function(f) {
   }
 }
 
+var initIndexedDB = function() {
+  var request = window.indexedDB.open("idecl", 2);
+  request.onerror = function(e) {
+    logError(null, "Error opening indexedDB: ", e);
+  };
+  request.onupgradeneeded = function(e) {
+    db = e.target.result;
+
+    var objectStore = db.createObjectStore("files");
+  }
+  request.onsuccess = function(e) {
+    db = e.target.result;
+    db.onerror = function(e) {
+      logError(null, "Error in IndexedDB: " + (e.target.error && e.target.error.message));
+    }
+    console.log("Opened", db);
+    upgradestore();
+  }
+
+}
+
 window.onload = function() {
   try {
+    initIndexedDB();
     initAce();
     initTerminal();
     initDarkMode();
     displaytimestamps();
-    upgradestore();
+    //upgradestore();
     checkLocalStale();
     if (!loadLSc("files"))
       loadFromServer(projectId(), true);

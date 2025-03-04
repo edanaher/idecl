@@ -1616,7 +1616,7 @@ var logError = function(ths, error) {
   document.getElementById("errorbutton").classList.remove("hidden");
   document.getElementById("errorcontents").innerHTML += error + "<br>";
   var data = {};
-  if (ths.id)
+  if (ths && ths.id)
     data.elementid = ths.id;
   var lastfile = loadLSc("lastfile")
   try {
@@ -1643,10 +1643,14 @@ var werr = function(f) {
   }
 }
 
+var wrapMessage = function(msg) {
+  return {message: msg, toString: function() { return msg; }};
+}
+
 var initIndexedDB = function() {
   var request = window.indexedDB.open("idecl", 2);
   request.onerror = function(e) {
-    logError(null, "Error opening indexedDB: ", e);
+    logError(null, wrapMessage("Error opening indexedDB: " + e));
   };
   request.onupgradeneeded = function(e) {
     db = e.target.result;
@@ -1656,7 +1660,7 @@ var initIndexedDB = function() {
   request.onsuccess = function(e) {
     db = e.target.result;
     db.onerror = function(e) {
-      logError(null, "Error in IndexedDB: " + (e.target.error && e.target.error.message));
+      logError(null, wrapMessage("Error in IndexedDB: " + (e.target.error && e.target.error.message)));
     }
     console.log("Opened", db);
     upgradestore();
@@ -1715,6 +1719,6 @@ window.onload = function() {
     addClickListenerById("clearterminal", function() { term.write("\x1b[2J\x1b[3J\x1b[H"); });
     addClickListenerById("toggleinstructions", toggleinstructions);
   } catch (error) {
-    logError(error);
+    logError(null, error);
   }
 }

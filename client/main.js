@@ -1368,17 +1368,54 @@ var upgradestore = function() {
   }
 
   if (version < 2) {
-    var trans = db.transaction(["files"], "readwrite");
+    var trans = db.transaction(["projects", "files", "history"], "readwrite");
     var dbfiles = trans.objectStore("files");
-    var files = JSON.parse(loadLSc("files"));
-    for (var i in files) {
-      var contents = loadLSc("files", i);
-      dbfiles.add(contents, projectId() + "." + i);
+    var dbprojects = trans.objectStore("projects");
+    var dbhistory = trans.objectStore("history");
+    var keys = Object.keys(localStorage)
+    for (var k in keys) {
+      var key = keys[k];
+      if (key.startsWith("files|")) {
+        //console.log(key);
+        var projectidstr = key.substr(6);
+        if (projectidstr.indexOf("|") != -1)
+          continue;
+        var projectid = parseInt(projectidstr);
+
+        var filenames = JSON.parse(localStorage.getItem(key));
+        for (var fileid in filenames) {
+          var filename = filenames[fileid]
+          console.log(projectid, key, fileid, filename, attrs);
+          var fileObj = {
+            "name": filename,
+            "contents": localStorage.getItem("files|" + projectid + "|" + fileid)
+          }
+          var attrs = localStorage.getItem("attrs|" + projectid + "|" + fileid);
+          if (attrs)
+            fileObj.attrs = attrs;
+          dbfiles.put(fileObj, projectid + "." + fileid);
+        }
+
+        var projectRow = {
+          "files": filenames
+        }
+        var lastfile = localStorage.getItem("lastfile|" + projectid);
+        if (lastfile !== null)
+          projectRow.lastfile = parseInt(lastfile);
+        var prnt = localStorage.getItem("parent|" + projectid);
+        if (prnt)
+          projectRow.parent = parseInt(prnt);
+        dbprojects.put(projectRow, projectid);
+
+        var edits = localStorage.getItem("edits|" + projectid);
+        if (edits)
+          dbhistory.put(edits, projectid + ".all");
+      }
     }
   }
 
 
-  localStorage.setItem("version", 1);
+  localStorage.setItem("version", 2);
 }
 
 var initFiles = function() {
@@ -1644,27 +1681,33 @@ var werr = function(f) {
 }
 
 var wrapMessage = function(msg) {
-  return {message: msg, toString: function() { return msg; }};
+  return {message: msg, toString: function() { return msg; }, stack: Error().stack};
 }
 
 var initIndexedDB = function() {
-  var request = window.indexedDB.open("idecl", 2);
+  var request = window.indexedDB.open("idecl", 4);
   request.onerror = function(e) {
     logError(null, wrapMessage("Error opening indexedDB: " + e));
   };
   request.onupgradeneeded = function(e) {
     db = e.target.result;
+    var version = e.oldVersion;
 
-    var objectStore = db.createObjectStore("files");
+    if (version < 2)
+      db.createObjectStore("files");
+    if (version < 3)
+      db.createObjectStore("projects");
+    if (version < 4)
+      db.createObjectStore("history");
   }
-  request.onsuccess = function(e) {
+  request.onsuccess = werr(function(e) {
     db = e.target.result;
     db.onerror = function(e) {
       logError(null, wrapMessage("Error in IndexedDB: " + (e.target.error && e.target.error.message)));
     }
     console.log("Opened", db);
     upgradestore();
-  }
+  })
 
 }
 

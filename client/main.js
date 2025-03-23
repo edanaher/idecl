@@ -56,6 +56,27 @@ var rmLSc = function(type, file) {
   return rmLS(type, projectId(), file);
 }
 
+var loadIDB = function(tabl, project, file) {
+  return new Promise(function(resolve, reject) {
+    var key;
+    if (file !== undefined)
+      key = project + "." + file;
+    else
+      key = project;
+    var trans = db.transaction([tabl], "readonly");
+    var table = trans.objectStore(tabl);
+    var req = table.get(key)
+    req.onerror = function(error) {
+      logError(null, error);
+      if (reject)
+        reject();
+    };
+    req.onsuccess = function(e) {
+      resolve(req.result);
+    };
+  });
+}
+
 var lastedittime = 0;
 var edits = [["m", 0, 0, 0]];
 var currenthistory = -1;
@@ -1423,6 +1444,11 @@ var initFiles = function() {
   var filenames = JSON.parse(loadLSc("files"));
   var filelist = document.getElementById("filelist");
 
+  loadIDB("projects", projectId()).then(function(projRow) {
+    console.log("row is ", projRow, "From", projectId());
+  });
+
+
   var opened = false;
   for(f in filenames) {
     var attrs = loadLSc("attrs", f);
@@ -1685,46 +1711,50 @@ var wrapMessage = function(msg) {
 }
 
 var initIndexedDB = function() {
-  var request = window.indexedDB.open("idecl", 4);
-  request.onerror = function(e) {
-    logError(null, wrapMessage("Error opening indexedDB: " + e));
-  };
-  request.onupgradeneeded = function(e) {
-    db = e.target.result;
-    var version = e.oldVersion;
+  return new Promise(function(resolve, reject) {
+    var request = window.indexedDB.open("idecl", 4);
+    request.onerror = function(e) {
+      logError(null, wrapMessage("Error opening indexedDB: " + e));
+      reject(e);
+    };
+    request.onupgradeneeded = function(e) {
+      db = e.target.result;
+      var version = e.oldVersion;
 
-    if (version < 2)
-      db.createObjectStore("files");
-    if (version < 3)
-      db.createObjectStore("projects");
-    if (version < 4)
-      db.createObjectStore("history");
-  }
-  request.onsuccess = werr(function(e) {
-    db = e.target.result;
-    db.onerror = function(e) {
-      logError(null, wrapMessage("Error in IndexedDB: " + (e.target.error && e.target.error.message)));
+      if (version < 2)
+        db.createObjectStore("files");
+      if (version < 3)
+        db.createObjectStore("projects");
+      if (version < 4)
+        db.createObjectStore("history");
     }
-    console.log("Opened", db);
-    upgradestore();
+    request.onsuccess = werr(function(e) {
+      db = e.target.result;
+      db.onerror = function(e) {
+        logError(null, wrapMessage("Error in IndexedDB: " + (e.target.error && e.target.error.message)));
+      }
+      console.log("Opened", db);
+      upgradestore();
+      resolve();
+    })
   })
-
 }
 
 window.onload = function() {
   try {
-    initIndexedDB();
+    initIndexedDB().then(function() {
+      if (!loadLSc("files"))
+        loadFromServer(projectId(), true);
+      else {
+        initFiles();
+      }
+    });
     initAce();
     initTerminal();
     initDarkMode();
     displaytimestamps();
     //upgradestore();
     checkLocalStale();
-    if (!loadLSc("files"))
-      loadFromServer(projectId(), true);
-    else {
-      initFiles();
-    }
     addClickListenerById("run", runcode);
     addClickListenerById("runtests", runtests);
     //document.getElementById("sendinput").addEventListener("click", sendinput);

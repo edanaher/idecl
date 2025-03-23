@@ -1444,8 +1444,17 @@ var initFiles = function() {
   var filenames = JSON.parse(loadLSc("files"));
   var filelist = document.getElementById("filelist");
 
-  loadIDB("projects", projectId()).then(function(projRow) {
+  var projRow;
+
+  loadIDB("projects", projectId()).then(function(pr) {
+    projRow = pr;
     console.log("row is ", projRow, "From", projectId());
+    filePromises = [];
+    for (f in projRow["files"])
+      filePromises.push(loadIDB("files", projectId(), f));
+    return Promise.all(filePromises);
+  }).then(function(files) {
+    console.log(files);
   });
 
 

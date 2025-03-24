@@ -1445,6 +1445,8 @@ var initFiles = function() {
   var filelist = document.getElementById("filelist");
 
   var projRow;
+  var files;
+  var opened = false;
 
   loadIDB("projects", projectId()).then(function(pr) {
     projRow = pr;
@@ -1453,36 +1455,43 @@ var initFiles = function() {
     for (f in projRow["files"])
       filePromises.push(loadIDB("files", projectId(), f));
     return Promise.all(filePromises);
-  }).then(function(files) {
-    console.log(files);
-  });
+  }).then(function(f) {
+    files = f;
 
-
-  var opened = false;
-  for(f in filenames) {
-    var attrs = loadLSc("attrs", f);
-    if (attrs && attrs.indexOf("h") != -1)
-      continue;
-    var div = document.createElement("div");
-    div.innerText = filenames[f];
-    div.setAttribute("title", filenames[f]);
-    div.classList.add("filename");
-    div.setAttribute("fileid", f);
-    if (f == lastfile) {
-      div.classList.add("open");
-      opened = true;
+    var index = 0;
+    for(f in projRow.files) {
+      var fileInfo = files[index];
+      console.log(f, fileInfo);
+      var attrs = fileInfo[f]
+      if (attrs && attrs.indexOf("h") != -1)
+        continue;
+      var div = document.createElement("div");
+      div.innerText = fileInfo.name;
+      console.log(fileInfo);
+      div.setAttribute("title", fileInfo.name);
+      div.classList.add("filename");
+      div.setAttribute("fileid", f);
+      if (f == projRow.lastfile) {
+        div.classList.add("open");
+        opened = true;
+      }
+      if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
+        div.classList.add("readonly");
+      filelist.appendChild(div);
+      index++;
     }
-    if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
-      div.classList.add("readonly");
-    filelist.appendChild(div);
-  }
 
-  edits = loadLSc("edits");
-  if (edits)
-    edits = deserializeEdits(edits);
-  else
-    edits = [["m", 0, 0, 0]];
-  displayeditstate();
+    return loadIDB("history", projectId(), "all");
+  }).then(function(e) {
+    edits = e;
+    if (edits)
+      edits = deserializeEdits(edits);
+    else
+      edits = [["m", 0, 0, 0]];
+    displayeditstate();
+
+    // Above this is IDB
+
 
   if (!opened && filelist.children.length > 0) {
     currenthistoryfile = -1;
@@ -1516,6 +1525,7 @@ var initFiles = function() {
   for (var i = 0; i < filenames.length; i++)
     filenames[i].addEventListener("click", werr(loadFile));
   setOutputType(attrs && attrs.indexOf("r") != -1);
+  });
 }
 
 var toggleDarkMode = function () {

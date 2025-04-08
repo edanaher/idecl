@@ -1502,7 +1502,7 @@ var initFiles = function() {
     for(f in projRow.files) {
       var fileInfo = files[index];
       console.log(f, fileInfo);
-      var attrs = fileInfo[f]
+      var attrs = fileInfo.attrs;
       if (attrs && attrs.indexOf("h") != -1)
         continue;
       var div = document.createElement("div");

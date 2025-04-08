@@ -77,6 +77,46 @@ var loadIDB = function(tabl, project, file) {
   });
 }
 
+var updateIDB = function(tabl, project, file, field, contents) {
+  console.log("Updating IDB");
+  return new Promise(function(resolve, reject) {
+    var key;
+    if (contents === undefined) {
+      contents = field;
+      field = file;
+      file = undefined;
+      key = project;
+    } else {
+      key = project + "." + file;
+    }
+    var trans = db.transaction([tabl], "readwrite");
+    var table = trans.objectStore(tabl);
+    var req = table.get(key)
+    req.onerror = function(error) {
+      logError(null, error);
+      if (reject)
+        reject();
+    };
+    req.onsuccess = function(e) {
+      console.log("Updating", field, "->", contents, "on", req.result, "from", key);
+      req.result[field] = contents;
+      var putreq = table.put(req.result, key);
+      putreq.onsuccess = function() {
+        resolve();
+      };
+      putreq.onerror = function(error) {
+        logError(null, error);
+        if (reject)
+          reject();
+      }
+    };
+  });
+}
+
+var updateIDBc = function(tabl, file, field, contents) {
+  return updateIDB(tabl, projectId(), file, field, contents);
+}
+
 var lastedittime = 0;
 var edits = [["m", 0, 0, 0]];
 var currenthistory = -1;
@@ -711,7 +751,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
   }
   var oldfileid = document.querySelector(".filename.open").getAttribute("fileid");
   document.querySelector(".filename.open").classList.remove("open");
-  saveLSc("lastfile", fileid);
+  updateIDBc("projects", "lastfile", parseInt(fileid));
   var sess = sessions[fileid]
   if (!sess) {
     if (contents)
@@ -771,7 +811,7 @@ var addFile = function() {
 
   // TODO: dedup with loadFile
   document.querySelector(".filename.open").classList.remove("open");
-  saveLSc("lastfile", nextId);
+  updateIDBc("projects", "lastfile", nextId);
   div.classList.add("open");
 
   var sess = ace.createEditSession("");
@@ -1384,7 +1424,7 @@ var upgradestore = function() {
         rmLSc("files", files[i]);
       }
       if (lastfile == files[i])
-        saveLSc("lastfile", i);
+        updateIDBc("projects", "lastfile", i);
     }
   }
 
@@ -1490,20 +1530,21 @@ var initFiles = function() {
       edits = [["m", 0, 0, 0]];
     displayeditstate();
 
+    if (!opened && filelist.children.length > 0) {
+      currenthistoryfile = -1;
+      setCurrentHistoryFile(edits.length - 1);
+      console.log("Found history file", currenthistoryfile, "from", edits);
+      if (currenthistoryfile != -1)
+        lastfile = currenthistoryfile;
+      else
+        lastfile = document.getElementById("filelist").childNodes[0].getAttribute("fileid");
+      document.querySelector('#filelist .filename[fileid="' + lastfile + '"]').classList.add("open");
+    }
+
+    updateIDBc("projects", "lastfile", parseInt(lastfile));
+
     // Above this is IDB
 
-
-  if (!opened && filelist.children.length > 0) {
-    currenthistoryfile = -1;
-    setCurrentHistoryFile(edits.length - 1);
-    console.log("Found history file", currenthistoryfile, "from", edits);
-    if (currenthistoryfile != -1)
-      lastfile = currenthistoryfile;
-    else
-      lastfile = document.getElementById("filelist").childNodes[0].getAttribute("fileid");
-    document.querySelector('#filelist .filename[fileid="' + lastfile + '"]').classList.add("open");
-  }
-  saveLSc("lastfile", lastfile);
   logedit("l", editor.session.selection.getCursor(), [-1, parseInt(lastfile)]);
 
   var sess = ace.createEditSession(loadLSc("files", lastfile));

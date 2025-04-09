@@ -1480,7 +1480,7 @@ var upgradestore = function() {
 }
 
 var initFiles = function() {
-  var lastfile = loadLSc("lastfile");
+  var lastfile;
   var filenames = JSON.parse(loadLSc("files"));
   var filelist = document.getElementById("filelist");
 
@@ -1514,6 +1514,7 @@ var initFiles = function() {
       if (f == projRow.lastfile) {
         div.classList.add("open");
         opened = true;
+        lastfile = projRow.lastfile;
       }
       if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
         div.classList.add("readonly");

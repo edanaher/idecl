@@ -77,6 +77,10 @@ var loadIDB = function(tabl, project, file) {
   });
 }
 
+var loadIDBc = function(tabl, file) {
+  return loadIDB(tabl, projectId(), file);
+}
+
 var updateIDB = function(tabl, project, file, field, contents) {
   console.log("Updating IDB");
   return new Promise(function(resolve, reject) {
@@ -1481,10 +1485,12 @@ var upgradestore = function() {
 
 var initFiles = function() {
   var lastfile;
+  var lastfileIndex;
   var filenames = JSON.parse(loadLSc("files"));
   var filelist = document.getElementById("filelist");
 
   var projRow;
+  var fileIndices = {};
   var files;
   var opened = false;
 
@@ -1492,8 +1498,11 @@ var initFiles = function() {
     projRow = pr;
     console.log("row is ", projRow, "From", projectId());
     filePromises = [];
-    for (f in projRow["files"])
+    var i = 0;
+    for (f in projRow["files"]) {
       filePromises.push(loadIDB("files", projectId(), f));
+      fileIndices[parseInt(f)] = i++;
+    }
     return Promise.all(filePromises);
   }).then(function(f) {
     files = f;
@@ -1542,31 +1551,30 @@ var initFiles = function() {
       document.querySelector('#filelist .filename[fileid="' + lastfile + '"]').classList.add("open");
     }
 
-    updateIDBc("projects", "lastfile", parseInt(lastfile));
-
+    return updateIDBc("projects", "lastfile", parseInt(lastfile));
+  }).then(function() {
+    var activefile = files[fileIndices[parseInt(lastfile)]];
+    logedit("l", editor.session.selection.getCursor(), [-1, parseInt(lastfile)]);
     // Above this is IDB
 
-  logedit("l", editor.session.selection.getCursor(), [-1, parseInt(lastfile)]);
+    var sess = ace.createEditSession(activefile.contents);
+    setEditorLanguage(sess);
+    sess.setUseWrapMode(true);
+    sess.setOption("indentedSoftWrap", false);
+    sess.on("change", editorupdate);
+    sess.on("changeSelection", cursorupdate);
+    editor.setSession(sess);
+    sessions[lastfile] = sess;
+    var attrs = activefile.attrs;
+    if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
+      editor.setReadOnly(true);
+    else
+      editor.setReadOnly(false);
 
-  var sess = ace.createEditSession(loadLSc("files", lastfile));
-  setEditorLanguage(sess);
-  sess.setUseWrapMode(true);
-  sess.setOption("indentedSoftWrap", false);
-  sess.on("change", editorupdate);
-  sess.on("changeSelection", cursorupdate);
-  editor.setSession(sess);
-  sessions[lastfile] = sess;
-  var attrs = loadLSc("attrs", lastfile);
-  if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
-    editor.setReadOnly(true);
-  else
-    editor.setReadOnly(false);
-
-
-  filenames = document.getElementsByClassName("filename");
-  for (var i = 0; i < filenames.length; i++)
-    filenames[i].addEventListener("click", werr(loadFile));
-  setOutputType(attrs && attrs.indexOf("r") != -1);
+    filenames = document.getElementsByClassName("filename");
+    for (var i = 0; i < filenames.length; i++)
+      filenames[i].addEventListener("click", werr(loadFile));
+    setOutputType(attrs && attrs.indexOf("r") != -1);
   });
 }
 

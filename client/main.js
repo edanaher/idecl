@@ -376,14 +376,17 @@ var editorupdate = function(delta) {
 var saveFile = function() {
   // Don't save inherited files
   var fileid = document.querySelector(".filename.open").getAttribute("fileid");
-  var attrs = loadLSc("attrs", fileid);
-  if (attrs && (attrs.indexOf("i") != -1 || attrs.indexOf("r") != -1))
-    return;
-  // Only save at end of history.  Eventually history should be saving, but until then...
-  if (currenthistory == -1) {
-    saveLSc("files", fileid, editor.getValue());
+  return loadIDBc("files", fileid).then(function(file) {
+    var attrs = file.attrs;
+    if (attrs && (attrs.indexOf("i") != -1 || attrs.indexOf("r") != -1))
+      return;
+    // Only save at end of history.  Eventually history should be saving, but until then...
+    if (currenthistory != -1)
+      return;
+    return updateIDBc("files", fileid, "contents", editor.getValue());
+  }).then(function() {
     saveLSc("edits", serializeEdits());
-  }
+  });
 }
 
 var checkHistoryReplay = function() {
@@ -458,7 +461,7 @@ var historymove = function(adjust, delay) {
     return;
   if (currenthistory == -1) {
     currenthistoryfile = 0;
-    saveFile();
+    saveFile(); // TODO: this is a promise
     currenthistory = edits.length - 1;
     setCurrentHistoryFile(currenthistory);
     editor.setOption("behavioursEnabled", false);
@@ -860,51 +863,52 @@ var removeFile = function() {
 }
 
 var saveToServer = function() {
-  saveFile();
-  var savebutton = document.getElementById("savefiles");
-  var loadbutton = document.getElementById("loadfiles");
-  savebutton.innerText = "Saving..."
-  var xhr = new XMLHttpRequest();
-  xhr.open("POST", baseURL() + "save", true);
-  xhr.setRequestHeader("Content-Type", "application/json");
-  xhr.onprogress = function() {
-    if (xhr.readyState === XMLHttpRequest.DONE || xhr.readyState === XMLHttpRequest.LOADING) {
-      if(xhr.status != 200) {
-        savebutton.innerText = "Error talking to server";
-        var postdata =  {
-          "project": projectId(),
-          "error": "Error saving file to server",
-          "stacktrace": null,
-          "data":  {
-            "status": xhr.status,
-            "body": xhr.response
-          }
-        };
-        sendError(postdata);
-      } else {
-        savebutton.innerText = "save";
-        document.getElementById("savefiles").classList.remove("dirty");
-        window.removeEventListener("beforeunload", promptForSave);
-        loadbutton.classList.remove("stale");
-        loadbutton.removeAttribute("title");
+  saveFile().then(function() {
+    var savebutton = document.getElementById("savefiles");
+    var loadbutton = document.getElementById("loadfiles");
+    savebutton.innerText = "Saving..."
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", baseURL() + "save", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.onprogress = function() {
+      if (xhr.readyState === XMLHttpRequest.DONE || xhr.readyState === XMLHttpRequest.LOADING) {
+        if(xhr.status != 200) {
+          savebutton.innerText = "Error talking to server";
+          var postdata =  {
+            "project": projectId(),
+            "error": "Error saving file to server",
+            "stacktrace": null,
+            "data":  {
+              "status": xhr.status,
+              "body": xhr.response
+            }
+          };
+          sendError(postdata);
+        } else {
+          savebutton.innerText = "save";
+          document.getElementById("savefiles").classList.remove("dirty");
+          window.removeEventListener("beforeunload", promptForSave);
+          loadbutton.classList.remove("stale");
+          loadbutton.removeAttribute("title");
+        }
       }
-    }
-  };
-  var postdata = {};
-  var filenames = JSON.parse(loadLSc("files"));
-  var par= loadLSc("parent");
-  if (par)
-    postdata["parent"] = par;
-  postdata["files"] = {};
-  for (var i in filenames)
-    postdata.files[i] = {
-      "name": filenames[i],
-      "contents": loadLSc("files", i),
-      "attrs": loadLSc("attrs", i) || ""
-  };
-  postdata["history"] = loadLSc("edits");
-  // TODO: save history
-  xhr.send(JSON.stringify(postdata));
+    };
+    var postdata = {};
+    var filenames = JSON.parse(loadLSc("files"));
+    var par= loadLSc("parent");
+    if (par)
+      postdata["parent"] = par;
+    postdata["files"] = {};
+    for (var i in filenames)
+      postdata.files[i] = {
+        "name": filenames[i],
+        "contents": loadLSc("files", i),
+        "attrs": loadLSc("attrs", i) || ""
+    };
+    postdata["history"] = loadLSc("edits");
+    // TODO: save history
+    xhr.send(JSON.stringify(postdata));
+  });
 }
 
 var saveToServerIfDirty = function() {
@@ -1000,37 +1004,38 @@ var runcommand = function(test) {
     websocket.send(JSON.stringify({"kill": true}))
     return;
   }
-  saveFile();
-  var runbutton = document.getElementById(test ? "runtests" : "run");
-  var otherrunbutton = document.getElementById(!test ? "runtests" : "run");
-  runbutton.innerText = test ? "stop running tests..." : "stop running...";
-  otherrunbutton.setAttribute("disabled", "");
-  var params = test ? "?test=1" : ""
+  saveFile().then(function() {
+    var runbutton = document.getElementById(test ? "runtests" : "run");
+    var otherrunbutton = document.getElementById(!test ? "runtests" : "run");
+    runbutton.innerText = test ? "stop running tests..." : "stop running...";
+    otherrunbutton.setAttribute("disabled", "");
+    var params = test ? "?test=1" : ""
 
-  var body = {};
-  var filenames = JSON.parse(loadLSc("files"))
-  for (var i in filenames)
-    body[filenames[i]] = fileForRun(projectId(), i);
+    var body = {};
+    var filenames = JSON.parse(loadLSc("files"))
+    for (var i in filenames)
+      body[filenames[i]] = fileForRun(projectId(), i);
 
-  websocket = webSocketConnect({"op": "run", "pid": projectId(), "files": body, "test": test}, function(data) {
-    if (data.container)
-      container = data.container;
-    if (data.output)
-      term.write(data.output);
-    if (data.status)
-      document.getElementById("runstatus").innerText = data.status;
-    if (data.complete) {
-      websocket = null;
-      term.options.cursorStyle = "underline";
-      term.options.cursorInactiveStyle = "none";
-      runbutton.innerText = test ? "run tests" : "run";
-      otherrunbutton.removeAttribute("disabled");
-    }
+    websocket = webSocketConnect({"op": "run", "pid": projectId(), "files": body, "test": test}, function(data) {
+      if (data.container)
+        container = data.container;
+      if (data.output)
+        term.write(data.output);
+      if (data.status)
+        document.getElementById("runstatus").innerText = data.status;
+      if (data.complete) {
+        websocket = null;
+        term.options.cursorStyle = "underline";
+        term.options.cursorInactiveStyle = "none";
+        runbutton.innerText = test ? "run tests" : "run";
+        otherrunbutton.removeAttribute("disabled");
+      }
+    });
+
+    term.options.cursorStyle = "block";
+    term.options.cursorInactiveStyle = "bar";
+    document.getElementById("runstatus").innerText = "starting..."
   });
-
-  term.options.cursorStyle = "block";
-  term.options.cursorInactiveStyle = "bar";
-  document.getElementById("runstatus").innerText = "starting..."
 }
 
 var runcode = function() {

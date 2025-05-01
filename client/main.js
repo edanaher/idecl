@@ -587,8 +587,11 @@ var stop_historymove = function(adjust) {
 
 var load_sibling = function() {
   var pid = document.getElementById("siblingsselect").value;
-  saveLS("lastfile", pid, loadLSc("lastfile"));
-  document.location.href = "/projects/" + pid;
+  loadIDBc("projects").then(function(projRow) {
+    return updateIDB("projects", pid, "lastfile", projRow.lastfile);
+  }).then(function() {
+    document.location.href = "/projects/" + pid;
+  });
 }
 
 var promptForSave = function(e) { e.preventDefault() }
@@ -1499,7 +1502,7 @@ var initFiles = function() {
   var files;
   var opened = false;
 
-  loadIDB("projects", projectId()).then(function(pr) {
+  loadIDBc("projects").then(function(pr) {
     projRow = pr;
     console.log("row is ", projRow, "From", projectId());
     filePromises = [];

@@ -121,6 +121,35 @@ var updateIDBc = function(tabl, file, field, contents) {
   return updateIDB(tabl, projectId(), file, field, contents);
 }
 
+// TODO: pass in transaction for batch updates.
+var putIDB = function(tabl, project, file, contents) {
+  return new Promise(function(resolve, reject) {
+    var key;
+    if (file)
+      key = project + "." + file;
+    else {
+      key = project;
+      contents = file;
+    }
+
+    var trans = db.transaction([tabl], "readwrite");
+    var table = trans.objectStore(tabl);
+    var req = table.put(contents, key);
+    req.onerror = function(error) {
+      logError(null, error);
+      if (reject)
+        reject();
+    };
+    req.onsuccess = function(e) {
+      resolve();
+    };
+  });
+}
+
+var putIDBc = function(tabl, file, contents) {
+  return putIDB(tabl, projectId(), file, contents);
+}
+
 var lastedittime = 0;
 var edits = [["m", 0, 0, 0]];
 var currenthistory = -1;
@@ -925,6 +954,7 @@ var pagehidden = function() {
     saveToServerIfDirty();
 }
 var loadFromServer = function(pid) {
+  console.log("Loading from server");
   if (currenthistory != -1) {
     alert("Cannot load from server while viewing history");
     return
@@ -937,63 +967,74 @@ var loadFromServer = function(pid) {
   xhr.onerror = function() {
     loadbutton.textContent = "Error talking to server";
   }
+  var files;
   xhr.onload = function() {
+    console.log("In XHR onload for loading from server")
     var serverResponse = JSON.parse(xhr.response);
     var serverFiles = serverResponse.files || {}
     if (Object.keys(serverFiles).length == 0) {
       // this is a bit hacky, but makes some sense.  If there's no server save
       // or local save, bootstrap it.
-      if (!loadLSc("files")) {
-        bootstrapStorage();
-        initFiles();
-        saveToServer();
-      }
-      else
-        loadbutton.innerText = "no server save";
-      document.getElementById("savefiles").classList.remove("dirty");
-      window.removeEventListener("beforeunload", promptForSave);
-      return;
+      return loadIDBc("files").then(function(f) {
+        files = f;
+        if (!files) {
+          bootstrapStorage();
+          initFiles().then(saveToServer);
+        }
+        else
+          loadbutton.innerText = "no server save";
+        document.getElementById("savefiles").classList.remove("dirty");
+        window.removeEventListener("beforeunload", promptForSave);
+      });
     }
 
     // TODO: dedupe with reset
-    var filenames = loadLS("files", pid);
-    rmLS("files", pid);
+    loadIDB("projects", pid).then(function(projRow) {
+      if (projRow && projRow.files) {
+        var promises = []
+        for (var i in files)
+          promises.push(rmIDB("files", pid, i));
+        return Promise.all(filePromises);
+      }
+    }).then(function() {
+      console.log("Removing file list?", pid, projectId());
+      if (pid == projectId()) {
+        console.log("Removing file list");
+        var filelist = document.getElementById("filelist");
+        while (filelist.firstChild)
+          filelist.removeChild(filelist.lastChild);
+        sessions = [];
+      }
 
-    for (var i in filenames)
-      rmLS("files", pid, i);
-
-    if (pid == projectId()) {
-      var filelist = document.getElementById("filelist");
-      while (filelist.firstChild)
-        filelist.removeChild(filelist.lastChild);
-      sessions = [];
-    }
-
-    if (serverResponse.history)
-      saveLSc("edits", serverResponse.history);
-
-    // Do this somewhere better?
-    filenames = {};
-    for (var i in serverFiles) {
-      saveLS("files", pid, i, serverFiles[i].contents);
-      if (serverFiles[i].attrs)
-        saveLS("attrs", pid, i, serverFiles[i].attrs);
-      filenames[i] = serverFiles[i].name;
-    }
-
-    saveLS("files", pid, JSON.stringify(filenames));
-
-    if (serverResponse.parent) {
-      saveLS("parent", pid, serverResponse.parent);
-    }
-    if (pid == projectId()) {
-      initFiles();
-      loadbutton.innerText = "load";
-      loadbutton.classList.remove("stale");
-      loadbutton.removeAttribute("title");
-      document.getElementById("savefiles").classList.remove("dirty");
-      window.removeEventListener("beforeunload", promptForSave);
-    }
+      if (serverResponse.history)
+        return saveLSc("edits", serverResponse.history);
+      else
+        return Promise.resolve();
+    }).then(function() {
+      var promises = []
+      filenames = {};
+      console.log(serverFiles);
+      for (var i in serverFiles) {
+        putIDBc("files", i, {"name": serverFiles[i].name, "contents": serverFiles[i].contents});
+        if (serverFiles[i].attrs)
+          promises.push(updateIDBc("files", i, "attrs", serverFiles[i].attrs));
+        filenames[i] = serverFiles[i].name;
+      }
+      promises.push(updateIDBc("projects", "files", filenames));
+      if (serverResponse.parent) {
+        promises.push(updateIDBc("projects", "parent", serverResponse.parent));
+      }
+      return Promise.all(promises);
+    }).then(function() {
+      if (pid == projectId()) {
+        initFiles();
+        loadbutton.innerText = "load";
+        loadbutton.classList.remove("stale");
+        loadbutton.removeAttribute("title");
+        document.getElementById("savefiles").classList.remove("dirty");
+        window.removeEventListener("beforeunload", promptForSave);
+      }
+    });
   };
   xhr.send();
   loadbutton.innerText = "loading";
@@ -1458,7 +1499,7 @@ var upgradestore = function() {
         var filenames = JSON.parse(localStorage.getItem(key));
         for (var fileid in filenames) {
           var filename = filenames[fileid]
-          console.log(projectid, key, fileid, filename, attrs);
+          //console.log(projectid, key, fileid, filename, attrs);
           var fileObj = {
             "name": filename,
             "contents": localStorage.getItem("files|" + projectid + "|" + fileid)
@@ -1502,7 +1543,7 @@ var initFiles = function() {
   var files;
   var opened = false;
 
-  loadIDBc("projects").then(function(pr) {
+  return loadIDBc("projects").then(function(pr) {
     projRow = pr;
     console.log("row is ", projRow, "From", projectId());
     filePromises = [];
@@ -1518,13 +1559,11 @@ var initFiles = function() {
     var index = 0;
     for(f in projRow.files) {
       var fileInfo = files[index];
-      console.log(f, fileInfo);
       var attrs = fileInfo.attrs;
       if (attrs && attrs.indexOf("h") != -1)
         continue;
       var div = document.createElement("div");
       div.innerText = fileInfo.name;
-      console.log(fileInfo);
       div.setAttribute("title", fileInfo.name);
       div.classList.add("filename");
       div.setAttribute("fileid", f);
@@ -1820,11 +1859,13 @@ var initIndexedDB = function() {
 window.onload = function() {
   try {
     initIndexedDB().then(function() {
-      if (!loadLSc("files"))
-        loadFromServer(projectId(), true);
-      else {
-        initFiles();
-      }
+      loadIDBc("projects").then(function(projRow) {
+        if (!projRow)
+          loadFromServer(projectId());
+        else {
+          initFiles();
+        }
+      });
     });
     initAce();
     initTerminal();

@@ -20,7 +20,7 @@ local program_killed = false;
 
 local wb, err = server:new{
   timeout = 5000,
-  max_payload_len = 65535
+  max_payload_len = 5 * 1024 * 1024
 }
 if not wb then
   ngx.log(ngx.ERR, "failed to new websocket: ", err)

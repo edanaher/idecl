@@ -221,7 +221,6 @@ rec {
           proxy_set_header Host $host${if dev then ":5000" else ""};
           proxy_set_header X-Forwarded-For $remote_addr;
           proxy_buffering off;
-          client_body_temp_path /var/cache/nginx/client_body;
         '';
       };
       enableACME = usessl;

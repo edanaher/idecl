@@ -283,6 +283,14 @@ while true do
   elseif typ == "pong" then
     ngx.log(ngx.INFO, "client ponged")
   elseif typ == "text" then
+    -- Chrome likes to chunk requests.  We just concat them.
+    if err == "again" then
+      local cdata, ctyp
+      while err == "again" do
+        cdata, ctyp, err = wb:recv_frame()
+        data = data .. cdata
+      end
+    end
     local json = cjson.decode(data)
     if json.op == "run" then
       runprogram(json)

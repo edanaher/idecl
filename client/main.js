@@ -1367,7 +1367,7 @@ var upgradestore = function() {
     }
   }
 
-  if (version < 2) {
+  /*if (version < 2) {
     var trans = db.transaction(["files"], "readwrite");
     var dbfiles = trans.objectStore("files");
     var files = JSON.parse(loadLSc("files"));
@@ -1375,7 +1375,7 @@ var upgradestore = function() {
       var contents = loadLSc("files", i);
       dbfiles.add(contents, projectId() + "." + i);
     }
-  }
+  }*/
 
 
   localStorage.setItem("version", 1);
@@ -1670,7 +1670,7 @@ var initIndexedDB = function() {
 
 window.onload = function() {
   try {
-    initIndexedDB();
+    //initIndexedDB();
     initAce();
     initTerminal();
     initDarkMode();

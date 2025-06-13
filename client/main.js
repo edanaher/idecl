@@ -1668,6 +1668,21 @@ var initIndexedDB = function() {
 
 }
 
+var setupMarked = function() {
+  var filelist = JSON.parse(loadLSc("files"));
+  var filenames = {};
+  for (var i in filelist)
+    filenames[filelist[i]] = i;
+  marked.use({ walkTokens: function(token) {
+    if (token.type == "image" && filenames[token.href]) {
+      contents = loadLSc("files", filenames[token.href]);
+      console.log(contents);
+      token.href = contents;
+      console.log(filenames, token);
+    }
+  }});
+}
+
 window.onload = function() {
   try {
     //initIndexedDB();
@@ -1675,6 +1690,7 @@ window.onload = function() {
     initTerminal();
     initDarkMode();
     displaytimestamps();
+    setupMarked();
     //upgradestore();
     checkLocalStale();
     if (!loadLSc("files"))

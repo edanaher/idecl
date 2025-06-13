@@ -412,6 +412,7 @@ body[theme="dark"] #instructionscontainer {
   vertical-align: top;
   flex: 10 10 45%;
   flex-direction: column;
+  overflow: auto;
 }
 
 #code {

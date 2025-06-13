@@ -767,6 +767,15 @@ var addFile = function() {
   div.addEventListener("click", werr(loadFile));
 }
 
+var uploadFile = function(e) {
+  var file = e.target.files[0];
+  const reader = new FileReader();
+  reader.addEventListener("load", function(e) {
+    console.log(file.name, file.type, e.target.result);
+  });
+  reader.readAsBinaryString(file);
+}
+
 var removeFile = function() {
   var div = document.querySelector(".filename.open");
   var fileid = parseInt(div.getAttribute("fileid"));
@@ -1713,6 +1722,7 @@ window.onload = function() {
     addClickListenerById("compare50", compare50);
     addClickListenerById("viewsubmissions", viewsubmissions);
     addClickListenerById("addfile", addFile);
+    addListenerById("uploadfileinput", "change", uploadFile);
     addClickListenerById("removefile", removeFile);
     addClickListenerById("savefiles", saveToServer);
     document.addEventListener("visibilitychange", werr(pagehidden));

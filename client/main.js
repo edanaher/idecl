@@ -768,10 +768,44 @@ var addFile = function() {
 }
 
 var uploadFile = function(e) {
+  // TODO: dedupe with addFile
   var file = e.target.files[0];
   const reader = new FileReader();
   reader.addEventListener("load", function(e) {
     console.log(file.name, file.type, e.target.result);
+
+    var filenames = JSON.parse(loadLSc("files"));
+    var max = -1;
+    var nextId = 0;
+    var oldfileid = document.querySelector(".filename.open").getAttribute("fileid");
+    for (var f in filenames) {
+      if (parseInt(f) >= nextId)
+        nextId = parseInt(f) + 1;
+      if (filenames[f] == file.name)
+        max = 0;
+      else if (filenames[f].slice(0, file.name.length) == file.name.length)
+        max = Math.max(max, parseInt(filenames[f].slice(file.name.length)));
+    }
+    var newfile = max == -1 ? file.name : file.name + (max + 1);
+    filenames[nextId] = newfile;
+    saveLSc("files", JSON.stringify(filenames));
+    saveLSc("files", nextId, e.target.result)
+
+    // TODO: dedup this with initFiles
+    var filelist = document.getElementById("filelist");
+    var div = document.createElement("div");
+    div.innerText = newfile;
+    div.setAttribute("title", newfile);
+    div.classList.add("filename");
+    div.setAttribute("fileid", nextId);
+    filelist.appendChild(div);
+
+    // TODO: open file if appropriate
+
+    // TODO: logedit as upload including contents instead of add
+    //logedit("a", sess.selection.getCursor(), [parseInt(oldfileid), nextId, newfile]);
+
+    div.addEventListener("click", werr(loadFile));
   });
   reader.readAsBinaryString(file);
 }

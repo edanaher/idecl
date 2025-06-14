@@ -57,9 +57,11 @@
         <div id="filebottom">
           <div id="addfile">+</div>
           <label>
+            {% if canuploadfile %}
             <div id="uploadfile">
             ^
             </div>
+            {% endif %}
             <input type="file" id="uploadfileinput" />
           </label>
           <div id="removefile">-</div>

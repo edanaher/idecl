@@ -16,6 +16,7 @@ class Permissions(Enum):
     DELETEPROJECT = 4
     VIEWPROJECT = 5
     EDITPROJECT = 15
+    UPLOADFILE = 21
     # This is hacky... possibly CLONEPROJECT with a parameter indicating type
     # of clone once generalized cloning is available?
     # Response: Yep - this will be an action.

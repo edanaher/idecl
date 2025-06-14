@@ -55,16 +55,16 @@
       <div id="filecontainer">
         <div id="filelist"></div>
         <div id="filebottom">
-          <div id="addfile">+</div>
+          <div id="addfile" title="Add new file">+</div>
           <label>
             {% if canuploadfile %}
-            <div id="uploadfile">
+            <div id="uploadfile" title="Upload file">
             ^
             </div>
             {% endif %}
             <input type="file" id="uploadfileinput" />
           </label>
-          <div id="removefile">-</div>
+          <div id="removefile" title="Delete open file">-</div>
         </div>
         <div id="savefiles">save</div>
         <div id="loadfiles">load</div>

@@ -82,7 +82,6 @@ var loadIDBc = function(tabl, file) {
 }
 
 var updateIDB = function(tabl, project, file, field, contents) {
-  console.log("Updating IDB");
   return new Promise(function(resolve, reject) {
     var key;
     if (contents === undefined) {
@@ -102,7 +101,7 @@ var updateIDB = function(tabl, project, file, field, contents) {
         reject();
     };
     req.onsuccess = function(e) {
-      console.log("Updating", field, "->", contents, "on", req.result, "from", key);
+      console.log("Updating", field, "->", contents, "on", req.result, "from", key, "on", tabl);
       req.result[field] = contents;
       var putreq = table.put(req.result, key);
       putreq.onsuccess = function() {
@@ -840,7 +839,7 @@ var addFile = function() {
     newfile = max == -1 ? "untitled" : "untitled" + (max + 1);
     filenames[nextId] = newfile;
     promises.push(updateIDBc("projects", "files", filenames));
-    promises.push(putIDBc("files", nextId, {name: newfeile, contents: ""}))
+    promises.push(putIDBc("files", nextId, {name: newfile, contents: ""}))
     return Promise.all(promises);
   }).then(function() {
     // TODO: dedup this with initFiles
@@ -1043,9 +1042,10 @@ var loadFromServer = function(pid) {
         for (var i in files)
           promises.push(rmIDB("files", pid, i));
         return Promise.all(filePromises);
+      } else {
+        return putIDBc("projects", {lastfile: 0});
       }
     }).then(function() {
-      console.log("Removing file list?", pid, projectId());
       if (pid == projectId()) {
         console.log("Removing file list");
         var filelist = document.getElementById("filelist");

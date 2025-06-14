@@ -789,6 +789,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
   }
   var oldfileid = document.querySelector(".filename.open").getAttribute("fileid");
   document.querySelector(".filename.open").classList.remove("open");
+  // TODO: async issues?
   updateIDBc("projects", "lastfile", parseInt(fileid));
   var sess = sessions[fileid]
   if (!sess) {
@@ -810,14 +811,17 @@ var loadFile = function(fileid, contents, savehistoryfile) {
   filenamediv.classList.add("open");
   if (currenthistory != -1 && savehistoryfile == true)
     currenthistoryfile = parseInt(fileid);
-  if (currenthistory == -1) {
-    var attrs = loadLSc("attrs", fileid);
-    if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
-      editor.setReadOnly(true);
-    else
-      editor.setReadOnly(false);
-  }
-  setOutputType(attrs && attrs.indexOf("r") != -1);
+  // TODO: async issues?
+  loadIDBc("files", fileid).then(function(fileRow) {
+    if (currenthistory == -1) {
+      var attrs = fileRow.attrs;
+      if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
+        editor.setReadOnly(true);
+      else
+        editor.setReadOnly(false);
+    }
+    setOutputType(attrs && attrs.indexOf("r") != -1);
+  });
 }
 
 var addFile = function() {

@@ -1719,9 +1719,18 @@ var setupMarked = function() {
   marked.use({ walkTokens: function(token) {
     if (token.type == "image" && filenames[token.href]) {
       contents = loadLSc("files", filenames[token.href]);
-      console.log(contents);
-      token.href = contents;
-      console.log(filenames, token);
+      var filetype = null;
+      if (token.href.endsWith(".png"))
+        filetype = "png";
+      else if (token.href.endsWith(".jpg") || token.href.endsWith(".jpeg"))
+        filetype = "jpg";
+      else if (token.href.endsWith(".gif"))
+        filetype = "gif";
+
+      if (filetype)
+        token.href = "data:image/" + filetype + ";base64," + btoa(contents);
+      else
+        console.log("Unknown type for file", token.href);
     }
   }});
 }

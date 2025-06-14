@@ -125,9 +125,9 @@ var updateIDBc = function(tabl, file, field, contents) {
 var putIDB = function(tabl, project, file, contents) {
   return new Promise(function(resolve, reject) {
     var key;
-    if (file)
+    if (contents) {
       key = project + "." + file;
-    else {
+    } else {
       key = project;
       contents = file;
     }

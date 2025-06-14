@@ -867,6 +867,49 @@ var addFile = function() {
   div.addEventListener("click", werr(loadFile));
 }
 
+var uploadFile = function(e) {
+  // TODO: dedupe with addFile
+  var file = e.target.files[0];
+  const reader = new FileReader();
+  reader.addEventListener("load", function(e) {
+    console.log(file.name, file.type, e.target.result);
+
+    var filenames = JSON.parse(loadLSc("files"));
+    var max = -1;
+    var nextId = 0;
+    var oldfileid = document.querySelector(".filename.open").getAttribute("fileid");
+    for (var f in filenames) {
+      if (parseInt(f) >= nextId)
+        nextId = parseInt(f) + 1;
+      if (filenames[f] == file.name)
+        max = 0;
+      else if (filenames[f].slice(0, file.name.length) == file.name.length)
+        max = Math.max(max, parseInt(filenames[f].slice(file.name.length)));
+    }
+    var newfile = max == -1 ? file.name : file.name + (max + 1);
+    filenames[nextId] = newfile;
+    saveLSc("files", JSON.stringify(filenames));
+    saveLSc("files", nextId, e.target.result)
+
+    // TODO: dedup this with initFiles
+    var filelist = document.getElementById("filelist");
+    var div = document.createElement("div");
+    div.innerText = newfile;
+    div.setAttribute("title", newfile);
+    div.classList.add("filename");
+    div.setAttribute("fileid", nextId);
+    filelist.appendChild(div);
+
+    // TODO: open file if appropriate
+
+    // TODO: logedit as upload including contents instead of add
+    //logedit("a", sess.selection.getCursor(), [parseInt(oldfileid), nextId, newfile]);
+
+    div.addEventListener("click", werr(loadFile));
+  });
+  reader.readAsBinaryString(file);
+}
+
 var removeFile = function() {
   var div = document.querySelector(".filename.open");
   var fileid = parseInt(div.getAttribute("fileid"));
@@ -1856,6 +1899,30 @@ var initIndexedDB = function() {
   })
 }
 
+var setupMarked = function() {
+  var filelist = JSON.parse(loadLSc("files"));
+  var filenames = {};
+  for (var i in filelist)
+    filenames[filelist[i]] = i;
+  marked.use({ walkTokens: function(token) {
+    if (token.type == "image" && filenames[token.href]) {
+      contents = loadLSc("files", filenames[token.href]);
+      var filetype = null;
+      if (token.href.endsWith(".png"))
+        filetype = "png";
+      else if (token.href.endsWith(".jpg") || token.href.endsWith(".jpeg"))
+        filetype = "jpg";
+      else if (token.href.endsWith(".gif"))
+        filetype = "gif";
+
+      if (filetype)
+        token.href = "data:image/" + filetype + ";base64," + btoa(contents);
+      else
+        console.log("Unknown type for file", token.href);
+    }
+  }});
+}
+
 window.onload = function() {
   try {
     initIndexedDB().then(function() {
@@ -1871,6 +1938,7 @@ window.onload = function() {
     initTerminal();
     initDarkMode();
     displaytimestamps();
+    setupMarked();
     //upgradestore();
     checkLocalStale();
     addClickListenerById("run", runcode);
@@ -1888,6 +1956,7 @@ window.onload = function() {
     addClickListenerById("compare50", compare50);
     addClickListenerById("viewsubmissions", viewsubmissions);
     addClickListenerById("addfile", addFile);
+    addListenerById("uploadfileinput", "change", uploadFile);
     addClickListenerById("removefile", removeFile);
     addClickListenerById("savefiles", saveToServer);
     document.addEventListener("visibilitychange", werr(pagehidden));

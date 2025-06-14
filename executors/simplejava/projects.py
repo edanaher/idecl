@@ -151,6 +151,7 @@ def project(pid):
             # TODO: Cloning a student's project would be nice for experimenting.  Enable it later once behavior is clearer.
             # TODO: these permissions should also check on the project.
             canclone=has_permission(P.ADDPROJECT, row.classroom_id) and not row.cloned_as_assignment,
+            canuploadfile=has_permission(P.UPLOADFILE, row.classroom_id),
             canpublish=has_permission(P.ADDPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,
             canunpublish=has_permission(P.DELETEPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,
             cansubmit=row.cloned_as_assignment, submitted=not not row.submitted_id, submitted_at = row.submitted_created,

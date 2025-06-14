@@ -113,9 +113,28 @@ body[theme="dark"] #filelist .filename.histundeleted.open {
   width: 20px;
   text-align: center;
   cursor: default;
+  display: inline-block;
 }
 
 body[theme="dark"] #addfile {
+  border: 1px solid #999999;
+}
+
+#uploadfile {
+  border: 1px solid black;
+  margin: 2px;
+  width: 20px;
+  text-align: center;
+  cursor: default;
+  display: inline-block;
+  overflow: clip;
+}
+
+#uploadfileinput {
+  display: none;
+}
+
+body[theme="dark"] #uploadfile {
   border: 1px solid #999999;
 }
 
@@ -412,6 +431,7 @@ body[theme="dark"] #instructionscontainer {
   vertical-align: top;
   flex: 10 10 45%;
   flex-direction: column;
+  overflow: auto;
 }
 
 #code {

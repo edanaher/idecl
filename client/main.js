@@ -822,49 +822,54 @@ var loadFile = function(fileid, contents, savehistoryfile) {
 }
 
 var addFile = function() {
-  var filenames = JSON.parse(loadLSc("files"));
-  var max = -1;
   var nextId = 0;
+  var newfile;
   var oldfileid = document.querySelector(".filename.open").getAttribute("fileid");
-  for (var f in filenames) {
-    if (parseInt(f) >= nextId)
-      nextId = parseInt(f) + 1;
-    if (filenames[f] == "untitled")
-      max = 0;
-    else if (filenames[f].slice(0, 8) == "untitled")
-      max = Math.max(max, parseInt(filenames[f].slice(8)));
-  }
-  var newfile = max == -1 ? "untitled" : "untitled" + (max + 1);
-  filenames[nextId] = newfile;
-  saveLSc("files", JSON.stringify(filenames));
-  saveLSc("files", nextId, "")
+  loadIDBc("projects").then(function(projRow) {
+    var filenames = projRow.files;
+    var promises = [];
+    var max = -1;
+    for (var f in filenames) {
+      if (parseInt(f) >= nextId)
+        nextId = parseInt(f) + 1;
+      if (filenames[f] == "untitled")
+        max = 0;
+      else if (filenames[f].slice(0, 8) == "untitled")
+        max = Math.max(max, parseInt(filenames[f].slice(8)));
+    }
+    newfile = max == -1 ? "untitled" : "untitled" + (max + 1);
+    filenames[nextId] = newfile;
+    promises.push(updateIDBc("projects", "files", filenames));
+    promises.push(putIDBc("files", nextId, {name: newfeile, contents: ""}))
+    return Promise.all(promises);
+  }).then(function() {
+    // TODO: dedup this with initFiles
+    var filelist = document.getElementById("filelist");
+    var div = document.createElement("div");
+    div.innerText = newfile;
+    div.setAttribute("title", newfile);
+    div.classList.add("filename");
+    div.setAttribute("fileid", nextId);
+    filelist.appendChild(div);
 
-  // TODO: dedup this with initFiles
-  var filelist = document.getElementById("filelist");
-  var div = document.createElement("div");
-  div.innerText = newfile;
-  div.setAttribute("title", newfile);
-  div.classList.add("filename");
-  div.setAttribute("fileid", nextId);
-  filelist.appendChild(div);
+    // TODO: dedup with loadFile
+    document.querySelector(".filename.open").classList.remove("open");
+    updateIDBc("projects", "lastfile", nextId);
+    div.classList.add("open");
 
-  // TODO: dedup with loadFile
-  document.querySelector(".filename.open").classList.remove("open");
-  updateIDBc("projects", "lastfile", nextId);
-  div.classList.add("open");
+    var sess = ace.createEditSession("");
+    setEditorLanguage(sess);
+    sess.setUseWrapMode(true);
+    sess.setOption("indentedSoftWrap", false);
+    sess.on("change", editorupdate);
+    sess.on("changeSelection", cursorupdate);
+    sessions[nextId] = sess;
+    editor.setSession(sess);
 
-  var sess = ace.createEditSession("");
-  setEditorLanguage(sess);
-  sess.setUseWrapMode(true);
-  sess.setOption("indentedSoftWrap", false);
-  sess.on("change", editorupdate);
-  sess.on("changeSelection", cursorupdate);
-  sessions[nextId] = sess;
-  editor.setSession(sess);
+    logedit("a", sess.selection.getCursor(), [parseInt(oldfileid), nextId, newfile]);
 
-  logedit("a", sess.selection.getCursor(), [parseInt(oldfileid), nextId, newfile]);
-
-  div.addEventListener("click", werr(loadFile));
+    div.addEventListener("click", werr(loadFile));
+  });
 }
 
 var uploadFile = function(e) {

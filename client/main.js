@@ -683,24 +683,38 @@ var renameFile = function(elem) {
 }
 
 var fileContents = function(projectid, fileid) {
-  var attrs = loadLS("attrs", projectid, fileid);
-  if (attrs && attrs.indexOf("i") != -1) {
-    var par = loadLS("parent", projectid);
-    var parfile = loadLS("files", projectid, fileid);
-    var parcontents = fileContents(par.split("|")[0], parfile);
-    if (parcontents)
-      return parcontents;
-    return loadLS("files", projectid, fileid);
-  } else {
-    return loadLS("files", projectid, fileid);
-  }
+  return loadIDB("files", projectid, fileid).then(function(fileRow) {
+    console.log("Loaded ", fileRow, "for", projectid, fileid);
+    var attrs = fileRow.attrs;
+    if (attrs && attrs.indexOf("i") != -1) {
+      console.log("Inherited");
+      var par;
+      var parfile;
+      return loadIDB("projects", projectid).then(function(projRow) {
+        console.log(projRow);
+        par = projRow.parent;
+        return loadIDB("files", projectid, fileid);
+      }).then(function(pf) {
+        parfile = pf;
+        console.log("par is", par);
+        return fileContents(par, parfile.contents);
+      }).then(function(parcontents) {
+        if (parcontents)
+          return parcontents;
+        return parfile
+      });
+    } else {
+      console.log("direct");
+      return fileRow.contents;
+    }
+  });
 }
 
 var fileForRun = function(projectid, fileid) {
   var attrs = loadLS("attrs", projectid, fileid);
   if (attrs && attrs.indexOf("i") != -1) {
     var par = loadLS("parent", projectid);
-    return {"inherit": {"project": parseInt(par.split("|")[0]), "file": parseInt(fileid)}};
+    return {"inherit": {"project": parseInt(par), "file": parseInt(fileid)}};
   } else {
     return {"contents": loadLS("files", projectid, fileid)}
   }
@@ -789,38 +803,42 @@ var loadFile = function(fileid, contents, savehistoryfile) {
   }
   var oldfileid = document.querySelector(".filename.open").getAttribute("fileid");
   document.querySelector(".filename.open").classList.remove("open");
-  // TODO: async issues?
-  updateIDBc("projects", "lastfile", parseInt(fileid));
-  var sess = sessions[fileid]
-  if (!sess) {
-    if (contents)
-      sess = ace.createEditSession(contents);
-    else
-      sess = ace.createEditSession(fileContents(projectId(), fileid) || "");
+  updateIDBc("projects", "lastfile", parseInt(fileid)).then(function() {
+    var sess = sessions[fileid]
+    if (!sess) {
+      if (contents)
+        return ace.createEditSession(contents);
+      else
+        return fileContents(projectId(), fileid).then(function(contents) {
+          return ace.createEditSession(contents || "");
+        });
+    }
+    return sess;
+  }).then(function(sess) {
     setEditorLanguage(sess, filenamediv.innerText);
     sess.setUseWrapMode(true);
     sess.setOption("indentedSoftWrap", false);
     sess.on("change", editorupdate);
     sess.on("changeSelection", cursorupdate);
     sessions[fileid] = sess;
-  }
-  if (!savehistoryfile)
-    logedit("l", sess.selection.getCursor(), [parseInt(oldfileid), parseInt(fileid)]);
-  editor.setSession(sess);
-  displayeditstate();
-  filenamediv.classList.add("open");
-  if (currenthistory != -1 && savehistoryfile == true)
-    currenthistoryfile = parseInt(fileid);
-  // TODO: async issues?
-  loadIDBc("files", fileid).then(function(fileRow) {
-    if (currenthistory == -1) {
-      var attrs = fileRow.attrs;
-      if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
-        editor.setReadOnly(true);
-      else
-        editor.setReadOnly(false);
-    }
-    setOutputType(attrs && attrs.indexOf("r") != -1);
+    if (!savehistoryfile)
+      logedit("l", sess.selection.getCursor(), [parseInt(oldfileid), parseInt(fileid)]);
+    editor.setSession(sess);
+    displayeditstate();
+    filenamediv.classList.add("open");
+    if (currenthistory != -1 && savehistoryfile == true)
+      currenthistoryfile = parseInt(fileid);
+    // TODO: async issues?
+    loadIDBc("files", fileid).then(function(fileRow) {
+      if (currenthistory == -1) {
+        var attrs = fileRow.attrs;
+        if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
+          editor.setReadOnly(true);
+        else
+          editor.setReadOnly(false);
+      }
+      setOutputType(attrs && attrs.indexOf("r") != -1);
+    });
   });
 }
 

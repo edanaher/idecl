@@ -686,7 +686,8 @@ var fileContents = function(projectid, fileid) {
   return loadIDB("files", projectid, fileid).then(function(fileRow) {
     console.log("Loaded ", fileRow, "for", projectid, fileid);
     var attrs = fileRow.attrs;
-    if (attrs && attrs.indexOf("i") != -1) {
+    // TODO: This is handled serverside now.  Is that right?
+    if (0 && attrs && attrs.indexOf("i") != -1) {
       console.log("Inherited");
       var par;
       var parfile;
@@ -697,7 +698,7 @@ var fileContents = function(projectid, fileid) {
       }).then(function(pf) {
         parfile = pf;
         console.log("par is", par);
-        return fileContents(par, parfile.contents);
+        return fileContents(par, parfile);
       }).then(function(parcontents) {
         if (parcontents)
           return parcontents;

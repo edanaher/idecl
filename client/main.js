@@ -638,48 +638,52 @@ var renameFile = function(elem) {
     return;
   if (elem.classList.contains("editing"))
     return
-  var attrs = loadLSc("attrs", elem.getAttribute("fileid"));
-  if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
-    return;
-
-  elem.classList.add("editing");
-  var name = elem.innerText;
-  elem.innerText = ""
-  var editbox = document.createElement("input");
-  editbox.value = name;
-  elem.appendChild(editbox);
-  editbox.focus();
-
-  var finishEdit = function() {
-    var newname = editbox.value.trim();
-    elem.removeChild(editbox);
-    elem.classList.remove("editing");
-
-    var files = JSON.parse(loadLSc("files"));
-    var fileid = elem.getAttribute("fileid")
-    for (var i in files)
-      if (files[i] == newname && fileid != i)
-        newname = name;
-    if (newname == "")
-      newname = name;
-    if (newname.length > 64)
-      newname = name;
-
-    elem.innerText = newname;
-    elem.setAttribute("title", newname);
-
-    if (newname == name)
+  loadIDBc("files", elem.getAttribute("fileid")).then(function(fileRow) {
+    var attrs = fileRow.attrs
+    if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
       return;
-    files[fileid] = newname;
-    saveLSc("files", JSON.stringify(files));
 
-    logedit("n", editor.session.selection.getCursor(), [elem.getAttribute("fileid"), name, newname]);
-  };
-  editbox.addEventListener("blur", werr(finishEdit));
-  editbox.addEventListener("beforeinput", werr(function(e) {
-    if (e.inputType == "insertLineBreak")
-      finishEdit();
-  }));
+    elem.classList.add("editing");
+    var name = elem.innerText;
+    elem.innerText = ""
+    var editbox = document.createElement("input");
+    editbox.value = name;
+    elem.appendChild(editbox);
+    editbox.focus();
+
+    var finishEdit = function() {
+      var newname = editbox.value.trim();
+      elem.removeChild(editbox);
+      elem.classList.remove("editing");
+
+      loadIDBc("projects").then(function(projRow) {
+        var files = projRow.files;
+        var fileid = elem.getAttribute("fileid")
+        for (var i in files)
+          if (files[i] == newname && fileid != i)
+            newname = name;
+        if (newname == "")
+          newname = name;
+        if (newname.length > 64)
+          newname = name;
+
+        elem.innerText = newname;
+        elem.setAttribute("title", newname);
+
+        if (newname == name)
+          return;
+        files[fileid] = newname;
+        return updateIDBc("projects", "files", files);
+      }).then(function() {
+        logedit("n", editor.session.selection.getCursor(), [elem.getAttribute("fileid"), name, newname]);
+      });
+    };
+    editbox.addEventListener("blur", werr(finishEdit));
+    editbox.addEventListener("beforeinput", werr(function(e) {
+      if (e.inputType == "insertLineBreak")
+        finishEdit();
+    }));
+  });
 }
 
 var fileContents = function(projectid, fileid) {
@@ -1614,7 +1618,7 @@ var upgradestore = function() {
 var initFiles = function() {
   var lastfile;
   var lastfileIndex;
-  var filenames = JSON.parse(loadLSc("files"));
+  var filenames;
   var filelist = document.getElementById("filelist");
 
   var projRow;
@@ -1622,8 +1626,9 @@ var initFiles = function() {
   var files;
   var opened = false;
 
-  return loadIDBc("projects").then(function(pr) {
+  loadIDBc("projects").then(function(pr) {
     projRow = pr;
+    filenames = projRow.files;
     console.log("row is ", projRow, "From", projectId());
     filePromises = [];
     var i = 0;

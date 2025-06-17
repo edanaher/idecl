@@ -711,14 +711,15 @@ var fileContents = function(projectid, fileid) {
   });
 }
 
-var fileForRun = function(projectid, fileid) {
-  var attrs = loadLS("attrs", projectid, fileid);
-  if (attrs && attrs.indexOf("i") != -1) {
-    var par = loadLS("parent", projectid);
-    return {"inherit": {"project": parseInt(par), "file": parseInt(fileid)}};
-  } else {
-    return {"contents": loadLS("files", projectid, fileid)}
-  }
+var fileForRun = function(projectid, fileid, par) {
+  return loadIDBc("files", fileid).then(function(fileRow) {
+    var attrs = fileRow.attrs;
+    if (attrs && attrs.indexOf("i") != -1) {
+      return {"inherit": {"project": parseInt(par), "file": parseInt(fileid)}};
+    } else {
+      return {"contents": fileRow.contents}
+    }
+  });
 }
 
 var manualmarkdown = false;
@@ -1119,17 +1120,24 @@ var runcommand = function(test) {
     websocket.send(JSON.stringify({"kill": true}))
     return;
   }
+  var filenames;
+  var runbutton = document.getElementById(test ? "runtests" : "run");
+  var otherrunbutton = document.getElementById(!test ? "runtests" : "run");
   saveFile().then(function() {
-    var runbutton = document.getElementById(test ? "runtests" : "run");
-    var otherrunbutton = document.getElementById(!test ? "runtests" : "run");
     runbutton.innerText = test ? "stop running tests..." : "stop running...";
     otherrunbutton.setAttribute("disabled", "");
-    var params = test ? "?test=1" : ""
-
-    var body = {};
-    var filenames = JSON.parse(loadLSc("files"))
+    return loadIDBc("projects");
+  }).then(function(projRow) {
+    filenames = projRow.files;
+    var promises = []
     for (var i in filenames)
-      body[filenames[i]] = fileForRun(projectId(), i);
+      promises.push(fileForRun(projectId(), i, projRow.parent));
+    return Promise.all(promises);
+  }).then(function(fileContents) {
+    var body = {};
+    var i = 0;
+    for (var f in filenames)
+      body[filenames[f]] = fileContents[i++];
 
     websocket = webSocketConnect({"op": "run", "pid": projectId(), "files": body, "test": test}, function(data) {
       if (data.container)

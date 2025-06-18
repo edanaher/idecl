@@ -149,6 +149,33 @@ var putIDBc = function(tabl, file, contents) {
   return putIDB(tabl, projectId(), file, contents);
 }
 
+var rmIDB = function(tabl, project, file) {
+  return new Promise(function(resolve, reject) {
+    var key;
+    if (file) {
+      key = project + "." + file;
+    } else {
+      key = project;
+    }
+
+    var trans = db.transaction([tabl], "readwrite");
+    var table = trans.objectStore(tabl);
+    var req = table.delete(key);
+    req.onerror = function(error) {
+      logError(null, error);
+      if (reject)
+        reject();
+    };
+    req.onsuccess = function(e) {
+      resolve();
+    };
+  });
+}
+
+var rmIDBc = function(tabl, file) {
+  return putIDB(tabl, projectId(), file);
+}
+
 var lastedittime = 0;
 var edits = [["m", 0, 0, 0]];
 var currenthistory = -1;
@@ -673,7 +700,7 @@ var renameFile = function(elem) {
         if (newname == name)
           return;
         files[fileid] = newname;
-        promises = [
+        var promises = [
           updateIDBc("projects", "files", files),
           updateIDBc("files", fileid, "name", newname)
         ];
@@ -950,27 +977,34 @@ var removeFile = function() {
   var div = document.querySelector(".filename.open");
   var fileid = parseInt(div.getAttribute("fileid"));
   var filename = div.innerText;
+  var filerow;
 
-  var attrs = loadLSc("attrs", fileid);
-  if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
-    return;
+  return loadIDBc("files", fileid).then(function(fr) {
+    fileRow = fr;
+    var attrs = fileRow.attrs;
+    if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
+      return;
 
-  if (!confirm("Are you sure you want to delete " + filename + "?"))
-    return;
+    if (!confirm("Are you sure you want to delete " + filename + "?"))
+      return;
 
-  logedit("r", editor.session.selection.getCursor(), [fileid, filename, loadLSc("files", fileid)]);
-  var filelist = document.getElementById("filelist");
+    return loadIDBc("projects");
+  }).then(function(projRow) {
+    var filelist = document.getElementById("filelist");
+    // TODO: handle deleting first file.
+    loadFile.call(filelist.children[0]);
+    filelist.removeChild(div);
 
-  // TODO: handle deleting first file.
-  loadFile.call(filelist.children[0]);
-  filelist.removeChild(div);
+    var files = projRow.files;
+    delete files[fileid];
+    var promises = [
+      rmIDBc("files", fileid),
+      updateIDBc("projects", "files", files)
+    ];
+    logedit("r", editor.session.selection.getCursor(), [fileid, filename, fileRow.contents]);
+    return Promise.all(promises)
+  });
 
-  rmLSc("files", fileid);
-  rmLSc("attrs", fileid);
-
-  var filenames = JSON.parse(loadLSc("files"));
-  delete filenames[fileid];
-  saveLSc("files", JSON.stringify(filenames));
 }
 
 var saveToServer = function() {

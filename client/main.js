@@ -673,7 +673,11 @@ var renameFile = function(elem) {
         if (newname == name)
           return;
         files[fileid] = newname;
-        return updateIDBc("projects", "files", files);
+        promises = [
+          updateIDBc("projects", "files", files),
+          updateIDBc("files", fileid, "name", newname)
+        ];
+        return Promise.all(promises);
       }).then(function() {
         logedit("n", editor.session.selection.getCursor(), [elem.getAttribute("fileid"), name, newname]);
       });
@@ -1633,7 +1637,7 @@ var initFiles = function() {
     filePromises = [];
     var i = 0;
     for (f in projRow["files"]) {
-      filePromises.push(loadIDB("files", projectId(), f));
+      filePromises.push(loadIDBc("files", f));
       fileIndices[parseInt(f)] = i++;
     }
     return Promise.all(filePromises);

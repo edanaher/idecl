@@ -1989,27 +1989,39 @@ var initIndexedDB = function() {
 }
 
 var setupMarked = function() {
-  var filelist = JSON.parse(loadLSc("files"));
-  var filenames = {};
-  for (var i in filelist)
-    filenames[filelist[i]] = i;
-  marked.use({ walkTokens: function(token) {
-    if (token.type == "image" && filenames[token.href]) {
-      contents = loadLSc("files", filenames[token.href]);
-      var filetype = null;
-      if (token.href.endsWith(".png"))
-        filetype = "png";
-      else if (token.href.endsWith(".jpg") || token.href.endsWith(".jpeg"))
-        filetype = "jpg";
-      else if (token.href.endsWith(".gif"))
-        filetype = "gif";
+  // TODO: update when files are added/renamed.
+  return loadIDBc("projects").then(function(projRow) {
+    var filelist = projRow.files;
+    var promises = []
+    for (var i in filelist)
+      if (filelist[i].endsWith(".png") || filelist[i].endsWith(".jpg") || filelist[i].endsWith(".jpeg") || filelist[i].endsWith(".gif"))
+        promises.push(loadIDBc("files", i));
+    return Promise.all(promises);
+  }).then(function(imageContents) {
+    var images = {};
+    for (var i in imageContents)
+      images[imageContents[i].name] = imageContents[i].contents;
+    marked.use({ walkTokens: function(token) {
+      if (token.type == "image" && images[token.href]) {
+        console.log("substituting tree", token, images);
+        var contents = images[token.href];
+        console.log("contents", contents);
+        var filetype = null;
+        if (token.href.endsWith(".png"))
+          filetype = "png";
+        else if (token.href.endsWith(".jpg") || token.href.endsWith(".jpeg"))
+          filetype = "jpg";
+        else if (token.href.endsWith(".gif"))
+          filetype = "gif";
 
-      if (filetype)
-        token.href = "data:image/" + filetype + ";base64," + btoa(contents);
-      else
-        console.log("Unknown type for file", token.href);
-    }
-  }});
+        if (filetype) {
+          console.log("subst")
+          token.href = "data:image/" + filetype + ";base64," + btoa(contents);
+        } else
+          console.log("Unknown type for file", token.href);
+      }
+    }});
+  });
 }
 
 window.onload = function() {
@@ -2022,12 +2034,12 @@ window.onload = function() {
           initFiles();
         }
       });
+      setupMarked();
     });
     initAce();
     initTerminal();
     initDarkMode();
     displaytimestamps();
-    setupMarked();
     //upgradestore();
     checkLocalStale();
     addClickListenerById("run", runcode);

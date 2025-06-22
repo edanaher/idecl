@@ -1929,7 +1929,6 @@ var logError = function(ths, error) {
   var data = {};
   if (ths && ths.id)
     data.elementid = ths.id;
-  var lastfile = loadLSc("lastfile")
   try {
     var fileid = document.querySelector(".filename.open").getAttribute("fileid");
     data.openfile = fileid;

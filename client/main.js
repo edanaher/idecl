@@ -101,9 +101,15 @@ var updateIDB = function(tabl, project, file, field, contents) {
         reject();
     };
     req.onsuccess = function(e) {
-      console.log("Updating", field, "->", contents, "on", req.result, "from", key, "on", tabl);
-      req.result[field] = contents;
-      var putreq = table.put(req.result, key);
+      //console.log("Updating", field, "->", contents, "on", req.result, "from", key, "on", tabl);
+      var newvalue;
+      if (field == null)
+        newvalue = contents;
+      else {
+        req.result[field] = contents;
+        newvalue = req.result;
+      }
+      var putreq = table.put(newvalue, key);
       putreq.onsuccess = function() {
         resolve();
       };
@@ -440,7 +446,7 @@ var saveFile = function() {
       return;
     return updateIDBc("files", fileid, "contents", editor.getValue());
   }).then(function() {
-    saveLSc("edits", serializeEdits());
+    return updateIDBc("history", "all", null, serializeEdits());
   });
 }
 
@@ -1131,7 +1137,7 @@ var loadFromServer = function(pid) {
       }
 
       if (serverResponse.history)
-        return saveLSc("edits", serverResponse.history);
+        return updateIDBc("history", "all", null, serverResponse.history);
       else
         return Promise.resolve();
     }).then(function() {
@@ -1408,11 +1414,12 @@ var checkLocalStale = function() {
     if (!history)
       return;
 
-    var localHistory = loadLS("edits", pid);
-    if ((serverHistory && !localHistory) || (serverHistory && (serverHistory.length > localHistory.length))) {
-      loadbutton.classList.add("stale");
-      loadbutton.setAttribute("title", "newer version detected on server");
-    }
+    loadIDB("history", pid, "all").then(function(localHistory) {
+      if ((serverHistory && !localHistory) || (serverHistory && (serverHistory.length > localHistory.length))) {
+        loadbutton.classList.add("stale");
+        loadbutton.setAttribute("title", "newer version detected on server");
+      }
+    });
   }
   xhr.send();
 

@@ -1024,10 +1024,36 @@ var removeFile = function() {
 }
 
 var saveToServer = function() {
+  var projRow;
+  var savebutton = document.getElementById("savefiles");
+  var loadbutton = document.getElementById("loadfiles");
   saveFile().then(function() {
-    var savebutton = document.getElementById("savefiles");
-    var loadbutton = document.getElementById("loadfiles");
     savebutton.innerText = "Saving..."
+    return loadIDBc("projects");
+  }).then(function(pr) {
+    projRow = pr;
+    var promises = [loadIDBc("history")];
+    for (var i in pr.files) {
+      console.log("Loading", i);
+      promises.push(loadIDBc("files", i));
+    }
+    return Promise.all(promises);
+  }).then(function(files) {
+    var postdata = {};
+    if (projRow.parent)
+      postdata["parent"] = projRow.parent;
+    postdata["history"] = files.shift();
+    postdata["files"] = {};
+    for (var i in files) {
+      console.log(i, files);
+      postdata.files[i] = {
+        "name": files[i].name,
+        "contents": files[i].contents,
+        "attrs": files[i].attrs || ""
+      };
+    }
+
+    console.log(postdata);
     var xhr = new XMLHttpRequest();
     xhr.open("POST", baseURL() + "save", true);
     xhr.setRequestHeader("Content-Type", "application/json");
@@ -1054,20 +1080,6 @@ var saveToServer = function() {
         }
       }
     };
-    var postdata = {};
-    var filenames = JSON.parse(loadLSc("files"));
-    var par= loadLSc("parent");
-    if (par)
-      postdata["parent"] = par;
-    postdata["files"] = {};
-    for (var i in filenames)
-      postdata.files[i] = {
-        "name": filenames[i],
-        "contents": loadLSc("files", i),
-        "attrs": loadLSc("attrs", i) || ""
-    };
-    postdata["history"] = loadLSc("edits");
-    // TODO: save history
     xhr.send(JSON.stringify(postdata));
   });
 }

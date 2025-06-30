@@ -17,6 +17,7 @@ def save_project(pid):
     with engine.connect() as conn:
         filedata = data["files"]
 
+        # TODO: handle renames or swaps (e.g., a->b, b->a; the first one will break the foreign key constraint
         conn.execute(text("DELETE FROM files WHERE project_id=:pid AND NOT hidden AND file_id NOT IN (" + ",".join(filedata.keys()) + ")"), [{"pid": pid}])
         conn.execute(text("INSERT INTO files (project_id, file_id, name, contents, hidden, inherited, readonly) VALUES (:pid, :file_id, :name, :contents, :hidden, :inherited, :readonly) ON CONFLICT DO UPDATE SET contents=:contents, name=:name"),
                 [{"pid": pid, "file_id": k, "name": filedata[k]["name"], "contents": filedata[k]["contents"],

@@ -1025,6 +1025,7 @@ var removeFile = function() {
 
 var saveToServer = function() {
   var projRow;
+  var fileids = [];
   var savebutton = document.getElementById("savefiles");
   var loadbutton = document.getElementById("loadfiles");
   saveFile().then(function() {
@@ -1036,6 +1037,7 @@ var saveToServer = function() {
     for (var i in pr.files) {
       console.log("Loading", i);
       promises.push(loadIDBc("files", i));
+      fileids.push(i);
     }
     return Promise.all(promises);
   }).then(function(files) {
@@ -1046,7 +1048,7 @@ var saveToServer = function() {
     postdata["files"] = {};
     for (var i in files) {
       console.log(i, files);
-      postdata.files[i] = {
+      postdata.files[fileids[i]] = {
         "name": files[i].name,
         "contents": files[i].contents,
         "attrs": files[i].attrs || ""

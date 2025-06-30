@@ -712,7 +712,8 @@ var renameFile = function(elem) {
         ];
         return Promise.all(promises);
       }).then(function() {
-        logedit("n", editor.session.selection.getCursor(), [elem.getAttribute("fileid"), name, newname]);
+        document.getElementById("savefiles").classList.add("dirty");
+        return logedit("n", editor.session.selection.getCursor(), [elem.getAttribute("fileid"), name, newname]);
       });
     };
     editbox.addEventListener("blur", werr(finishEdit));

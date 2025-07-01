@@ -1302,22 +1302,25 @@ var sendinputfromterminal = (function() {
 })();
 
 var renderinstructions = function() {
-  var filenames = JSON.parse(loadLSc("files"));
-  var id = null;
-  for (var i in filenames)
-    if (filenames[i] == "instructions.md") {
-      id = i;
-      break;
+  loadIDBc("projects").then(function(projRow) {
+    var files = projRow.files;
+    var id = null;
+    for (var i in files)
+      if (files[i] == "instructions.md") {
+        id = i;
+        break;
+      }
+
+    if (!id) {
+      document.getElementById("markdownoutput").innerHTML = "no instructions found";
+      return;
     }
 
-  if (!id) {
-    document.getElementById("markdownoutput").innerHTML = "no instructions found";
-    return;
-  }
-
-  var contents = loadLSc("files", i);
-  var rendered = DOMPurify.sanitize(marked.parse(contents));
-  document.getElementById("markdownoutput").innerHTML = rendered;
+    return loadIDBc("files", i);
+  }).then(function(fileRow) {
+    var rendered = DOMPurify.sanitize(marked.parse(fileRow.contents));
+    document.getElementById("markdownoutput").innerHTML = rendered;
+  });
 }
 
 var rendermarkdown = (function() {

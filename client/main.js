@@ -179,7 +179,7 @@ var rmIDB = function(tabl, project, file) {
 }
 
 var rmIDBc = function(tabl, file) {
-  return putIDB(tabl, projectId(), file);
+  return rmIDB(tabl, projectId(), file);
 }
 
 var lastedittime = 0;
@@ -1450,21 +1450,24 @@ var resetFiles = function() {
   if (confirm("Really?  Click Cancel to reset; OK will leave your files."))
     return;
 
-  var filenames = JSON.parse(loadLSc("files"));
-  rmLSc("files");
+  return loadIDBc("projects").then(function(projRow) {
+    var filenames = projRow.files;
+    var promises = [rmIDBc("files")];
+    promises.push(rmIDBc("history", "all"));
+    for (var i in filenames) {
+      promises.push(rmIDBc("files", i));
+    }
+    return Promise.all(promises);
+  }).then(function() {
+    var filelist = document.getElementById("filelist");
+    while (filelist.firstChild)
+      filelist.removeChild(filelist.lastChild);
+    sessions = {};
+    edits = [];
 
-  for (var i in filenames) {
-    rmLSc("files", i);
-  }
-  rmLSc("edits");
-
-  var filelist = document.getElementById("filelist");
-  while (filelist.firstChild)
-    filelist.removeChild(filelist.lastChild);
-  sessions = {};
-
-  bootstrapStorage();
-  initFiles();
+    bootstrapStorage();
+    initFiles();
+  });
 }
 
 var cloneProject = function(from, to, assignment) {

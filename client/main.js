@@ -1471,47 +1471,67 @@ var resetFiles = function() {
 }
 
 var cloneProject = function(from, to, assignment) {
-  var files = JSON.parse(loadLS("files", from));
-  var filenames = {}
-  for (f in files)
-    filenames[files[f]] = true;
+  console.log("Cloning project");
   var newfiles = {}
-  var templated = {};
-  for (f in files) {
-    var newname = files[f];
-    if (assignment) {
-      if ("template/" + files[f] in filenames)
-        continue;
-      if (newname.startsWith("template/")) {
-        newname = newname.replace("template/", "");
-        templated[f] = true;
-      }
-    }
-    newfiles[f] = newname;
-  }
-  saveLS("files", to, JSON.stringify(newfiles));
-  // TODO: Link to specific history number to track pre-clone history
-  saveLS("parent", to, from + "|" + 0);
-  for (var f in newfiles) {
-    var contents = loadLS("files", from, f);
-    saveLS("files", to, f, contents);
-    if (assignment) {
-      var attrs = "";
-      if (files[f].startsWith("Test") || files[f].endsWith("Test.java") || files[f].endsWith("Tests.java")) {
-        saveLS("files", to, f, f);
-        attrs = attrs.concat("hi");
-      }
-      if (files[f].endsWith(".md")) {
-        saveLS("files", to, f, f);
-        attrs = attrs.concat("i");
-      }
-      if (!templated[f])
-        attrs = attrs.concat("r");
+  return loadIDB("projects", from).then(function(fromRow) {
+    var files = fromRow.files;
 
-      if (attrs != "")
-        saveLS("attrs", to, f, attrs);
+    var filenames = {}
+    for (f in files)
+      filenames[files[f]] = true;
+    var templated = {};
+    for (f in files) {
+      var newname = files[f];
+      if (assignment) {
+        if ("template/" + files[f] in filenames)
+          continue;
+        if (newname.startsWith("template/")) {
+          newname = newname.replace("template/", "");
+          templated[f] = true;
+        }
+      }
+      newfiles[f] = newname;
     }
-  }
+    var newProjRow = {
+      files: newfiles,
+      parent: from + "|" + 0
+    };
+    var promises = [putIDB("projects", to, newProjRow)];
+    for (var f in newfiles)
+      promises.push(loadIDB("files", from, f))
+    return Promise.all(promises);
+  }).then(function(files) {
+
+    // TODO: Link to specific history number to track pre-clone history
+    var i = 1;
+    var promises = [];
+    for (var f in newfiles) {
+      console.log(files, i)
+      var newFileRow = {
+        name: newfiles[f],
+        contents: files[i].contents
+      }
+      if (assignment) {
+        var attrs = "";
+        if (files[f].startsWith("Test") || files[f].endsWith("Test.java") || files[f].endsWith("Tests.java")) {
+          saveLS("files", to, f, f);
+          attrs = attrs.concat("hi");
+        }
+        if (files[f].endsWith(".md")) {
+          saveLS("files", to, f, f);
+          attrs = attrs.concat("i");
+        }
+        if (!templated[f])
+          attrs = attrs.concat("r");
+
+        if (attrs != "")
+          newFileRow.attrs = attrs;
+      }
+      promises.push(putIDB("files", to, f, newFileRow));
+      i++;
+    }
+    return Promise.all(promises);
+  });
 }
 
 var cloneProjectInit = function(assignment) {
@@ -1522,9 +1542,10 @@ var cloneProjectInit = function(assignment) {
   var xhr = new XMLHttpRequest();
   xhr.open("POST", "/classrooms/" + classroom_id + "/projects", true);
   xhr.onload = function() {
-    var pid = xhr.response;
-    cloneProject(projectId(), pid, assignment);
-    alert("Cloned to project " + name);
+    var pid = parseInt(xhr.response);
+    cloneProject(projectId(), pid, assignment).then(function() {
+      alert("Cloned to project " + name + " to id " + pid);
+    });
   };
   var formdata = new FormData();
   formdata.append("name", name);
@@ -2056,12 +2077,13 @@ window.onload = function() {
     initIndexedDB().then(function() {
       loadIDBc("projects").then(function(projRow) {
         if (!projRow)
-          loadFromServer(projectId());
+          return loadFromServer(projectId());
         else {
-          initFiles();
+          return initFiles();
         }
+      }).then(function() {
+        setupMarked();
       });
-      setupMarked();
     });
     initAce();
     initTerminal();

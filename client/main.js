@@ -1536,11 +1536,11 @@ var cloneProject = function(from, to, assignment) {
       if (assignment) {
         var attrs = "";
         if (files[f].startsWith("Test") || files[f].endsWith("Test.java") || files[f].endsWith("Tests.java")) {
-          saveLS("files", to, f, f);
+          newFileRow.contents = f;
           attrs = attrs.concat("hi");
         }
         if (files[f].endsWith(".md")) {
-          saveLS("files", to, f, f);
+          newFileRow.contents = f;
           attrs = attrs.concat("i");
         }
         if (!templated[f])

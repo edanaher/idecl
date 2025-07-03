@@ -453,35 +453,43 @@ var saveFile = function() {
 var checkHistoryReplay = function() {
   var filelistdiv = document.getElementById("filelist");
   var uifiles = filelistdiv.children;
-  var localfiles = JSON.parse(loadLSc("files"));
+  var localfiles;
   var valid = true;
-  if (uifiles.length != Object.keys(localfiles).length) {
-    console.log("Filelists different lengths: ", uifiles.length, Object.keys(localfiles));
-    valid = false;
-  }
-  for (var i = 0; i < uifiles.length; i++) {
-    var filediv = uifiles[i];
-    var fileid = filediv.getAttribute("fileid");
-    var sess = sessions[fileid];
-    if (filediv.innerText != localfiles[fileid]) {
-      console.log("Difference in file name", fileid, filediv.innerText, localfiles[fileid]);
-      filediv.innerText = localfiles[fileid];
+  loadIDBc("projects").then(function(projRow) {
+    localfiles = projRow.files;
+    if (uifiles.length != Object.keys(localfiles).length) {
+      console.log("Filelists different lengths: ", uifiles.length, Object.keys(localfiles));
       valid = false;
     }
-    if (!sess)
-      continue;
-    var restored = sess.getValue();
-    var orig = loadLSc("files", fileid);
-    if (restored != orig) {
-      console.log("Difference in file contents", fileid, filediv.innerText, [JSON.stringify(restored), JSON.stringify(orig)]);
-      sess.setValue(loadLSc("files", fileid));
-      valid = false;
+    var promises = []
+    for (var i = 0; i < uifiles.length; i++)
+      promises.push(loadIDBc("files", parseInt(uifiles[i].getAttribute("fileid"))));
+    return Promise.all(promises);
+  }).then(function(fileRows) {
+    for (var i = 0; i < uifiles.length; i++) {
+      var filediv = uifiles[i];
+      var fileid = filediv.getAttribute("fileid");
+      var sess = sessions[fileid];
+      if (filediv.innerText != localfiles[fileid]) {
+        console.log("Difference in file name", fileid, filediv.innerText, localfiles[fileid]);
+        filediv.innerText = localfiles[fileid];
+        valid = false;
+      }
+      if (!sess)
+        continue;
+      var restored = sess.getValue();
+      var orig = fileRows[i].contents;
+      if (restored != orig) {
+        console.log("Difference in file contents", fileid, filediv.innerText, [JSON.stringify(restored), JSON.stringify(orig)]);
+        sess.setValue(orig);
+        valid = false;
+      }
     }
-  }
-  if (valid)
-    console.log("hist success");
-  else
-    alert("History fail");
+    if (valid)
+      console.log("hist success");
+    else
+      alert("History fail");
+    });
 }
 
 var setCurrentHistoryFile = function(start) {
@@ -520,119 +528,134 @@ var historymove = function(adjust, delay) {
   var histlen = edits.length;
   if (currenthistory == -1 && adjust > 0 || currenthistory == 0 && adjust < 0)
     return;
-  if (currenthistory == -1) {
-    currenthistoryfile = 0;
-    saveFile(); // TODO: this is a promise
-    currenthistory = edits.length - 1;
-    setCurrentHistoryFile(currenthistory);
-    editor.setOption("behavioursEnabled", false);
-    editor.setOption("enableAutoIndent", false);
-  }
-  if (adjust > 0)
-    currenthistory += adjust;
-  editor.setReadOnly(true);
-
-  var edit = edits[currenthistory];
-  //console.log("currenthistoryfile was", currenthistoryfile);
-  //console.log("edit is", edit);
-  // Load up the currently active file.  Unless it was removed.
-  if (edit[0] != "r")
-    loadFile(currenthistoryfile, true);
-  if (adjust > 0) {
-    if (edit[0] == "m") {
-      editor.gotoLine(edit[2] + 1, edit[3]);
-    } else if (edit[0] == "i") {
-      editor.gotoLine(edit[2] + 1, edit[3]);
-      editor.insert(edit[4]);
-    } else if (edit[0] == "d") {
-      var [row, col] = postinsertposition(edit);
-      editor.session.replace(new ace.Range(edit[2], edit[3], row, col), "");
-    } else if (edit[0] == "s") {
-      editor.selection.setRange(new ace.Range(edit[2], edit[3], edit[4].row, edit[4].column));
-    } else if (edit[0] == "l") {
-      loadFile(edit[4][1], true);
-      editor.gotoLine(edit[2] + 1, edit[3]);
-    } else if (edit[0] == "a") {
-      var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
-      filenamediv.classList.remove("histdeleted");
-      loadFile(edit[4][1], true);
-      editor.gotoLine(edit[2] + 1, edit[3]);
-    } else if (edit[0] == "n") {
-      var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
-      filenamediv.innerText = edit[4][2];
-    } else if (edit[0] == "r") {
-      var filelist = document.getElementById("filelist");
-      var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
-      loadFile(parseInt(filelist.children[0].getAttribute("fileid")), true);
-      filelist.removeChild(filenamediv);
+  var edit;
+  Promise.resolve().then(function() {
+    if (currenthistory == -1) {
+      return saveFile().then(function() {
+        currenthistoryfile = 0;
+        currenthistory = edits.length - 1;
+        setCurrentHistoryFile(currenthistory);
+        editor.setOption("behavioursEnabled", false);
+        editor.setOption("enableAutoIndent", false);
+      });
     }
-  } else {
-    if (edit[0] == "i") {
-      var [row, col] = postinsertposition(edit);
-      editor.session.replace(new ace.Range(edit[2], edit[3], row, col), "");
-    } else if (edit[0] == "d" && adjust < 0) {
-      editor.gotoLine(edit[2] + 1, edit[3]);
-      editor.insert(edit[4]);
-    } else if (edit[0] == "l") {
-      setCurrentHistoryFile(currenthistory - 1);
-      var prevfile = edit[4][0]
-      if (/*i >= 0 && */prevfile != currenthistoryfile) {
-        console.log("history load file mismatch on ", /*i, */";", prevfile, "vs", currenthistoryfile, "from"/*, edits[i]*/);
-        prevfile = currenthistoryfile;
+  }).then(function() {
+    if (adjust > 0)
+      currenthistory += adjust;
+    editor.setReadOnly(true);
+
+    edit = edits[currenthistory];
+    //console.log("currenthistoryfile was", currenthistoryfile);
+    //console.log("edit is", edit);
+    // Load up the currently active file.  Unless it was removed.
+    console.log("open file before:", document.querySelector(".filename.open"), "to", currenthistoryfile);
+    if (edit[0] != "r")
+      return loadFile(currenthistoryfile, true);
+  }).then(function() {
+    console.log("open file after:", document.querySelector(".filename.open"));
+    if (adjust > 0) {
+      if (edit[0] == "m") {
+        editor.gotoLine(edit[2] + 1, edit[3]);
+      } else if (edit[0] == "i") {
+        editor.gotoLine(edit[2] + 1, edit[3]);
+        editor.insert(edit[4]);
+      } else if (edit[0] == "d") {
+        var [row, col] = postinsertposition(edit);
+        editor.session.replace(new ace.Range(edit[2], edit[3], row, col), "");
+      } else if (edit[0] == "s") {
+        editor.selection.setRange(new ace.Range(edit[2], edit[3], edit[4].row, edit[4].column));
+      } else if (edit[0] == "l") {
+        return loadFile(edit[4][1], true).then(function() {
+          editor.gotoLine(edit[2] + 1, edit[3]);
+        });
+      } else if (edit[0] == "a") {
+        var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
+        filenamediv.classList.remove("histdeleted");
+        return loadFile(edit[4][1], true).then(function() {
+          editor.gotoLine(edit[2] + 1, edit[3]);
+        });
+      } else if (edit[0] == "n") {
+        var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
+        filenamediv.innerText = edit[4][2];
+      } else if (edit[0] == "r") {
+        var filelist = document.getElementById("filelist");
+        var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
+        return loadFile(parseInt(filelist.children[0].getAttribute("fileid")), true).then(function() {
+          filelist.removeChild(filenamediv);
+        });
       }
-      loadFile(prevfile, true);
-    } else if (edit[0] == "a") {
-      var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
-      filenamediv.classList.add("histdeleted");
-      loadFile(edit[4][0], true);
-    } else if (edit[0] == "n") {
-      var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
-      filenamediv.innerText = edit[4][1];
-    } else if (edit[0] == "r") {
-      var filelist = document.getElementById("filelist");
-      var div = document.createElement("div");
-      div.innerText = edit[4][1];
-      div.classList.add("filename");
-      div.setAttribute("fileid", edit[4][0]);
-      div.addEventListener("click", werr(loadFile));
-      filelist.appendChild(div);
-      div.classList.add("histundeleted");
+    } else {
+      return Promise.resolve().then(function() {
+        if (edit[0] == "i") {
+          var [row, col] = postinsertposition(edit);
+          editor.session.replace(new ace.Range(edit[2], edit[3], row, col), "");
+        } else if (edit[0] == "d" && adjust < 0) {
+          editor.gotoLine(edit[2] + 1, edit[3]);
+          editor.insert(edit[4]);
+        } else if (edit[0] == "l") {
+          setCurrentHistoryFile(currenthistory - 1);
+          var prevfile = edit[4][0]
+          if (/*i >= 0 && */prevfile != currenthistoryfile) {
+            console.log("history load file mismatch on ", /*i, */";", prevfile, "vs", currenthistoryfile, "from"/*, edits[i]*/);
+            prevfile = currenthistoryfile;
+          }
+          return loadFile(prevfile, true);
+        } else if (edit[0] == "a") {
+          var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
+          filenamediv.classList.add("histdeleted");
+          return loadFile(edit[4][0], true);
+        } else if (edit[0] == "n") {
+          var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
+          filenamediv.innerText = edit[4][1];
+        } else if (edit[0] == "r") {
+          var filelist = document.getElementById("filelist");
+          var div = document.createElement("div");
+          div.innerText = edit[4][1];
+          div.classList.add("filename");
+          div.setAttribute("fileid", edit[4][0]);
+          div.addEventListener("click", werr(loadFile));
+          filelist.appendChild(div);
+          div.classList.add("histundeleted");
 
-      loadFile(edit[4][0], edit[4][2], true);
+          return loadFile(edit[4][0], edit[4][2], true);
+        }
+      }).then(function() {
+        var prevedit = edits[currenthistory - 1];
+        if (prevedit[0] == "m") {
+          editor.gotoLine(prevedit[2] + 1, prevedit[3]);
+        } else if (prevedit[0] == "i") {
+          editor.gotoLine(prevedit[2] + 1, prevedit[3] + prevedit[4].length);
+        } else if (prevedit[0] == "d") {
+          editor.gotoLine(prevedit[2] + 1, prevedit[3]);
+        } else if (prevedit[0] == "s") {
+          editor.selection.setRange(new ace.Range(prevedit[2], prevedit[3], prevedit[4].row, prevedit[4].column));
+        } else if (prevedit[0] == "n") {
+          editor.gotoLine(prevedit[2] + 1, prevedit[3]);
+        }
+      });
     }
-    var prevedit = edits[currenthistory - 1];
-    if (prevedit[0] == "m") {
-      editor.gotoLine(prevedit[2] + 1, prevedit[3]);
-    } else if (prevedit[0] == "i") {
-      editor.gotoLine(prevedit[2] + 1, prevedit[3] + prevedit[4].length);
-    } else if (prevedit[0] == "d") {
-      editor.gotoLine(prevedit[2] + 1, prevedit[3]);
-    } else if (prevedit[0] == "s") {
-      editor.selection.setRange(new ace.Range(prevedit[2], prevedit[3], prevedit[4].row, prevedit[4].column));
-    } else if (prevedit[0] == "n") {
-      editor.gotoLine(prevedit[2] + 1, prevedit[3]);
-    }
-  }
-  //console.log("currenthistoryfile is", currenthistoryfile);
+  }).then(function() {
+    //console.log("currenthistoryfile is", currenthistoryfile);
 
-  while (edits.length > histlen)
-    edits.pop();
-  if (adjust < 0)
-    currenthistory += adjust;
-  if (currenthistory >= edits.length - 1) {
-    checkHistoryReplay();
-    currenthistory = -1;
-    editor.setReadOnly(false);
-    editor.setOption("behavioursEnabled", true);
-    editor.setOption("enableAutoIndent", true);
+    while (edits.length > histlen)
+      edits.pop();
+    if (adjust < 0)
+      currenthistory += adjust;
+    if (currenthistory >= edits.length - 1) {
+      checkHistoryReplay();
+      currenthistory = -1;
+      editor.setReadOnly(false);
+      editor.setOption("behavioursEnabled", true);
+      editor.setOption("enableAutoIndent", true);
+      displayeditstate();
+      return;
+    }
+    currenthistorytime = getAbsoluteHistoryTime();
+
     displayeditstate();
-    return;
-  }
-  currenthistorytime = getAbsoluteHistoryTime();
-
-  displayeditstate();
-  var newdelay = delay > 100 ? delay * 2 / 3 : delay > 10 ? delay * 0.95 : 10;
-  historymove_timer = setTimeout(historymove, newdelay, adjust, newdelay);
+    var newdelay = delay > 100 ? delay * 2 / 3 : delay > 10 ? delay * 0.95 : 10;
+    historymove_timer = setTimeout(historymove, newdelay, adjust, newdelay);
+  });
 }
 
 var start_historymove = function(adjust) {
@@ -847,7 +870,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
   }
   var oldfileid = document.querySelector(".filename.open").getAttribute("fileid");
   document.querySelector(".filename.open").classList.remove("open");
-  updateIDBc("projects", "lastfile", parseInt(fileid)).then(function() {
+  return updateIDBc("projects", "lastfile", parseInt(fileid)).then(function() {
     var sess = sessions[fileid]
     if (!sess) {
       if (contents)
@@ -873,16 +896,16 @@ var loadFile = function(fileid, contents, savehistoryfile) {
     if (currenthistory != -1 && savehistoryfile == true)
       currenthistoryfile = parseInt(fileid);
     // TODO: async issues?
-    loadIDBc("files", fileid).then(function(fileRow) {
-      if (currenthistory == -1) {
-        var attrs = fileRow.attrs;
-        if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
-          editor.setReadOnly(true);
-        else
-          editor.setReadOnly(false);
-      }
-      setOutputType(attrs && attrs.indexOf("r") != -1);
-    });
+    return loadIDBc("files", fileid)
+  }).then(function(fileRow) {
+    if (currenthistory == -1) {
+      var attrs = fileRow.attrs;
+      if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
+        editor.setReadOnly(true);
+      else
+        editor.setReadOnly(false);
+    }
+    setOutputType(attrs && attrs.indexOf("r") != -1);
   });
 }
 
@@ -1056,7 +1079,6 @@ var saveToServer = function() {
       };
     }
 
-    console.log(postdata);
     var xhr = new XMLHttpRequest();
     xhr.open("POST", baseURL() + "save", true);
     xhr.setRequestHeader("Content-Type", "application/json");
@@ -2051,9 +2073,7 @@ var setupMarked = function() {
       images[imageContents[i].name] = imageContents[i].contents;
     marked.use({ walkTokens: function(token) {
       if (token.type == "image" && images[token.href]) {
-        console.log("substituting tree", token, images);
         var contents = images[token.href];
-        console.log("contents", contents);
         var filetype = null;
         if (token.href.endsWith(".png"))
           filetype = "png";
@@ -2063,7 +2083,6 @@ var setupMarked = function() {
           filetype = "gif";
 
         if (filetype) {
-          console.log("subst")
           token.href = "data:image/" + filetype + ";base64," + btoa(contents);
         } else
           console.log("Unknown type for file", token.href);

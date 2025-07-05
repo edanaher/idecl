@@ -549,11 +549,9 @@ var historymove = function(adjust, delay) {
     //console.log("currenthistoryfile was", currenthistoryfile);
     //console.log("edit is", edit);
     // Load up the currently active file.  Unless it was removed.
-    console.log("open file before:", document.querySelector(".filename.open"), "to", currenthistoryfile);
     if (edit[0] != "r")
       return loadFile(currenthistoryfile, true);
   }).then(function() {
-    console.log("open file after:", document.querySelector(".filename.open"));
     if (adjust > 0) {
       if (edit[0] == "m") {
         editor.gotoLine(edit[2] + 1, edit[3]);
@@ -753,7 +751,7 @@ var renameFile = function(elem) {
 
 var fileContents = function(projectid, fileid) {
   return loadIDB("files", projectid, fileid).then(function(fileRow) {
-    console.log("Loaded ", fileRow, "for", projectid, fileid);
+    //console.log("Loaded ", fileRow, "for", projectid, fileid);
     var attrs = fileRow.attrs;
     // TODO: This is handled serverside now.  Is that right?
     if (0 && attrs && attrs.indexOf("i") != -1) {
@@ -1752,7 +1750,6 @@ var initFiles = function() {
   loadIDBc("projects").then(function(pr) {
     projRow = pr;
     filenames = projRow.files;
-    console.log("row is ", projRow, "From", projectId());
     filePromises = [];
     var i = 0;
     for (f in projRow["files"]) {

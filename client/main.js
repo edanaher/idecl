@@ -522,6 +522,7 @@ var getAbsoluteHistoryTime = function() {
 }
 
 var historymove_timer;
+var historymove_active = false;
 var historymove = function(adjust, delay) {
   if (!edits || edits.length == 0)
     return;
@@ -654,15 +655,18 @@ var historymove = function(adjust, delay) {
 
     displayeditstate();
     var newdelay = delay > 100 ? delay * 2 / 3 : delay > 10 ? delay * 0.95 : 10;
-    historymove_timer = setTimeout(historymove, newdelay, adjust, newdelay);
+    if (historymove_active)
+      historymove_timer = setTimeout(historymove, newdelay, adjust, newdelay);
   });
 }
 
 var start_historymove = function(adjust) {
+  historymove_active = true;
   historymove(adjust, 500);
 }
 
 var stop_historymove = function(adjust) {
+  historymove_active = false;
   if (historymove_timer) {
     clearTimeout(historymove_timer);
     historymove_timer = null;

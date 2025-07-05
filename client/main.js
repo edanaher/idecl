@@ -455,7 +455,7 @@ var checkHistoryReplay = function() {
   var uifiles = filelistdiv.children;
   var localfiles;
   var valid = true;
-  loadIDBc("projects").then(function(projRow) {
+  return loadIDBc("projects").then(function(projRow) {
     localfiles = projRow.files;
     if (uifiles.length != Object.keys(localfiles).length) {
       console.log("Filelists different lengths: ", uifiles.length, Object.keys(localfiles));
@@ -641,15 +641,15 @@ var historymove = function(adjust, delay) {
       edits.pop();
     if (adjust < 0)
       currenthistory += adjust;
-    if (currenthistory >= edits.length - 1) {
-      checkHistoryReplay();
-      currenthistory = -1;
-      editor.setReadOnly(false);
-      editor.setOption("behavioursEnabled", true);
-      editor.setOption("enableAutoIndent", true);
-      displayeditstate();
-      return;
-    }
+    if (currenthistory >= edits.length - 1)
+      checkHistoryReplay().then(function() {
+        currenthistory = -1;
+        editor.setReadOnly(false);
+        editor.setOption("behavioursEnabled", true);
+        editor.setOption("enableAutoIndent", true);
+        displayeditstate();
+        return;
+      });
     currenthistorytime = getAbsoluteHistoryTime();
 
     displayeditstate();

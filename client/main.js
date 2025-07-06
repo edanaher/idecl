@@ -870,6 +870,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
     filenamediv = this;
     fileid = this.getAttribute("fileid");
   }
+  var filename = filenamediv.innerText;
   var oldfileid = document.querySelector(".filename.open").getAttribute("fileid");
   document.querySelector(".filename.open").classList.remove("open");
   return updateIDBc("projects", "lastfile", parseInt(fileid)).then(function() {
@@ -877,7 +878,9 @@ var loadFile = function(fileid, contents, savehistoryfile) {
     if (!sess) {
       if (contents)
         return ace.createEditSession(contents);
-      else
+      else if(isImageFilename(filename)) {
+        return ace.createEditSession("Image file");
+      } else
         return fileContents(projectId(), fileid).then(function(contents) {
           return ace.createEditSession(contents || "");
         });
@@ -986,12 +989,15 @@ var uploadFile = function(e) {
       }
       newfile = max == -1 ? file.name : file.name + (max + 1);
       filenames[nextId] = newfile;
+      var fileInfo = {
+        "name": newfile,
+        "contents": e.target.result
+      };
+      if (isImageFilename(newfile))
+        fileInfo.attrs = "r";
       var promises = [
         updateIDBc("projects", "files", filenames),
-        putIDBc("files", nextId, {
-          "name": newfile,
-          "contents": e.target.result
-        })
+        putIDBc("files", nextId, fileInfo)
       ];
       return Promise.all(promises);
     }).then(function() {
@@ -1001,6 +1007,8 @@ var uploadFile = function(e) {
       div.innerText = newfile;
       div.setAttribute("title", newfile);
       div.classList.add("filename");
+      if (isImageFilename(newfile))
+        div.classList.add("readonly");
       div.setAttribute("fileid", nextId);
       filelist.appendChild(div);
 
@@ -1808,7 +1816,8 @@ var initFiles = function() {
     logedit("l", editor.session.selection.getCursor(), [-1, parseInt(lastfile)]);
     // Above this is IDB
 
-    var sess = ace.createEditSession(activefile.contents);
+    var contents = isImageFilename(activefile.name) ? "Image file" : activefile.contents;
+    var sess = ace.createEditSession(contents);
     setEditorLanguage(sess);
     sess.setUseWrapMode(true);
     sess.setOption("indentedSoftWrap", false);
@@ -2057,6 +2066,10 @@ var initIndexedDB = function() {
       resolve();
     })
   })
+}
+
+var isImageFilename = function(filename) {
+  return filename.endsWith(".png") || filename.endsWith(".jpg") || filename.endsWith(".jepg") || filename.endsWith(".gif");
 }
 
 var setupMarked = function() {

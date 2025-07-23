@@ -26,9 +26,10 @@
             var req = projectsTable.get(id);
             req.onsuccess = function(e) {
               projectsTable.delete(id);
-              var files = req.result.files;
-              for (var f in files)
-                filesTable.delete(id + "." + f);
+              var files = req.result && req.result.files;
+              if (files)
+                for (var f in files)
+                  filesTable.delete(id + "." + f);
               historyTable.delete(id);
             }
           }

@@ -258,6 +258,14 @@ var serializeEdits = function() {
       extra = serializeInt(edit[4][0]) + serializeInt(edit[4][1]) + serializeString(edit[4][2]);
     else if (edit[0] == "r") // id, name, contents
       extra = serializeInt(edit[4][0]) + serializeString(edit[4][1]) + serializeString(edit[4][2]);
+    else if (edit[0] == "p") {// full project contents
+      files = [];
+      for(var f in edit[4].files) {
+        var file = edit[4].files[f];
+        files.push(serializeInt(f) + serializeString(file.name) + serializeString(file.attrs || "") + serializeString(file.contents));
+      }
+      extra = serializeInt(files.length) + files.join("");
+    }
     strs.push(edit[0] + serializeInt(edit[1]) + serializeInt(edit[2]) + serializeInt(edit[3]) + extra);
   }
   return "v1" + strs.join(";");
@@ -310,6 +318,21 @@ var deserializeEdits = function(str) {
       [contents, i] = deserializeString(str, i);
       extra = [id, name, contents]
     }
+    if (type == "p") {// full project contents
+      var filecount;
+      var files = [];
+      var id;
+      [filecount, i] = deserializeInt(str, i);
+      for(var f = 0; f < filecount; f++) {
+        var file = {};
+        [id, i] = deserializeInt(str, i);
+        [file.name, i] = deserializeString(str, i);
+        [file.attrs, i] = deserializeString(str, i);
+        [file.contents, i] = deserializeString(str, i);
+        files[id] = file;
+      }
+      extra = {files: files};
+    }
     edits.push([type, time, row, col, extra]);
     i++;
   }
@@ -338,6 +361,7 @@ var postinsertposition = function(edit) {
 //   [a]dd file
 //   [r]emove file
 //   re[n]ame file
+//   [p]roject contents
 //  *e[x]ecute file
 //   *[P]age load (userid, sessionid, historyid)
 var logedit = function(type, position, data) {
@@ -387,9 +411,30 @@ var logedit = function(type, position, data) {
     edits.pop();
   }
   edits.push([type, now - lastedittime, row, col, data]);
+  if (edits.length % 5 == 0)
+    logProjectContents();
   //console.log(type, now - lastedittime, row, col, data, "/", edits.length);
   lastedittime = now;
   displayeditstate();
+}
+
+var logProjectContents = function() {
+  var fileids = [];
+  var index = edits.length;
+  edits.push(["p", 0, 0, 0, {"files": []}]);
+  return loadIDBc("projects").then(function(pr) {
+    var promises = [];
+    for (var i in pr.files) {
+      promises.push(loadIDBc("files", i));
+      fileids.push(i);
+    }
+    return Promise.all(promises);
+  }).then(function(files) {
+    var contents = {};
+    for(var i = 0; i < files.length; i++)
+      contents[fileids[i]] = files[i];
+    edits[index] = ["p", 0, 0, 0, {"files": contents}];
+  });
 }
 
 

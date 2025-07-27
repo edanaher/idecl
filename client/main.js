@@ -2085,11 +2085,12 @@ var wrapMessage = function(msg) {
 
 var initIndexedDB = function() {
   return new Promise(function(resolve, reject) {
-    var request = window.indexedDB.open("idecl", 4);
+    var request = window.indexedDB.open("idecl", 5);
     request.onerror = function(e) {
       logError(null, wrapMessage("Error opening indexedDB: " + e));
       reject(e);
     };
+    // TODO: handle versionchange events so this works if another tab is open.
     request.onupgradeneeded = function(e) {
       db = e.target.result;
       var version = e.oldVersion;
@@ -2100,7 +2101,12 @@ var initIndexedDB = function() {
         db.createObjectStore("projects");
       if (version < 4)
         db.createObjectStore("history");
-    }
+      if (version < 5)
+        db.createObjectStore("snapshots");
+    };
+    request.onblocked = function(e) {
+      console.log("Opening IDB is blocked");
+    };
     request.onsuccess = werr(function(e) {
       db = e.target.result;
       db.onerror = function(e) {
@@ -2109,7 +2115,7 @@ var initIndexedDB = function() {
       console.log("Opened", db);
       upgradestore();
       resolve();
-    })
+    });
   })
 }
 
@@ -2161,6 +2167,7 @@ window.onload = function() {
         }
       }).then(function() {
         setupMarked();
+        checkLocalStale();
       });
     });
     initAce();
@@ -2168,7 +2175,6 @@ window.onload = function() {
     initDarkMode();
     displaytimestamps();
     //upgradestore();
-    checkLocalStale();
     addClickListenerById("run", runcode);
     addClickListenerById("runtests", runtests);
     //document.getElementById("sendinput").addEventListener("click", sendinput);

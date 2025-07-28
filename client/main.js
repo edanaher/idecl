@@ -411,29 +411,30 @@ var logedit = function(type, position, data) {
     edits.pop();
   }
   edits.push([type, now - lastedittime, row, col, data]);
-  if (edits.length % 5 == 0)
-    logProjectContents();
+  if (edits.length % 100 == 0)
+    logSnapshot(edits.length);
   //console.log(type, now - lastedittime, row, col, data, "/", edits.length);
   lastedittime = now;
   displayeditstate();
 }
 
-var logProjectContents = function() {
+var logSnapshot = function(editindex) {
   var fileids = [];
-  var index = edits.length;
-  edits.push(["p", 0, 0, 0, {"files": []}]);
-  return loadIDBc("projects").then(function(pr) {
-    var promises = [];
-    for (var i in pr.files) {
-      promises.push(loadIDBc("files", i));
-      fileids.push(i);
-    }
-    return Promise.all(promises);
-  }).then(function(files) {
-    var contents = {};
-    for(var i = 0; i < files.length; i++)
-      contents[fileids[i]] = files[i];
-    edits[index] = ["p", 0, 0, 0, {"files": contents}];
+  return saveFile().then(function() {
+    return loadIDBc("projects").then(function(pr) {
+      var promises = [];
+      for (var i in pr.files) {
+        promises.push(loadIDBc("files", i));
+        fileids.push(i);
+      }
+      return Promise.all(promises);
+    }).then(function(files) {
+      var fileSnapshots = {};
+      for(var i = 0; i < files.length; i++)
+        fileSnapshots[fileids[i]] = {"contents": files[i]};
+
+      putIDBc("snapshots", editindex, {"files": fileSnapshots});
+    });
   });
 }
 
@@ -1189,79 +1190,79 @@ var loadFromServer = function(pid) {
     loadbutton.textContent = "Error talking to server";
   }
   var files;
-  xhr.onload = function() {
-    console.log("In XHR onload for loading from server")
-    var serverResponse = JSON.parse(xhr.response);
-    var serverFiles = serverResponse.files || {}
-    if (Object.keys(serverFiles).length == 0) {
-      // this is a bit hacky, but makes some sense.  If there's no server save
-      // or local save, bootstrap it.
-      return loadIDBc("files").then(function(f) {
-        files = f;
-        if (!files) {
-          bootstrapStorage();
-          initFiles().then(saveToServer);
+  return new Promise(function(resolve, reject) {
+    xhr.onload = function() {
+      console.log("In XHR onload for loading from server")
+      var serverResponse = JSON.parse(xhr.response);
+      var serverFiles = serverResponse.files || {}
+      if (Object.keys(serverFiles).length == 0) {
+        // this is a bit hacky, but makes some sense.  If there's no server save
+        // or local save, bootstrap it.
+        return loadIDBc("files").then(function(f) {
+          files = f;
+          if (!files) {
+            bootstrapStorage();
+            initFiles().then(saveToServer);
+          }
+          else
+            loadbutton.innerText = "no server save";
+          document.getElementById("savefiles").classList.remove("dirty");
+          window.removeEventListener("beforeunload", promptForSave);
+        });
+      }
+
+      // TODO: dedupe with reset
+      return loadIDB("projects", pid).then(function(projRow) {
+        if (projRow && projRow.files) {
+          var promises = []
+          for (var i in files)
+            promises.push(rmIDB("files", pid, i));
+          return Promise.all(filePromises);
+        } else {
+          return putIDBc("projects", {lastfile: 0});
         }
+      }).then(function() {
+        if (pid == projectId()) {
+          console.log("Removing file list");
+          var filelist = document.getElementById("filelist");
+          while (filelist.firstChild)
+            filelist.removeChild(filelist.lastChild);
+          sessions = [];
+        }
+
+        if (serverResponse.history)
+          return updateIDBc("history", "all", null, serverResponse.history);
         else
-          loadbutton.innerText = "no server save";
-        document.getElementById("savefiles").classList.remove("dirty");
-        window.removeEventListener("beforeunload", promptForSave);
-      });
-    }
-
-    // TODO: dedupe with reset
-    loadIDB("projects", pid).then(function(projRow) {
-      if (projRow && projRow.files) {
+          return Promise.resolve();
+      }).then(function() {
         var promises = []
-        for (var i in files)
-          promises.push(rmIDB("files", pid, i));
-        return Promise.all(filePromises);
-      } else {
-        return putIDBc("projects", {lastfile: 0});
-      }
-    }).then(function() {
-      if (pid == projectId()) {
-        console.log("Removing file list");
-        var filelist = document.getElementById("filelist");
-        while (filelist.firstChild)
-          filelist.removeChild(filelist.lastChild);
-        sessions = [];
-      }
-
-      if (serverResponse.history)
-        return updateIDBc("history", "all", null, serverResponse.history);
-      else
-        return Promise.resolve();
-    }).then(function() {
-      var promises = []
-      filenames = {};
-      console.log(serverFiles);
-      for (var i in serverFiles) {
-        putIDBc("files", i, {"name": serverFiles[i].name, "contents": serverFiles[i].contents});
-        if (serverFiles[i].attrs)
-          promises.push(updateIDBc("files", i, "attrs", serverFiles[i].attrs));
-        filenames[i] = serverFiles[i].name;
-      }
-      promises.push(updateIDBc("projects", "files", filenames));
-      if (serverResponse.parent) {
-        promises.push(updateIDBc("projects", "parent", serverResponse.parent));
-      }
-      return Promise.all(promises);
-    }).then(function() {
-      if (pid == projectId()) {
-        initFiles();
-        loadbutton.innerText = "load";
-        loadbutton.classList.remove("stale");
-        loadbutton.removeAttribute("title");
-        document.getElementById("savefiles").classList.remove("dirty");
-        window.removeEventListener("beforeunload", promptForSave);
-      }
-    });
-  };
-  xhr.send();
-  loadbutton.innerText = "loading";
-
-  return
+        filenames = {};
+        console.log(serverFiles);
+        for (var i in serverFiles) {
+          putIDBc("files", i, {"name": serverFiles[i].name, "contents": serverFiles[i].contents});
+          if (serverFiles[i].attrs)
+            promises.push(updateIDBc("files", i, "attrs", serverFiles[i].attrs));
+          filenames[i] = serverFiles[i].name;
+        }
+        promises.push(updateIDBc("projects", "files", filenames));
+        if (serverResponse.parent) {
+          promises.push(updateIDBc("projects", "parent", serverResponse.parent));
+        }
+        return Promise.all(promises);
+      }).then(function() {
+        if (pid == projectId()) {
+          initFiles();
+          loadbutton.innerText = "load";
+          loadbutton.classList.remove("stale");
+          loadbutton.removeAttribute("title");
+          document.getElementById("savefiles").classList.remove("dirty");
+          window.removeEventListener("beforeunload", promptForSave);
+        }
+      });
+    };
+    xhr.send();
+    loadbutton.innerText = "loading";
+  });
 }
 
 websocket = undefined;

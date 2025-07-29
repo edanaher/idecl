@@ -411,6 +411,7 @@ var logedit = function(type, position, data) {
     edits.pop();
   }
   edits.push([type, now - lastedittime, row, col, data]);
+  sendMultiplayerEdit([type, now - lastedittime, row, col, data]);
   if (edits.length % 100 == 0)
     logSnapshot(edits.length);
   //console.log(type, now - lastedittime, row, col, data, "/", edits.length);
@@ -438,6 +439,31 @@ var logSnapshot = function(editindex) {
   });
 }
 
+// TODO: enforce ordering of edits.
+multiplayerWebsocket = null;
+var sendMultiplayerEdit = function(edit) {
+  if (!multiplayerWebsocket) {
+    console.log("Connecting", multiplayerWebsocket);
+    multiplayerWebsocket = webSocketConnect("/multiplayer", {"op": "connect", "project": projectId()}, function(data) {
+      console.log("Multiplayer received", data);
+    });
+    console.log("Connecting 2", multiplayerWebsocket);
+  }
+  switch (multiplayerWebsocket.readyState) {
+    case WebSocket.CONNECTING:
+    case WebSocket.CLOSING:
+      console.log("Waiting");
+      return setTimeout(function() { sendMultiplayerEdit(edit); }, 500);
+    case WebSocket.CLOSED:
+      console.log("Resetting websocket");
+  console.log("Readystate is", multiplayerWebsocket.readyState);
+      multiplayerWebsocket = null;
+      return sendMultiplayerEdit(edit);
+  }
+  console.log("Readystate is", multiplayerWebsocket.readyState);
+  multiplayerWebsocket.send(JSON.stringify({"op": "updates", "updates": [edit], "project": projectId()}))
+
+}
 
 var cursorupdate = function() {
   var anchor = editor.selection.getAnchor();
@@ -1290,7 +1316,7 @@ var runcommand = function(test) {
     for (var f in filenames)
       body[filenames[f]] = fileContents[i++];
 
-    websocket = webSocketConnect({"op": "run", "pid": projectId(), "files": body, "test": test}, function(data) {
+    websocket = webSocketConnect("/websocket", {"op": "run", "pid": projectId(), "files": body, "test": test}, function(data) {
       if (data.container)
         container = data.container;
       if (data.output)
@@ -1995,12 +2021,12 @@ var addListenerById = function(id, e, f) {
     elem.addEventListener(e, werr(f));
 }
 
-var webSocketConnect = function(message, onmessage) {
-  var websocket
+var webSocketConnect = function(route, message, onmessage) {
+  var websocket;
   if (location.protocol == "https:")
-    websocket = new WebSocket("wss://" + location.host + "/websocket/");
+    websocket = new WebSocket("wss://" + location.host + route);
   else
-    websocket = new WebSocket("ws://" + location.host + "/websocket/");
+    websocket = new WebSocket("ws://" + location.host + route);
   websocket.onopen = function () {
     websocket.send(JSON.stringify(message))
   };

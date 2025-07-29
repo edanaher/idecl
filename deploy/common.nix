@@ -189,11 +189,63 @@ rec {
 
     doCheck = false;
   };
+  lua-resty-jit-uuid = pkgs.stdenv.mkDerivation rec {
+    pname = "lua-resty-jit-uuid";
+    version = "0.0.7";
+
+    src = pkgs.fetchFromGitHub {
+      owner = "thibaultcha";
+      repo = "lua-resty-jit-uuid";
+      rev = version;
+      sha256 = "sha256-C7JkmHnW+SO3g8a2VDZwK2frKRV4iJrXKjxN1diTKP4=";
+    };
+
+    meta = with pkgs.lib; {
+      description = "A pure LuaJIT (no dependencies) UUID library tuned for performance.";
+      homepage = "https://github.com/thibaultcha/lua-resty-jit-uuid";
+      license = licenses.mit;
+      maintainers = [ ];
+    };
+
+    buildPhase = "true";
+
+    installPhase = ''
+      mkdir -p $out/resty
+      cp lib/resty/jit-uuid.lua $out/resty
+    '';
+  };
+  lua-resty-nats = pkgs.stdenv.mkDerivation rec {
+    pname = "lua-resty-nats";
+    version = "0.1.0";
+
+    src = pkgs.fetchFromGitHub {
+      owner = "lijianbing";
+      repo = "lua-resty-nats";
+      rev = version;
+      sha256 = "sha256-DXcxs58M/C8JpsZIKIf0JKfx1hNW5CxarBqHCyaC/UI=";
+    };
+
+    meta = with pkgs.lib; {
+      description = "Lua NATS client driver for ngx_lua";
+      homepage = "https://github.com/lijianbing/lua-resty-nats";
+      license = licenses.mit;
+      maintainers = [ ];
+    };
+
+    buildPhase = "true";
+
+    installPhase = ''
+      mkdir -p $out/resty
+      cp lib/resty/nats.lua $out/resty
+    '';
+  };
   nginx-config = {
     enable = true;
     package = pkgs.openresty;
     appendHttpConfig = ''
         lua_shared_dict state 20k;
+        lua_shared_dict multiplayer 1m;
+        lua_package_path "${lua-resty-nats}/?.lua;${lua-resty-jit-uuid}/?.lua;;";
     '';
     virtualHosts."${hostname}" = {
       default = true;
@@ -234,6 +286,14 @@ rec {
           set $junit_path "${junit}";
           set $hamcrest_path "${hamcrest}";
           content_by_lua_file ${idecl-src}/lua/main.lua;
+        '';
+      };
+      locations."/multiplayer" = {
+        extraConfig = ''
+          ${if dev then "lua_code_cache off;" else ""}
+          lua_socket_log_errors off;
+          lua_check_client_abort on;
+          content_by_lua_file ${idecl-src}/lua/multiplayer.lua;
         '';
       };
     };

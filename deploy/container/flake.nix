@@ -64,7 +64,9 @@
               };
               systemd.services.nginx.serviceConfig.ProtectHome = false;
               services.nginx = common.nginx-config;
-              environment.systemPackages = [ pkgs.sqlite-interactive common.compare50 ];
+              services.nats.enable = true;
+              services.nats.settings.http_port = 8222;
+              environment.systemPackages = [ pkgs.sqlite-interactive common.compare50 pkgs.natscli pkgs.screen pkgs.ngrep];
               systemd.services.idecl = let
                 python-with-packages = common.python-with-packages;
                 init-script = pkgs.writeShellScript "init-idecl" ''
@@ -93,7 +95,7 @@
                   ExecStart = "/bin/sh -c 'source ${src-path}/deploy/morph/secrets.sh && ${pkgs.python3Packages.flask}/bin/flask run --debug --port ${builtins.toString idecl-port}'";
                 };
               };
-              networking.firewall.allowedTCPPorts = [ 50 80 ];
+              networking.firewall.allowedTCPPorts = [ 50 80 8222 ];
             };
           };
         };

@@ -82,6 +82,7 @@
     security.acme.acceptTerms = true;
     security.acme.defaults.email = "ssl@edanaher.net";
     services.nginx = common.nginx-config;
+    services.nats.enable = true;
     users.users.nginx.extraGroups = [ "docker" ];
 
     virtualisation.docker.enable = true;

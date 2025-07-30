@@ -20,6 +20,12 @@ var localFileStore = function(filename) {
       return "files"
   }
 }
+// TODO: get client_id from server on SPA load once that's a thing.
+// So far, this is just used to avoid self-multiplayer edits.
+var clientId = Math.floor(Math.random() * 1000000);
+
+// HACK: don't send multiplayer when replaying a received edit.
+var replayingMultiplayerEdit = false;
 
 var loadLS = function(type, project, file) {
   var key = type + "|" + project + (file === undefined ? "" : "|" + file);
@@ -367,6 +373,9 @@ var postinsertposition = function(edit) {
 var logedit = function(type, position, data) {
   if (currenthistory != -1)
     return;
+  // TODO: handle this properly.
+  if (replayingMultiplayerEdit)
+    return;
   var now = Date.now();
   var row = null;
   var col = null;
@@ -444,8 +453,16 @@ multiplayerWebsocket = null;
 var sendMultiplayerEdit = function(edit) {
   if (!multiplayerWebsocket) {
     console.log("Connecting", multiplayerWebsocket);
-    multiplayerWebsocket = webSocketConnect("/multiplayer", {"op": "connect", "project": projectId()}, function(data) {
-      console.log("Multiplayer received", data);
+    multiplayerWebsocket = webSocketConnect("/multiplayer", {"op": "connect", "project": projectId(), "clientid": clientId}, function(data) {
+      console.log("Multiplayer received", data, "from", clientId);
+      if (data.clientid != clientId) {
+        replayingMultiplayerEdit = true;
+        var pos = editor.getCursorPosition();
+        replayEdit(data.updates[0])
+        console.log(pos);
+        editor.gotoLine(pos.row + 1, pos.column);
+        replayingMultiplayerEdit = false;
+      }
     });
     console.log("Connecting 2", multiplayerWebsocket);
   }
@@ -461,7 +478,8 @@ var sendMultiplayerEdit = function(edit) {
       return sendMultiplayerEdit(edit);
   }
   console.log("Readystate is", multiplayerWebsocket.readyState);
-  multiplayerWebsocket.send(JSON.stringify({"op": "updates", "updates": [edit], "project": projectId()}))
+  console.log(clientId)
+  multiplayerWebsocket.send(JSON.stringify({"op": "updates", "updates": [edit], "project": projectId(), "clientid": clientId}))
 
 }
 
@@ -593,6 +611,39 @@ var getAbsoluteHistoryTime = function() {
   }
 }
 
+var replayEdit = function(edit) {
+  if (edit[0] == "m") {
+    editor.gotoLine(edit[2] + 1, edit[3]);
+  } else if (edit[0] == "i") {
+    editor.gotoLine(edit[2] + 1, edit[3]);
+    editor.insert(edit[4]);
+  } else if (edit[0] == "d") {
+    var [row, col] = postinsertposition(edit);
+    editor.session.replace(new ace.Range(edit[2], edit[3], row, col), "");
+  } else if (edit[0] == "s") {
+    editor.selection.setRange(new ace.Range(edit[2], edit[3], edit[4].row, edit[4].column));
+  } else if (edit[0] == "l") {
+    return loadFile(edit[4][1], true).then(function() {
+      editor.gotoLine(edit[2] + 1, edit[3]);
+    });
+  } else if (edit[0] == "a") {
+    var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
+    filenamediv.classList.remove("histdeleted");
+    return loadFile(edit[4][1], true).then(function() {
+      editor.gotoLine(edit[2] + 1, edit[3]);
+    });
+  } else if (edit[0] == "n") {
+    var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
+    filenamediv.innerText = edit[4][2];
+  } else if (edit[0] == "r") {
+    var filelist = document.getElementById("filelist");
+    var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
+    return loadFile(parseInt(filelist.children[0].getAttribute("fileid")), true).then(function() {
+      filelist.removeChild(filenamediv);
+    });
+  }
+}
+
 var historymove_timer;
 var historymove_active = false;
 var historymove = function(adjust, delay) {
@@ -625,36 +676,7 @@ var historymove = function(adjust, delay) {
       return loadFile(currenthistoryfile, true);
   }).then(function() {
     if (adjust > 0) {
-      if (edit[0] == "m") {
-        editor.gotoLine(edit[2] + 1, edit[3]);
-      } else if (edit[0] == "i") {
-        editor.gotoLine(edit[2] + 1, edit[3]);
-        editor.insert(edit[4]);
-      } else if (edit[0] == "d") {
-        var [row, col] = postinsertposition(edit);
-        editor.session.replace(new ace.Range(edit[2], edit[3], row, col), "");
-      } else if (edit[0] == "s") {
-        editor.selection.setRange(new ace.Range(edit[2], edit[3], edit[4].row, edit[4].column));
-      } else if (edit[0] == "l") {
-        return loadFile(edit[4][1], true).then(function() {
-          editor.gotoLine(edit[2] + 1, edit[3]);
-        });
-      } else if (edit[0] == "a") {
-        var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
-        filenamediv.classList.remove("histdeleted");
-        return loadFile(edit[4][1], true).then(function() {
-          editor.gotoLine(edit[2] + 1, edit[3]);
-        });
-      } else if (edit[0] == "n") {
-        var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
-        filenamediv.innerText = edit[4][2];
-      } else if (edit[0] == "r") {
-        var filelist = document.getElementById("filelist");
-        var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
-        return loadFile(parseInt(filelist.children[0].getAttribute("fileid")), true).then(function() {
-          filelist.removeChild(filenamediv);
-        });
-      }
+      replayEdit(edit);
     } else {
       return Promise.resolve().then(function() {
         if (edit[0] == "i") {

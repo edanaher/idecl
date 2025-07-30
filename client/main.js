@@ -981,6 +981,37 @@ var setEditorLanguage = function(sess, filename) {
     sess.setMode("ace/mode/java");
 }
 
+var sessionForFileId = function(fileid, filename, contents) {
+  var sess = sessions[fileid]
+  if (!sess) {
+    if (contents || contents == "") {
+      sess = ace.createEditSession(contents);
+      sessions[fileid] = sess;
+      return sess;
+    }
+    else if(isImageFilename(filename)) {
+      sess = ace.createEditSession("Image file");
+      sessions[fileid] = sess;
+      return sess;
+    } else {
+      return fileContents(projectId(), fileid).then(function(contents) {
+        sess = ace.createEditSession(contents || "");
+        sessions[fileid] = sess;
+        return sess;
+      });
+    }
+  }
+  return sess;
+}
+
+var configureSession = function(sess, filename) {
+  setEditorLanguage(sess, filename);
+  sess.setUseWrapMode(true);
+  sess.setOption("indentedSoftWrap", false);
+  sess.on("change", editorupdate);
+  sess.on("changeSelection", cursorupdate);
+}
+
 var loadFile = function(fileid, contents, savehistoryfile) {
   var filenamediv;
   if (contents == true) {
@@ -998,25 +1029,9 @@ var loadFile = function(fileid, contents, savehistoryfile) {
   var filename = filenamediv.innerText;
   var oldfileid = openFileId();
   return updateIDBc("projects", "lastfile", parseInt(fileid)).then(function() {
-    var sess = sessions[fileid]
-    if (!sess) {
-      if (contents || contents == "")
-        return ace.createEditSession(contents);
-      else if(isImageFilename(filename)) {
-        return ace.createEditSession("Image file");
-      } else
-        return fileContents(projectId(), fileid).then(function(contents) {
-          return ace.createEditSession(contents || "");
-        });
-    }
-    return sess;
+    return sessionForFileId(fileid, filename, contents);
   }).then(function(sess) {
-    setEditorLanguage(sess, filenamediv.innerText);
-    sess.setUseWrapMode(true);
-    sess.setOption("indentedSoftWrap", false);
-    sess.on("change", editorupdate);
-    sess.on("changeSelection", cursorupdate);
-    sessions[fileid] = sess;
+    configureSession(sess, filename);
     if (!savehistoryfile)
       logedit("l", sess.selection.getCursor(), [parseInt(oldfileid), parseInt(fileid)]);
     editor.setSession(sess);
@@ -1065,13 +1080,8 @@ var addFile = function() {
     updateIDBc("projects", "lastfile", nextId);
     navBar.setOpenFile(div)
 
-    var sess = ace.createEditSession("");
-    setEditorLanguage(sess);
-    sess.setUseWrapMode(true);
-    sess.setOption("indentedSoftWrap", false);
-    sess.on("change", editorupdate);
-    sess.on("changeSelection", cursorupdate);
-    sessions[nextId] = sess;
+    var sess = sessionForFileId(nextId, newfile, "");
+    configureSession(sess, newfile);
     editor.setSession(sess);
 
     logedit("a", sess.selection.getCursor(), [parseInt(oldfileid), nextId, newfile]);
@@ -1152,6 +1162,7 @@ var removeFile = function() {
 
     var files = projRow.files;
     delete files[fileid];
+    delete sess[fileid];
     var promises = [
       rmIDBc("files", fileid),
       updateIDBc("projects", "files", files)
@@ -1918,14 +1929,9 @@ var initFiles = function() {
     // Above this is IDB
 
     var contents = isImageFilename(activefile.name) ? "Image file" : activefile.contents;
-    var sess = ace.createEditSession(contents);
-    setEditorLanguage(sess);
-    sess.setUseWrapMode(true);
-    sess.setOption("indentedSoftWrap", false);
-    sess.on("change", editorupdate);
-    sess.on("changeSelection", cursorupdate);
+    var sess = sessionForFileId(lastfile, activefile.name, contents);
+    configureSession(sess, activefile.name);
     editor.setSession(sess);
-    sessions[lastfile] = sess;
     var attrs = activefile.attrs;
     if (attrs && (attrs.indexOf("r") != -1 || attrs.indexOf("i") != -1))
       editor.setReadOnly(true);
@@ -2112,8 +2118,7 @@ var logError = function(ths, error) {
   if (ths && ths.id)
     data.elementid = ths.id;
   try {
-    var fileid = document.querySelector(".filename.open").getAttribute("fileid");
-    data.openfile = fileid;
+    data.openfile = navBar.openFileId();
   } catch (error) {}
 
   var postdata =  {

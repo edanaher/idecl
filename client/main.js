@@ -997,7 +997,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
   return updateIDBc("projects", "lastfile", parseInt(fileid)).then(function() {
     var sess = sessions[fileid]
     if (!sess) {
-      if (contents)
+      if (contents || contents == "")
         return ace.createEditSession(contents);
       else if(isImageFilename(filename)) {
         return ace.createEditSession("Image file");

@@ -188,6 +188,21 @@ var rmIDBc = function(tabl, file) {
   return rmIDB(tabl, projectId(), file);
 }
 
+var openFileId = function() {
+  parseInt(document.querySelector(".filename.open").getAttribute("fileid"));
+}
+
+var setOpenFile = function(newopenfile) {
+  var prevOpen = document.querySelector(".filename.open");
+  if (prevOpen)
+    prevOpen.classList.remove("open");
+  if (typeof(newopenfile) == "number")
+    document.querySelector('#filelist .filename[fileid="' + newopenfile + '"]').classList.add("open")
+  else
+    newopenfile.classList.add("open");
+
+}
+
 var lastedittime = 0;
 var edits = [["m", 0, 0, 0]];
 var currenthistory = -1;
@@ -523,7 +538,7 @@ var editorupdate = function(delta) {
 
 var saveFile = function() {
   // Don't save inherited files
-  var fileid = document.querySelector(".filename.open").getAttribute("fileid");
+  var fileid = openFileId();
   return loadIDBc("files", fileid).then(function(file) {
     var attrs = file.attrs;
     if (attrs && (attrs.indexOf("i") != -1 || attrs.indexOf("r") != -1))
@@ -970,8 +985,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
     fileid = this.getAttribute("fileid");
   }
   var filename = filenamediv.innerText;
-  var oldfileid = document.querySelector(".filename.open").getAttribute("fileid");
-  document.querySelector(".filename.open").classList.remove("open");
+  var oldfileid = openFileId();
   return updateIDBc("projects", "lastfile", parseInt(fileid)).then(function() {
     var sess = sessions[fileid]
     if (!sess) {
@@ -996,7 +1010,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
       logedit("l", sess.selection.getCursor(), [parseInt(oldfileid), parseInt(fileid)]);
     editor.setSession(sess);
     displayeditstate();
-    filenamediv.classList.add("open");
+    setOpenFile(filenamediv);
     if (currenthistory != -1 && savehistoryfile == true)
       currenthistoryfile = parseInt(fileid);
     // TODO: async issues?
@@ -1016,7 +1030,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
 var addFile = function() {
   var nextId = 0;
   var newfile;
-  var oldfileid = document.querySelector(".filename.open").getAttribute("fileid");
+  var oldfileid = openFileId();
   loadIDBc("projects").then(function(projRow) {
     var filenames = projRow.files;
     var promises = [];
@@ -1045,9 +1059,8 @@ var addFile = function() {
     filelist.appendChild(div);
 
     // TODO: dedup with loadFile
-    document.querySelector(".filename.open").classList.remove("open");
     updateIDBc("projects", "lastfile", nextId);
-    div.classList.add("open");
+    setOpenFile(div)
 
     var sess = ace.createEditSession("");
     setEditorLanguage(sess);
@@ -1879,7 +1892,7 @@ var initFiles = function() {
       div.classList.add("filename");
       div.setAttribute("fileid", f);
       if (f == projRow.lastfile) {
-        div.classList.add("open");
+        setOpenFile(div)
         opened = true;
         lastfile = projRow.lastfile;
       }
@@ -1906,7 +1919,7 @@ var initFiles = function() {
         lastfile = currenthistoryfile;
       else
         lastfile = document.getElementById("filelist").childNodes[0].getAttribute("fileid");
-      document.querySelector('#filelist .filename[fileid="' + lastfile + '"]').classList.add("open");
+      setOpenFile(lastfile);
     }
 
     return updateIDBc("projects", "lastfile", parseInt(lastfile));

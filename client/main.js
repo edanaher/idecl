@@ -189,7 +189,10 @@ var rmIDBc = function(tabl, file) {
 }
 
 var openFileId = function() {
-  return parseInt(document.querySelector(".filename.open").getAttribute("fileid"));
+  var openFile = document.querySelector(".filename.open");
+  if (openFile)
+    return openFile.getAttribute("fileid");
+  return -1;
 };
 
 var navBar = {

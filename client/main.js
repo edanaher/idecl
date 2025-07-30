@@ -189,18 +189,31 @@ var rmIDBc = function(tabl, file) {
 }
 
 var openFileId = function() {
-  parseInt(document.querySelector(".filename.open").getAttribute("fileid"));
-}
+  return parseInt(document.querySelector(".filename.open").getAttribute("fileid"));
+};
 
-var setOpenFile = function(newopenfile) {
-  var prevOpen = document.querySelector(".filename.open");
-  if (prevOpen)
-    prevOpen.classList.remove("open");
-  if (typeof(newopenfile) == "number")
-    document.querySelector('#filelist .filename[fileid="' + newopenfile + '"]').classList.add("open")
-  else
-    newopenfile.classList.add("open");
+var navBar = {
+  setOpenFile: function(newopenfile) {
+    var prevOpen = document.querySelector(".filename.open");
+    if (prevOpen)
+      prevOpen.classList.remove("open");
+    if (typeof(newopenfile) == "number")
+      document.querySelector('#filelist .filename[fileid="' + newopenfile + '"]').classList.add("open")
+    else
+      newopenfile.classList.add("open");
 
+  },
+  addFile: function(id, name) {
+    var filelist = document.getElementById("filelist");
+    var div = document.createElement("div");
+    div.innerText = name;
+    div.setAttribute("title", name);
+    div.classList.add("filename");
+    div.setAttribute("fileid", id);
+    div.addEventListener("click", werr(loadFile));
+    filelist.appendChild(div);
+    return div;
+  }
 }
 
 var lastedittime = 0;
@@ -722,12 +735,7 @@ var historymove = function(adjust, delay) {
           filenamediv.innerText = edit[4][1];
         } else if (edit[0] == "r") {
           var filelist = document.getElementById("filelist");
-          var div = document.createElement("div");
-          div.innerText = edit[4][1];
-          div.classList.add("filename");
-          div.setAttribute("fileid", edit[4][0]);
-          div.addEventListener("click", werr(loadFile));
-          filelist.appendChild(div);
+          var div = navBar.addFile(edit[4][0], edit[4][1]);
           div.classList.add("histundeleted");
 
           return loadFile(edit[4][0], edit[4][2], true);
@@ -1010,7 +1018,7 @@ var loadFile = function(fileid, contents, savehistoryfile) {
       logedit("l", sess.selection.getCursor(), [parseInt(oldfileid), parseInt(fileid)]);
     editor.setSession(sess);
     displayeditstate();
-    setOpenFile(filenamediv);
+    navBar.setOpenFile(filenamediv);
     if (currenthistory != -1 && savehistoryfile == true)
       currenthistoryfile = parseInt(fileid);
     // TODO: async issues?
@@ -1049,18 +1057,10 @@ var addFile = function() {
     promises.push(putIDBc("files", nextId, {name: newfile, contents: ""}))
     return Promise.all(promises);
   }).then(function() {
-    // TODO: dedup this with initFiles
-    var filelist = document.getElementById("filelist");
-    var div = document.createElement("div");
-    div.innerText = newfile;
-    div.setAttribute("title", newfile);
-    div.classList.add("filename");
-    div.setAttribute("fileid", nextId);
-    filelist.appendChild(div);
+    var div = navBar.addFile(nextId, newfile);
 
-    // TODO: dedup with loadFile
     updateIDBc("projects", "lastfile", nextId);
-    setOpenFile(div)
+    navBar.setOpenFile(div)
 
     var sess = ace.createEditSession("");
     setEditorLanguage(sess);
@@ -1072,8 +1072,6 @@ var addFile = function() {
     editor.setSession(sess);
 
     logedit("a", sess.selection.getCursor(), [parseInt(oldfileid), nextId, newfile]);
-
-    div.addEventListener("click", werr(loadFile));
   });
 }
 
@@ -1114,22 +1112,14 @@ var uploadFile = function(e) {
       return Promise.all(promises);
     }).then(function() {
       // TODO: dedup this with initFiles
-      var filelist = document.getElementById("filelist");
-      var div = document.createElement("div");
-      div.innerText = newfile;
-      div.setAttribute("title", newfile);
-      div.classList.add("filename");
+      var div = navBar.addFile(nextId, newfile);
       if (isImageFilename(newfile))
         div.classList.add("readonly");
-      div.setAttribute("fileid", nextId);
-      filelist.appendChild(div);
 
       // TODO: open file if appropriate
 
       // TODO: logedit as upload including contents instead of add
       //logedit("a", sess.selection.getCursor(), [parseInt(oldfileid), nextId, newfile]);
-
-      div.addEventListener("click", werr(loadFile));
     });
   });
   reader.readAsBinaryString(file);
@@ -1886,13 +1876,9 @@ var initFiles = function() {
       var attrs = fileInfo.attrs;
       if (attrs && attrs.indexOf("h") != -1)
         continue;
-      var div = document.createElement("div");
-      div.innerText = fileInfo.name;
-      div.setAttribute("title", fileInfo.name);
-      div.classList.add("filename");
-      div.setAttribute("fileid", f);
+      var div = navBar.addFile(f, fileInfo.name);
       if (f == projRow.lastfile) {
-        setOpenFile(div)
+        navBar.setOpenFile(div)
         opened = true;
         lastfile = projRow.lastfile;
       }
@@ -1919,7 +1905,7 @@ var initFiles = function() {
         lastfile = currenthistoryfile;
       else
         lastfile = document.getElementById("filelist").childNodes[0].getAttribute("fileid");
-      setOpenFile(lastfile);
+      navBar.setOpenFile(lastfile);
     }
 
     return updateIDBc("projects", "lastfile", parseInt(lastfile));

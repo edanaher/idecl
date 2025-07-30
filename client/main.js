@@ -195,6 +195,13 @@ var openFileId = function() {
   return -1;
 };
 
+var fileNameForId = function() {
+  var openFile = document.querySelector(".filename.open");
+  if (openFile)
+    return openFile.innerText;
+  return "";
+}
+
 var navBar = {
   setOpenFile: function(newopenfile) {
     var prevOpen = document.querySelector(".filename.open");
@@ -488,7 +495,8 @@ var sendMultiplayerEdit = function(edit) {
       console.log("Multiplayer received", data, "from", clientId);
       if (data.clientid != clientId) {
         replayingMultiplayerEdit = true;
-        replayEdit(data.updates[0], false)
+        replayEdit(data.updates[0], false, sessionForFileId(data.file, fileNameForId(data.file)))
+        // TODO: mark file as dirty to be saved later.
         replayingMultiplayerEdit = false;
       }
     });
@@ -501,13 +509,11 @@ var sendMultiplayerEdit = function(edit) {
       return setTimeout(function() { sendMultiplayerEdit(edit); }, 500);
     case WebSocket.CLOSED:
       console.log("Resetting websocket");
-  console.log("Readystate is", multiplayerWebsocket.readyState);
       multiplayerWebsocket = null;
       return sendMultiplayerEdit(edit);
   }
   console.log("Readystate is", multiplayerWebsocket.readyState);
-  console.log(clientId)
-  multiplayerWebsocket.send(JSON.stringify({"op": "updates", "updates": [edit], "project": projectId(), "clientid": clientId}))
+  multiplayerWebsocket.send(JSON.stringify({"op": "updates", "updates": [edit], "file": openFileId(), "project": projectId(), "clientid": clientId}))
 
 }
 
@@ -639,17 +645,21 @@ var getAbsoluteHistoryTime = function() {
   }
 }
 
-var replayEdit = function(edit, moveCursor) {
+var replayEdit = function(edit, moveCursor, session) {
+  // If it's not replaying a specific file, use the open one.
+  if (!session)
+    session = editor.session;
+
   if (edit[0] == "m") {
     if (moveCursor)
       editor.gotoLine(edit[2] + 1, edit[3]);
   } else if (edit[0] == "i") {
     if (moveCursor)
       editor.gotoLine(edit[2] + 1, edit[3]);
-    editor.session.insert({row: edit[2], column: edit[3]}, edit[4]);
+    session.insert({row: edit[2], column: edit[3]}, edit[4]);
   } else if (edit[0] == "d") {
     var [row, col] = postinsertposition(edit);
-    editor.session.replace(new ace.Range(edit[2], edit[3], row, col), "");
+    session.replace(new ace.Range(edit[2], edit[3], row, col), "");
   } else if (edit[0] == "s") {
     if (moveCursor)
       editor.selection.setRange(new ace.Range(edit[2], edit[3], edit[4].row, edit[4].column));
@@ -659,6 +669,7 @@ var replayEdit = function(edit, moveCursor) {
         editor.gotoLine(edit[2] + 1, edit[3]);
       });
   } else if (edit[0] == "a") {
+    // TODO: add the file
     if (moveCursor) {
       var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
       filenamediv.classList.remove("histdeleted");
@@ -667,11 +678,11 @@ var replayEdit = function(edit, moveCursor) {
       });
     }
   } else if (edit[0] == "n") {
-    // TODO: rename file
+    // TODO: rename file in storage
     var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
     filenamediv.innerText = edit[4][2];
   } else if (edit[0] == "r") {
-    // TODO: remove file
+    // TODO: remove file in storage
     var filelist = document.getElementById("filelist");
     var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
     return loadFile(parseInt(filelist.children[0].getAttribute("fileid")), true).then(function() {

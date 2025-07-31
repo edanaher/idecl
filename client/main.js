@@ -231,6 +231,7 @@ var edits = [["m", 0, 0, 0]];
 var currenthistory = -1;
 var currenthistoryfile = -1;
 var currenthistorytime = -1;
+var dirtyfiles = {}
 
 var padtime = function(n) {
   if (n < 10)
@@ -468,7 +469,7 @@ var logedit = function(type, position, data) {
 
 var logSnapshot = function(editindex) {
   var fileids = [];
-  return saveFile().then(function() {
+  return saveDirtyFiles().then(function() {
     return loadIDBc("projects").then(function(pr) {
       var promises = [];
       for (var i in pr.files) {
@@ -495,9 +496,9 @@ var sendMultiplayerEdit = function(edit) {
       console.log("Multiplayer received", data, "from", clientId);
       if (data.clientid != clientId) {
         replayingMultiplayerEdit = true;
-        replayEdit(data.updates[0], false, sessionForFileId(data.file, fileNameForId(data.file)))
-        // TODO: mark file as dirty to be saved later.
-        replayingMultiplayerEdit = false;
+        replayEdit(data.updates[0], false, data.file).then(function() {
+          replayingMultiplayerEdit = false;
+        });
       }
     });
     console.log("Connecting 2", multiplayerWebsocket);
@@ -558,20 +559,31 @@ var editorupdate = function(delta) {
   triggerautosave();
 }
 
-var saveFile = function() {
-  // Don't save inherited files
-  var fileid = openFileId();
+var saveFile = function(fileid) {
+  if (!fileid)
+    fileid = openFileId();
   return loadIDBc("files", fileid).then(function(file) {
     var attrs = file.attrs;
+    // Don't save inherited or readonly files
     if (attrs && (attrs.indexOf("i") != -1 || attrs.indexOf("r") != -1))
       return;
     // Only save at end of history.  Eventually history should be saving, but until then...
     if (currenthistory != -1)
       return;
-    return updateIDBc("files", fileid, "contents", editor.getValue());
+    return updateIDBc("files", fileid, "contents", sessions[fileid].getValue());
   }).then(function() {
     return updateIDBc("history", "all", null, serializeEdits());
   });
+}
+
+var saveDirtyFiles = function() {
+  var promises = [saveFile];
+  for (var f in dirtyfiles) {
+    console.log("saving", f);
+    promises.push(saveFile(f));
+    delete dirtyfiles[f];
+  }
+  return Promise.all(promises);
 }
 
 var checkHistoryReplay = function() {
@@ -645,50 +657,58 @@ var getAbsoluteHistoryTime = function() {
   }
 }
 
-var replayEdit = function(edit, moveCursor, session) {
+var replayEdit = function(edit, moveCursor, fileid) {
   // If it's not replaying a specific file, use the open one.
-  if (!session)
-    session = editor.session;
+  return Promise.resolve().then(function() {
+    if (fileid)
+      return sessionForFileId(fileid, fileNameForId(fileid))
+    else
+      return editor.session;
+  }).then(function(session) {
+    console.log(session);
 
-  if (edit[0] == "m") {
-    if (moveCursor)
-      editor.gotoLine(edit[2] + 1, edit[3]);
-  } else if (edit[0] == "i") {
-    if (moveCursor)
-      editor.gotoLine(edit[2] + 1, edit[3]);
-    session.insert({row: edit[2], column: edit[3]}, edit[4]);
-  } else if (edit[0] == "d") {
-    var [row, col] = postinsertposition(edit);
-    session.replace(new ace.Range(edit[2], edit[3], row, col), "");
-  } else if (edit[0] == "s") {
-    if (moveCursor)
-      editor.selection.setRange(new ace.Range(edit[2], edit[3], edit[4].row, edit[4].column));
-  } else if (edit[0] == "l") {
-    if (moveCursor)
-      return loadFile(edit[4][1], true).then(function() {
+    if (edit[0] == "m") {
+      if (moveCursor)
         editor.gotoLine(edit[2] + 1, edit[3]);
-      });
-  } else if (edit[0] == "a") {
-    // TODO: add the file
-    if (moveCursor) {
-      var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
-      filenamediv.classList.remove("histdeleted");
-      return loadFile(edit[4][1], true).then(function() {
+    } else if (edit[0] == "i") {
+      if (moveCursor)
         editor.gotoLine(edit[2] + 1, edit[3]);
+      session.insert({row: edit[2], column: edit[3]}, edit[4]);
+      if (fileid) dirtyfiles[fileid] = true;
+    } else if (edit[0] == "d") {
+      var [row, col] = postinsertposition(edit);
+      session.replace(new ace.Range(edit[2], edit[3], row, col), "");
+      if (fileid) dirtyfiles[fileid] = true;
+    } else if (edit[0] == "s") {
+      if (moveCursor)
+        editor.selection.setRange(new ace.Range(edit[2], edit[3], edit[4].row, edit[4].column));
+    } else if (edit[0] == "l") {
+      if (moveCursor)
+        return loadFile(edit[4][1], true).then(function() {
+          editor.gotoLine(edit[2] + 1, edit[3]);
+        });
+    } else if (edit[0] == "a") {
+      // TODO: add the file
+      if (moveCursor) {
+        var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][1] + "\"]");
+        filenamediv.classList.remove("histdeleted");
+        return loadFile(edit[4][1], true).then(function() {
+          editor.gotoLine(edit[2] + 1, edit[3]);
+        });
+      }
+    } else if (edit[0] == "n") {
+      // TODO: rename file in storage
+      var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
+      filenamediv.innerText = edit[4][2];
+    } else if (edit[0] == "r") {
+      // TODO: remove file in storage
+      var filelist = document.getElementById("filelist");
+      var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
+      return loadFile(parseInt(filelist.children[0].getAttribute("fileid")), true).then(function() {
+        filelist.removeChild(filenamediv);
       });
     }
-  } else if (edit[0] == "n") {
-    // TODO: rename file in storage
-    var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
-    filenamediv.innerText = edit[4][2];
-  } else if (edit[0] == "r") {
-    // TODO: remove file in storage
-    var filelist = document.getElementById("filelist");
-    var filenamediv = document.querySelector("#filelist .filename[fileid=\"" + edit[4][0] + "\"]");
-    return loadFile(parseInt(filelist.children[0].getAttribute("fileid")), true).then(function() {
-      filelist.removeChild(filenamediv);
-    });
-  }
+  });
 }
 
 var historymove_timer;
@@ -702,7 +722,7 @@ var historymove = function(adjust, delay) {
   var edit;
   Promise.resolve().then(function() {
     if (currenthistory == -1) {
-      return saveFile().then(function() {
+      return saveDirtyFiles().then(function() {
         currenthistoryfile = 0;
         currenthistory = edits.length - 1;
         setCurrentHistoryFile(currenthistory);
@@ -723,7 +743,7 @@ var historymove = function(adjust, delay) {
       return loadFile(currenthistoryfile, true);
   }).then(function() {
     if (adjust > 0) {
-      replayEdit(edit, true);
+      return replayEdit(edit, true);
     } else {
       return Promise.resolve().then(function() {
         if (edit[0] == "i") {
@@ -1189,7 +1209,7 @@ var saveToServer = function() {
   var fileids = [];
   var savebutton = document.getElementById("savefiles");
   var loadbutton = document.getElementById("loadfiles");
-  saveFile().then(function() {
+  saveDirtyFiles().then(function() {
     savebutton.innerText = "Saving..."
     return loadIDBc("projects");
   }).then(function(pr) {
@@ -1355,7 +1375,7 @@ var runcommand = function(test) {
   var filenames;
   var runbutton = document.getElementById(test ? "runtests" : "run");
   var otherrunbutton = document.getElementById(!test ? "runtests" : "run");
-  saveFile().then(function() {
+  saveDirtyFiles().then(function() {
     runbutton.innerText = test ? "stop running tests..." : "stop running...";
     otherrunbutton.setAttribute("disabled", "");
     return loadIDBc("projects");
@@ -2254,7 +2274,7 @@ window.onload = function() {
         document.cookie = "sudo=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
         window.location.replace("/");
     });
-    editor.on("blur", saveFile);
+    editor.on("blur", saveDirtyFiles);
     editor.on("change", markDirty);
     addClickListenerById("cloneproject", function() { cloneProjectInit(false); });
     addClickListenerById("publish", publish);

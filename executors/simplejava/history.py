@@ -16,7 +16,7 @@ def update_project_history(pid):
     print("DATA IS ", repr(data["updates"]), flush=True)
 
     with engine.connect() as conn:
-        conn.execute(text(f"INSERT INTO history (project_id, \"index\", type, time, row, column, extra, client, checksum) VALUES (:pid, :index, :type, :time, :row, :column, :extra, :client, :checksum)"),
+        conn.execute(text(f"INSERT INTO history (project_id, \"index\", type, time, row, column, extra, client, checksum) VALUES (:pid, :index, :type, :time, :row, :column, :extra, :client, :checksum) ON CONFLICT DO NOTHING"),
                 [{"pid": data["project_id"],
                   "client": data["client_id"],
                   "index": u["index"],

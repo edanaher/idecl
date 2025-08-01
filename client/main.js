@@ -459,7 +459,7 @@ var logedit = function(type, position, data) {
     edits.pop();
   }
   edits.push([type, now - lastedittime, row, col, data]);
-  sendMultiplayerEdit(edits.length, [type, now - lastedittime, row, col, data]);
+  sendMultiplayerEdits();
   if (edits.length % 100 == 0)
     logSnapshot(edits.length);
   //console.log(type, now - lastedittime, row, col, data, "/", edits.length);
@@ -487,10 +487,9 @@ var logSnapshot = function(editindex) {
   });
 }
 
-// TODO: enforce ordering of edits.
+// TODO: Only send one batch at a time.
 multiplayerWebsocket = null;
-var sendMultiplayerEdit = function(index, edit) {
-  console.log("edit is", edit);
+var sendMultiplayerEdits = function() {
   if (!multiplayerWebsocket) {
     console.log("Connecting", multiplayerWebsocket);
     multiplayerWebsocket = webSocketConnect("/multiplayer", {"op": "connect", "project": projectId(), "clientid": clientId}, function(data) {
@@ -508,22 +507,34 @@ var sendMultiplayerEdit = function(index, edit) {
     case WebSocket.CONNECTING:
     case WebSocket.CLOSING:
       console.log("Waiting");
-      return setTimeout(function() { sendMultiplayerEdit(index, edit); }, 500);
+      return setTimeout(function() { sendMultiplayerEdits(); }, 500);
     case WebSocket.CLOSED:
       console.log("Resetting websocket");
       multiplayerWebsocket = null;
-      return sendMultiplayerEdit(index, edit);
+      return sendMultiplayerEdits();
   }
-  console.log("Readystate is", multiplayerWebsocket.readyState);
-  updates = [{
-    "index": index,
-    "type": edit[0],
-    "time": edit[1],
-    "row": edit[2],
-    "column": edit[3],
-    "extra": edit[4],
-  }];
-  multiplayerWebsocket.send(JSON.stringify({"op": "updates", "updates": updates, "rawupdates": [edit], "file": openFileId(), "project": projectId(), "client_id": clientId}))
+
+  loadIDBc("history", "synced").then(function(lastsync) {
+    if (!lastsync)
+      lastsync = 0;
+    var lasthistory = edits.length - 1;
+    var updates = [];
+    console.log("Syncing", lastsync, "to", lasthistory);
+    for (var i = lastsync; i <= lasthistory; i++) {
+      var edit = edits[i];
+      updates.push({
+        "index": i,
+        "type": edit[0],
+        "time": edit[1],
+        "row": edit[2],
+        "column": edit[3],
+        "extra": edit[4],
+      });
+    }
+    console.log(updates);
+    multiplayerWebsocket.send(JSON.stringify({"op": "updates", "updates": updates, "rawupdates": [edit], "file": openFileId(), "project": projectId(), "client_id": clientId}))
+    return putIDBc("history", "synced", lasthistory);
+  });
 
 }
 

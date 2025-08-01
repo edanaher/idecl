@@ -495,7 +495,7 @@ var sendMultiplayerEdit = function(index, edit) {
     console.log("Connecting", multiplayerWebsocket);
     multiplayerWebsocket = webSocketConnect("/multiplayer", {"op": "connect", "project": projectId(), "clientid": clientId}, function(data) {
       console.log("Multiplayer received", data, "from", clientId);
-      if (data.clientid != clientId) {
+      if (data.client_id != clientId) {
         replayingMultiplayerEdit = true;
         replayEdit(data.rawupdates[0], false, data.file).then(function() {
           replayingMultiplayerEdit = false;

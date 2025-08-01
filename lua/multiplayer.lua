@@ -86,7 +86,19 @@ while true do
       end
       ngx.thread.spawn(pollnats)
     elseif json.op == "updates" then
-      ngx.log(ngx.ERR, "Client sent update ", json.updates[1][1], " on ", json.project)
+      ngx.log(ngx.ERR, "Client sent update ", json.rawupdates[1][1], " on ", json.project)
+
+      local pythonbody = {
+        project_id = json.project,
+        client_id = json.client_id,
+        updates = json.updates
+      }
+      local compile = ngx.location.capture("/projects/" .. tostring(json.project) .. "/history", {
+        body=cjson.encode(pythonbody),
+        method=ngx.HTTP_POST,
+        headers={["Content-Type"]="application/json"}
+      })
+
       n:publish("project." .. project_id, data)
     else
       ngx.log(ngx.ERR, "Unknown websocket op:", json.op)

@@ -145,6 +145,22 @@ history_full = Table(
     UniqueConstraint("project_id", name="uniq_history_full_project_id"),
 )
 
+history = Table(
+    "history",
+    metadata_obj,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("project_id", Integer, ForeignKey("projects.id", name="fk_history_project_id")),
+    Column("index", Integer, nullable=False),
+    Column("type", String, nullable=False),
+    Column("time", Integer, nullable=False),
+    Column("row", Integer, nullable=False),
+    Column("column", Integer, nullable=False),
+    Column("extra", String),
+    Column("client", Integer, nullable=False),
+    Column("checksum", Integer),
+    UniqueConstraint("project_id", "index", name="uniq_history_project_id_index"),
+)
+
 project_test_results = Table(
     "project_test_results",
     metadata_obj,

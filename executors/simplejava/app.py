@@ -224,3 +224,4 @@ import actions
 import filestore
 import projects
 import users
+import history

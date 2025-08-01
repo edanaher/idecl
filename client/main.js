@@ -459,7 +459,7 @@ var logedit = function(type, position, data) {
     edits.pop();
   }
   edits.push([type, now - lastedittime, row, col, data]);
-  sendMultiplayerEdit([type, now - lastedittime, row, col, data]);
+  sendMultiplayerEdit(edits.length, [type, now - lastedittime, row, col, data]);
   if (edits.length % 100 == 0)
     logSnapshot(edits.length);
   //console.log(type, now - lastedittime, row, col, data, "/", edits.length);
@@ -489,14 +489,15 @@ var logSnapshot = function(editindex) {
 
 // TODO: enforce ordering of edits.
 multiplayerWebsocket = null;
-var sendMultiplayerEdit = function(edit) {
+var sendMultiplayerEdit = function(index, edit) {
+  console.log("edit is", edit);
   if (!multiplayerWebsocket) {
     console.log("Connecting", multiplayerWebsocket);
     multiplayerWebsocket = webSocketConnect("/multiplayer", {"op": "connect", "project": projectId(), "clientid": clientId}, function(data) {
       console.log("Multiplayer received", data, "from", clientId);
       if (data.clientid != clientId) {
         replayingMultiplayerEdit = true;
-        replayEdit(data.updates[0], false, data.file).then(function() {
+        replayEdit(data.rawupdates[0], false, data.file).then(function() {
           replayingMultiplayerEdit = false;
         });
       }
@@ -507,14 +508,22 @@ var sendMultiplayerEdit = function(edit) {
     case WebSocket.CONNECTING:
     case WebSocket.CLOSING:
       console.log("Waiting");
-      return setTimeout(function() { sendMultiplayerEdit(edit); }, 500);
+      return setTimeout(function() { sendMultiplayerEdit(index, edit); }, 500);
     case WebSocket.CLOSED:
       console.log("Resetting websocket");
       multiplayerWebsocket = null;
-      return sendMultiplayerEdit(edit);
+      return sendMultiplayerEdit(index, edit);
   }
   console.log("Readystate is", multiplayerWebsocket.readyState);
-  multiplayerWebsocket.send(JSON.stringify({"op": "updates", "updates": [edit], "file": openFileId(), "project": projectId(), "clientid": clientId}))
+  updates = [{
+    "index": index,
+    "type": edit[0],
+    "time": edit[1],
+    "row": edit[2],
+    "column": edit[3],
+    "extra": edit[4],
+  }];
+  multiplayerWebsocket.send(JSON.stringify({"op": "updates", "updates": updates, "rawupdates": [edit], "file": openFileId(), "project": projectId(), "client_id": clientId}))
 
 }
 

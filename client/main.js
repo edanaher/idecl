@@ -1,4 +1,4 @@
-var baseURL = function() { return (document.URL + "/").replace(/\/\/$/, "/"); }
+var baseURL = function() { return (document.location.origin + document.location.pathname + "/").replace(/\/\/$/, "/"); }
 var markdownvisible;
 var projectId = function() {
   p = document.URL.match(/projects\/([0-9]*)/)
@@ -142,6 +142,7 @@ var putIDB = function(tabl, project, file, contents) {
       key = project;
       contents = file;
     }
+    console.log("Updating ", key, "from", tabl, project, file, contents);
 
     var trans = db.transaction([tabl], "readwrite");
     var table = trans.objectStore(tabl);
@@ -232,6 +233,7 @@ var currenthistory = -1;
 var currenthistoryfile = -1;
 var currenthistorytime = -1;
 var dirtyfiles = {}
+var debugSkipMultiplayerUpdates = false;
 
 var padtime = function(n) {
   if (n < 10)
@@ -494,7 +496,7 @@ var sendMultiplayerEdits = function() {
     console.log("Connecting", multiplayerWebsocket);
     multiplayerWebsocket = webSocketConnect("/multiplayer", {"op": "connect", "project": projectId(), "clientid": clientId}, function(data) {
       console.log("Multiplayer received", data, "from", clientId);
-      if (data.client_id != clientId) {
+      if (data.client_id != clientId && !debugSkipMultiplayerUpdates) {
         replayingMultiplayerEdit = true;
         replayEdit(data.rawupdates[0], false, data.file).then(function() {
           replayingMultiplayerEdit = false;
@@ -1825,7 +1827,7 @@ var submit = function() {
 }
 
 var compare50 = function() {
-  document.location.href = document.location + "/compare"
+  document.location.href = document.location.origin + document.location.path + "/compare"
 }
 
 var viewsubmissions = function() {
@@ -2083,6 +2085,23 @@ var initDarkMode = function() {
     toggleDarkMode();
 }
 
+var initDevOptions = function() {
+  console.log("DEV MODE");
+  if ((new URLSearchParams(window.location.search)).get("dev") != "1")
+    return;
+
+  var skipMPdiv = document.getElementById("debugskipmultiplayerupdates")
+  addClickListenerById("debugskipmultiplayerupdates", function() {
+    debugSkipMultiplayerUpdates = !debugSkipMultiplayerUpdates;
+    if (debugSkipMultiplayerUpdates) {
+      skipMPdiv.classList.add("active");
+    } else {
+      skipMPdiv.classList.remove("active");
+    }
+  });
+  skipMPdiv.classList.remove("hidden");
+}
+
 var switchlayout = function() {
   var layouts = ["split", "fullscreencode", "fullscreenconsole"];
   var maincontent = document.getElementById("maincontent")
@@ -2285,6 +2304,7 @@ window.onload = function() {
     initAce();
     initTerminal();
     initDarkMode();
+    initDevOptions();
     displaytimestamps();
     //upgradestore();
     addClickListenerById("run", runcode);

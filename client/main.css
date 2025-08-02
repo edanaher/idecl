@@ -361,6 +361,21 @@ body[theme="dark"] #comments {
   color: #777777;
 }
 
+#debugskipmultiplayerupdates {
+  flex: 0 0;
+  border: 1px solid #333333;
+  padding: 2px;
+  margin: 2px;
+  text-align: center;
+  cursor: default;
+}
+#debugskipmultiplayerupdates.active { background-color: #FF8080; }
+#debugskipmultiplayerupdates.hidden { display: none; }
+body[theme="dark"] #debugskipmultiplayerupdates {
+  border: 1px solid #777777;
+  color: #777777;
+}
+
 #commentbox {
   position: absolute;
   bottom: 40px;

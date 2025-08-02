@@ -14,8 +14,26 @@ from db import engine
 def update_project_history(pid):
     data = request.json
     print("DATA IS ", repr(data["updates"]), flush=True)
+    min_index = min(u["index"] for u in data["updates"])
 
     with engine.connect() as conn:
+        dbhist = conn.execute(text(f"SELECT * FROM history WHERE project_id=:pid AND \"index\" >= :minindex ORDER BY \"index\""), [{"pid": pid, "minindex": min_index}]).all()
+
+        for client_first in data["updates"]:
+            if client_first["index"] == min_index:
+                break
+
+        print("client_first", repr(client_first), flush=True)
+        if (len(dbhist) == 0 or
+           client_first["type"] != dbhist[0].type or
+           client_first["time"] != dbhist[0].time or
+           client_first["row"] != dbhist[0].row or
+           client_first["column"] != dbhist[0].column or
+           client_first["index"] != dbhist[0].index):
+            # TODO: negotiate update with client and/or rebase client
+           print("Out of date client; refusing to log update")
+           return "Failure"
+
         conn.execute(text(f"INSERT INTO history (project_id, \"index\", type, time, row, column, extra, client, checksum) VALUES (:pid, :index, :type, :time, :row, :column, :extra, :client, :checksum) ON CONFLICT DO NOTHING"),
                 [{"pid": data["project_id"],
                   "client": data["client_id"],

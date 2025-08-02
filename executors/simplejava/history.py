@@ -31,13 +31,15 @@ def update_project_history(pid):
            client_first["column"] != dbhist[0].column or
            client_first["index"] != dbhist[0].index):
             # TODO: negotiate update with client and/or rebase client
-           print("Out of date client; refusing to log update")
+           print("Out of date client; refusing to log update", flush=True)
            return "Failure"
+
+        offset = len(dbhist) - 1
 
         conn.execute(text(f"INSERT INTO history (project_id, \"index\", type, time, row, column, extra, client, checksum) VALUES (:pid, :index, :type, :time, :row, :column, :extra, :client, :checksum) ON CONFLICT DO NOTHING"),
                 [{"pid": data["project_id"],
                   "client": data["client_id"],
-                  "index": u["index"],
+                  "index": u["index"] + offset,
                   "type": u["type"],
                   "time": u["time"],
                   "row": u["row"],
@@ -46,6 +48,31 @@ def update_project_history(pid):
                   "checksum": u.get("checksum")
                   } for u in data["updates"]])
         conn.commit()
+
+    adjusted = [{
+        "index": u["index"] + offset,
+        "type": u["type"],
+        "time": u["time"],
+        "row": u["row"], # TODO: adjust row and column
+        "column": u["column"],
+        "extra": json.dumps(u.get("extra")), # TODO: and adjust extra as needed
+    } for u in data["updates"]]
+
+    missed = [{
+        "index": r.index,
+        "type": r.type,
+        "time": r.time,
+        "row": r.row,
+        "column": r.column,
+        "extra": r.extra,
+    } for r in dbhist[0:]]
+
+    response = {
+        "missed": missed,
+        "adjusted": adjusted
+    }
+
+    print("Response", json.dumps(response), flush=True)
 
     return "Success"
 

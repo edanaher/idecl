@@ -1992,8 +1992,6 @@ var initFiles = function() {
       editor.setReadOnly(false);
 
     filenames = document.getElementsByClassName("filename");
-    for (var i = 0; i < filenames.length; i++)
-      filenames[i].addEventListener("click", werr(loadFile));
     setOutputType(attrs && attrs.indexOf("r") != -1);
   });
 }

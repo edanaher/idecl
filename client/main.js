@@ -230,6 +230,7 @@ var navBar = {
 var lastedittime = 0;
 var edits = [["m", 0, 0, 0]];
 var currenthistory = -1;
+var currenthistorycheckpoint = -1; // state when history move started
 var currenthistoryfile = -1;
 var currenthistorytime = -1;
 var dirtyfiles = {}
@@ -827,15 +828,15 @@ var historymove = function(adjust, delay) {
       edits.pop();
     if (adjust < 0)
       currenthistory += adjust;
-    if (currenthistory >= edits.length - 1)
-      checkHistoryReplay().then(function() {
-        currenthistory = -1;
-        editor.setReadOnly(false);
-        editor.setOption("behavioursEnabled", true);
-        editor.setOption("enableAutoIndent", true);
-        displayeditstate();
-        return;
-      });
+    if (currenthistory == currenthistorycheckpoint)
+      checkHistoryReplay(); // TODO: race condition here
+    if (currenthistory >= edits.length - 1) {
+      currenthistory = -1;
+      editor.setReadOnly(false);
+      editor.setOption("behavioursEnabled", true);
+      editor.setOption("enableAutoIndent", true);
+      displayeditstate();
+    }
     currenthistorytime = getAbsoluteHistoryTime();
 
     displayeditstate();

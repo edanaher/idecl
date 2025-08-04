@@ -535,7 +535,6 @@ var sendMultiplayerEdits = function() {
     }
     console.log(updates);
     multiplayerWebsocket.send(JSON.stringify({"op": "updates", "updates": updates, "rawupdates": [edit], "file": openFileId(), "project": projectId(), "client_id": clientId}))
-    return putIDBc("history", "synced", lasthistory);
   });
 
 }
@@ -593,19 +592,19 @@ var saveFile = function(fileid) {
     if (currenthistory != -1)
       return;
     return updateIDBc("files", fileid, "contents", sessions[fileid].getValue());
-  }).then(function() {
-    return updateIDBc("history", "all", null, serializeEdits());
-  });
+  })
 }
 
 var saveDirtyFiles = function() {
-  var promises = [saveFile];
+  var promises = [saveFile()];
   for (var f in dirtyfiles) {
     console.log("saving", f);
     promises.push(saveFile(f));
     delete dirtyfiles[f];
   }
-  return Promise.all(promises);
+  return Promise.all(promises).then(function() {
+    return updateIDBc("history", "all", null, serializeEdits());
+  })
 }
 
 var checkHistoryReplay = function() {

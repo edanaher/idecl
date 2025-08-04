@@ -462,7 +462,8 @@ var logedit = function(type, position, data) {
     edits.pop();
   }
   edits.push([type, now - lastedittime, row, col, data]);
-  sendMultiplayerEdits();
+  if (!overwrite)
+    sendMultiplayerEdits();
   if (edits.length % 100 == 0)
     logSnapshot(edits.length);
   //console.log(type, now - lastedittime, row, col, data, "/", edits.length);
@@ -506,12 +507,34 @@ var sendMultiplayerEdits = function() {
               edits.push(data.rawupdates[0]);
               replayingMultiplayerEdit = false;
               displayeditstate();
+              return putIDBc("history", "synced", edits.length - 1);
             });
           }
+          break;
         case "ack":
           console.log("Received ack:", data);
           if (data.index)
             putIDBc("history", "synced", data.index);
+          if (data.missed) {
+            // TODO: undo and replay around missed changes.
+            replayingMultiplayerEdit = true;
+            var replayPromise = Promise.resolve();
+            // Don't replay if in history.
+            var missed = [];
+            for (var i = 0; i < data.missed.length; i++) {
+              m = data.missed[i];
+              missed[i] = [m.type, m.time, m.row, m.column, m.extra];
+            }
+            if (currenthistory == -1)
+              for (var i = 0; i < missed.length; i++)
+                replayPromise = replayPromise.then(replayEdit(missed[i], false, data.file));
+            return replayPromise.then(function() {
+              edits = edits.concat(missed);
+              replayingMultiplayerEdit = false;
+              displayeditstate();
+              return putIDBc("history", "synced", data.index);
+            });
+          }
       }
     });
     console.log("Connecting 2", multiplayerWebsocket);
@@ -609,7 +632,6 @@ var saveFile = function(fileid) {
 var saveDirtyFiles = function() {
   var promises = [saveFile()];
   for (var f in dirtyfiles) {
-    console.log("saving", f);
     promises.push(saveFile(f));
     delete dirtyfiles[f];
   }
@@ -697,8 +719,6 @@ var replayEdit = function(edit, moveCursor, fileid) {
     else
       return editor.session;
   }).then(function(session) {
-    console.log(session);
-
     if (edit[0] == "m") {
       if (moveCursor)
         editor.gotoLine(edit[2] + 1, edit[3]);
@@ -1248,7 +1268,6 @@ var saveToServer = function() {
     projRow = pr;
     var promises = [loadIDBc("history")];
     for (var i in pr.files) {
-      console.log("Loading", i);
       promises.push(loadIDBc("files", i));
       fileids.push(i);
     }
@@ -1260,7 +1279,6 @@ var saveToServer = function() {
     postdata["history"] = files.shift();
     postdata["files"] = {};
     for (var i in files) {
-      console.log(i, files);
       postdata.files[fileids[i]] = {
         "name": files[i].name,
         "contents": files[i].contents,

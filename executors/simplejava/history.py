@@ -65,17 +65,11 @@ def update_project_history(pid):
         "time": r.time,
         "row": r.row,
         "column": r.column,
-        "extra": r.extra,
-    } for r in dbhist[0:]]
-
-    response = {
-        "missed": missed,
-        "adjusted": adjusted
-    }
-
-    print("Response", json.dumps(response), flush=True)
+        "extra": json.loads(r.extra),
+        "client": r.client
+    } for r in dbhist[1:]]
 
     # TODO: return real response
-    return json.dumps({"op": "ack", "index": data["updates"][-1]["index"]})
+    return json.dumps({"op": "ack", "index": adjusted[-1]["index"], "missed": missed, "adjusted": adjusted[1:]})
 
 

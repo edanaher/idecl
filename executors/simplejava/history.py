@@ -32,7 +32,8 @@ def update_project_history(pid):
            client_first["index"] != dbhist[0].index):
             # TODO: negotiate update with client and/or rebase client
            print("Out of date client; refusing to log update", flush=True)
-           return "Failure"
+           if client_first["index"] != 0 or len(dbhist) > 0:
+               return json.dumps({"op": "ack", "error": "client is out of date"})
 
         offset = len(dbhist) - 1
 
@@ -74,6 +75,7 @@ def update_project_history(pid):
 
     print("Response", json.dumps(response), flush=True)
 
-    return "Success"
+    # TODO: return real response
+    return json.dumps({"op": "ack", "index": data["updates"][-1]["index"]})
 
 

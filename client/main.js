@@ -142,7 +142,7 @@ var putIDB = function(tabl, project, file, contents) {
       key = project;
       contents = file;
     }
-    console.log("Updating ", key, "from", tabl, project, file, contents);
+    //console.log("Updating ", key, "from", tabl, project, file, contents);
 
     var trans = db.transaction([tabl], "readwrite");
     var table = trans.objectStore(tabl);
@@ -496,11 +496,21 @@ var sendMultiplayerEdits = function() {
     console.log("Connecting", multiplayerWebsocket);
     multiplayerWebsocket = webSocketConnect("/multiplayer", {"op": "connect", "project": projectId(), "clientid": clientId}, function(data) {
       console.log("Multiplayer received", data, "from", clientId);
-      if (data.client_id != clientId && !debugSkipMultiplayerUpdates) {
-        replayingMultiplayerEdit = true;
-        replayEdit(data.rawupdates[0], false, data.file).then(function() {
-          replayingMultiplayerEdit = false;
-        });
+      switch (data.op) {
+        case "updates":
+          if (data.client_id != clientId && !debugSkipMultiplayerUpdates) {
+            replayingMultiplayerEdit = true;
+            var replay = currenthistory == -1 ? replayEdit(data.rawupdates[0], false, data.file) : Promise.resolve();
+            return replay.then(function() {
+              edits.push(data.rawupdates[0]);
+              replayingMultiplayerEdit = false;
+              displayeditstate();
+            });
+          }
+        case "ack":
+          console.log("Received ack:", data);
+          if (data.index)
+            putIDBc("history", "synced", data.index);
       }
     });
     console.log("Connecting 2", multiplayerWebsocket);
@@ -1314,7 +1324,6 @@ var loadFromServer = function(pid) {
   var files;
   return new Promise(function(resolve, reject) {
     xhr.onload = function() {
-      console.log("In XHR onload for loading from server")
       var serverResponse = JSON.parse(xhr.response);
       var serverFiles = serverResponse.files || {}
       if (Object.keys(serverFiles).length == 0) {
@@ -1345,21 +1354,41 @@ var loadFromServer = function(pid) {
         }
       }).then(function() {
         if (pid == projectId()) {
-          console.log("Removing file list");
           var filelist = document.getElementById("filelist");
           while (filelist.firstChild)
             filelist.removeChild(filelist.lastChild);
           sessions = [];
         }
 
-        if (serverResponse.history)
-          return updateIDBc("history", "all", null, serverResponse.history);
-        else
-          return Promise.resolve();
+        var promises = [];
+        var histloaded = false;
+        if (serverResponse.history) {
+          console.log("Checking history");
+          var oldedits = edits;
+          edits = [];
+          for (var i = 0; i < serverResponse.history.length; i++) {
+            var sedit = serverResponse.history[i];
+            if (sedit.index != i) {
+              logError(null, "Index mismatching loading history: item " + i + " has index " + sedit.index);
+              break;
+            }
+            edits.push([sedit.type, sedit.time, sedit.row, sedit.column, sedit.extra]);
+          }
+          console.log("Loaded", i, edits);
+          if (i == serverResponse.history.length) {
+            histloaded = true;
+            promises.push(updateIDBc("history", "all", null, serializeEdits()));
+            promises.push(updateIDBc("history", "synced", null, serverResponse.history.length));
+          } else {
+            edits = histedits;
+          }
+        }
+        if (!histloaded && serverResponse.full_history)
+          promises.push(updateIDBc("history", "all", null, serverResponse.full_history));
+        return promises;
       }).then(function() {
         var promises = []
         filenames = {};
-        console.log(serverFiles);
         for (var i in serverFiles) {
           putIDBc("files", i, {"name": serverFiles[i].name, "contents": serverFiles[i].contents});
           if (serverFiles[i].attrs)

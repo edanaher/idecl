@@ -63,11 +63,24 @@ def load_project(pid):
         """), [{"pid": pid}]).all()
         if (len(rows) == 0):
             return "{}"
-        history_row = conn.execute(text("SELECT history FROM history_full WHERE project_id=:pid"),[{"pid": pid}]).first()
+        full_history_row = conn.execute(text("SELECT history FROM history_full WHERE project_id=:pid"),[{"pid": pid}]).first()
+        history_rows = conn.execute(text("SELECT \"index\", type, time, row, column, extra FROM history WHERE project_id=:pid ORDER BY id"),[{"pid": pid}]).all()
         parent = conn.execute(text("SELECT parent_id FROM projects WHERE id=:pid"), [{"pid": pid}]).first()
 
     response = {"files": {r.file_id: {"name": r.name, "contents": r.contents, "attrs": attrsToString(r)} for r in rows},
             "parent": parent.parent_id}
-    if history_row and history_row.history:
-        response["history"] = history_row.history
+    if full_history_row and full_history_row.history:
+        response["full_history"] = full_history_row.history
+    if full_history_row and full_history_row.history:
+        response["full_history"] = full_history_row.history
+    print(repr(history_rows), flush=True)
+    if len(history_rows) > 0:
+        response["history"] = [{
+            "index": r.index,
+            "type": r.type,
+            "time": r.time,
+            "row": r.row,
+            "column": r.column,
+            "extra": json.loads(r.extra)
+        } for r in history_rows]
     return json.dumps(response)

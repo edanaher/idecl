@@ -93,11 +93,13 @@ while true do
         client_id = json.client_id,
         updates = json.updates
       }
-      local compile = ngx.location.capture("/projects/" .. tostring(json.project) .. "/history", {
+      local synchistory = ngx.location.capture("/projects/" .. tostring(json.project) .. "/history", {
         body=cjson.encode(pythonbody),
         method=ngx.HTTP_POST,
         headers={["Content-Type"]="application/json"}
       })
+
+      wb:send_text(synchistory.body)
 
       n:publish("project." .. project_id, data)
     else

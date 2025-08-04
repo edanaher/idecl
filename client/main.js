@@ -1379,7 +1379,7 @@ var loadFromServer = function(pid) {
           if (i == serverResponse.history.length) {
             histloaded = true;
             promises.push(updateIDBc("history", "all", null, serializeEdits()));
-            promises.push(updateIDBc("history", "synced", null, serverResponse.history.length));
+            promises.push(updateIDBc("history", "synced", null, serverResponse.history.length - 1));
           } else {
             edits = histedits;
           }

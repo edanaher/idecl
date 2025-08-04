@@ -71,8 +71,6 @@ def load_project(pid):
             "parent": parent.parent_id}
     if full_history_row and full_history_row.history:
         response["full_history"] = full_history_row.history
-    if full_history_row and full_history_row.history:
-        response["full_history"] = full_history_row.history
     print(repr(history_rows), flush=True)
     if len(history_rows) > 0:
         response["history"] = [{

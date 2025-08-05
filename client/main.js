@@ -507,6 +507,7 @@ var sendMultiplayerEdits = function() {
               edits.push(data.rawupdates[0]);
               replayingMultiplayerEdit = false;
               displayeditstate();
+              console.log("Synced after update is", edits.length - 1);
               return putIDBc("history", "synced", edits.length - 1);
             });
           }
@@ -519,19 +520,34 @@ var sendMultiplayerEdits = function() {
             // TODO: undo and replay around missed changes.
             replayingMultiplayerEdit = true;
             var replayPromise = Promise.resolve();
-            // Don't replay if in history.
             var missed = [];
             for (var i = 0; i < data.missed.length; i++) {
-              m = data.missed[i];
+              var m = data.missed[i];
               missed[i] = [m.type, m.time, m.row, m.column, m.extra];
             }
-            if (currenthistory == -1)
+            var adjusted = [];
+            for (var i = 0; i < data.adjusted.length; i++) {
+              var a = data.adjusted[i];
+              adjusted[i] = [a.type, a.time, a.row, a.column, a.extra];
+            }
+            // Replay if we're not back in history
+            // If we're in history but in recent commits that were adjusted, this gets messy.
+            // TODO: Handle that.
+            if (currenthistory == -1) {
+              for (var i = edits.length - 1; i >= edits.length - data.adjusted.length; i--)
+                replayPromise = replayPromise.then(replayEdit(reverseEdit(edits[i]), false, data.file));
               for (var i = 0; i < missed.length; i++)
                 replayPromise = replayPromise.then(replayEdit(missed[i], false, data.file));
+              for (var i = 0; i < adjusted.length; i++)
+                replayPromise = replayPromise.then(replayEdit(adjusted[i], false, data.file));
+            }
+            console.log("Replaying ", missed.length, "missed ops", missed);
+            console.log("Rebasing ", adjusted.length, "adjusted ops", adjusted);
             return replayPromise.then(function() {
-              edits = edits.concat(missed);
+              edits = edits.slice(0, edits.length - data.adjusted.length).concat(missed).concat(adjusted);
               replayingMultiplayerEdit = false;
               displayeditstate();
+              console.log("Synced after ack is", data.index);
               return putIDBc("history", "synced", data.index);
             });
           }
@@ -709,6 +725,30 @@ var getAbsoluteHistoryTime = function() {
       return edits[i][1] + offset;
     offset += edits[i][1];
   }
+}
+
+var reverseEdit = function(edit) {
+  switch (edit[0]) {
+    case "m":
+    case "s":
+    case "l":
+      return edit;
+    case "i":
+      return ["d", edit[1], edit[2], edit[3], edit[4]];
+    case "d":
+      return ["i", edit[1], edit[2], edit[3], edit[4]];
+    case "a":
+      // TODO: is this right?
+      return ["r", edit[1], edit[2], edit[3], edit[4]];
+    case "r":
+      // TODO: is this right?
+      return ["a", edit[1], edit[2], edit[3], edit[4]];
+    case "n":
+      // TODO: is this right?
+      return ["n", edit[1], edit[2], edit[3], [edit[4][0], edit[4][2], edit[4][1]]];
+  }
+  // TODO: handle every case
+  return edit;
 }
 
 var replayEdit = function(edit, moveCursor, fileid) {

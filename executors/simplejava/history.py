@@ -56,7 +56,7 @@ def update_project_history(pid):
         "time": u["time"],
         "row": u["row"], # TODO: adjust row and column
         "column": u["column"],
-        "extra": json.dumps(u.get("extra")), # TODO: and adjust extra as needed
+        "extra": u.get("extra"), # TODO: and adjust extra as needed
     } for u in data["updates"]]
 
     missed = [{

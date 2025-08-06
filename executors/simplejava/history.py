@@ -9,6 +9,14 @@ from permissions import Permissions as P, has_permission, requires_permission
 
 from db import engine
 
+def adjust_history(target, missed):
+    for m in missed:
+        if m["type"] == "i":
+            if m["row"] == target["row"] and m["column"] < target["column"]:
+                target["column"] += len(m["extra"])
+    return target
+
+
 @app.route("/projects/<pid>/history", methods=["POST"])
 @requires_permission(P.EDITPROJECT, "project")
 def update_project_history(pid):
@@ -50,15 +58,6 @@ def update_project_history(pid):
                   } for u in data["updates"]])
         conn.commit()
 
-    adjusted = [{
-        "index": u["index"] + offset,
-        "type": u["type"],
-        "time": u["time"],
-        "row": u["row"], # TODO: adjust row and column
-        "column": u["column"],
-        "extra": u.get("extra"), # TODO: and adjust extra as needed
-    } for u in data["updates"]]
-
     missed = [{
         "index": r.index,
         "type": r.type,
@@ -68,6 +67,16 @@ def update_project_history(pid):
         "extra": json.loads(r.extra),
         "client": r.client
     } for r in dbhist[1:]]
+
+    adjusted = [adjust_history({
+        "index": u["index"] + offset,
+        "type": u["type"],
+        "time": u["time"],
+        "row": u["row"], # TODO: adjust row and column
+        "column": u["column"],
+        "extra": u.get("extra"), # TODO: and adjust extra as needed
+    }, missed) for u in data["updates"]]
+
 
     # TODO: return real response
     return json.dumps({"op": "ack", "index": adjusted[-1]["index"], "missed": missed, "adjusted": adjusted[1:]})

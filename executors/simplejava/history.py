@@ -45,37 +45,37 @@ def update_project_history(pid):
 
         offset = len(dbhist) - 1
 
+        missed = [{
+            "index": r.index,
+            "type": r.type,
+            "time": r.time,
+            "row": r.row,
+            "column": r.column,
+            "extra": json.loads(r.extra),
+            "client": r.client
+        } for r in dbhist[1:]]
+
+        adjusted = [adjust_history({
+            "index": u["index"] + offset,
+            "type": u["type"],
+            "time": u["time"],
+            "row": u["row"], # TODO: adjust row and column
+            "column": u["column"],
+            "extra": u.get("extra"), # TODO: and adjust extra as needed
+        }, missed) for u in data["updates"]]
+
         conn.execute(text(f"INSERT INTO history (project_id, \"index\", type, time, row, column, extra, client, checksum) VALUES (:pid, :index, :type, :time, :row, :column, :extra, :client, :checksum) ON CONFLICT DO NOTHING"),
                 [{"pid": data["project_id"],
                   "client": data["client_id"],
-                  "index": u["index"] + offset,
-                  "type": u["type"],
-                  "time": u["time"],
-                  "row": u["row"],
-                  "column": u["column"],
-                  "extra": json.dumps(u.get("extra")),
-                  "checksum": u.get("checksum")
-                  } for u in data["updates"]])
+                  "index": a["index"],
+                  "type": a["type"],
+                  "time": a["time"],
+                  "row": a["row"],
+                  "column": a["column"],
+                  "extra": json.dumps(a.get("extra")),
+                  "checksum": a.get("checksum")
+                  } for a in adjusted])
         conn.commit()
-
-    missed = [{
-        "index": r.index,
-        "type": r.type,
-        "time": r.time,
-        "row": r.row,
-        "column": r.column,
-        "extra": json.loads(r.extra),
-        "client": r.client
-    } for r in dbhist[1:]]
-
-    adjusted = [adjust_history({
-        "index": u["index"] + offset,
-        "type": u["type"],
-        "time": u["time"],
-        "row": u["row"], # TODO: adjust row and column
-        "column": u["column"],
-        "extra": u.get("extra"), # TODO: and adjust extra as needed
-    }, missed) for u in data["updates"]]
 
 
     # TODO: return real response

@@ -66,9 +66,15 @@ def projects(classroom):
                                          (roles_permissions.tag_value is null or replace(roles_permissions.tag_value, '${user.id}', :user) = projects_tags.value)
               left join classrooms_tags on roles_permissions.tag_id = classrooms_tags.tag_id and classrooms_tags.classroom_id = projects.classroom_id
             ),
+            listableprojectswithtype as (
+              select projects.*, projects_tags.value as project_type
+              from listableprojectswithcanview as projects
+              left join projects_tags on projects_tags.project_id = projects.id
+              left join tags on projects_tags.tag_id = tags.id and tags.name = 'type'
+            ),
             listableprojectswithcloneable as (
               select projects.*, roles_permissions.id and (roles_permissions.tag_id is null or classrooms_tags.id is not null or projects_tags.id is not null) and cloned_as_assignment is null as cloneable
-              from listableprojectswithcanview as projects
+              from listableprojectswithtype as projects
               join users_roles on (projects.id = users_roles.project_id or users_roles.project_id is null)
                                and (users_roles.classroom_id is null or users_roles.classroom_id=:classroom)
                                and users_roles.user_id=:user
@@ -96,7 +102,7 @@ def projects(classroom):
             left join projects_tags on projects_tags.project_id = projects.id
             left join tags on projects_tags.tag_id = tags.id and (:all_tags or tags.display)
             group by projects.id
-            order by coalesce(case when projects.cloned_as_assignment then projects.parent_id else null end, projects.id) asc, username asc, projects.id asc
+            order by (case when project_type == 'sandbox' then 1 else 0 end), coalesce(case when projects.cloned_as_assignment then projects.parent_id else null end, case when project_type == 'sandbox' then null else projects.id end) asc, username asc, projects.id asc
         """), [{"classroom": classroom, "perm_list": P.LISTPROJECT.value, "user": current_user.euid, "perm_cloneassignment": P.CLONEPROJECTASASSIGNMENT.value, "perm_view": P.VIEWPROJECT.value, "all_tags": request.args.get("all_tags") == "1"}]).all()
     return render_template("projects.html", classroom=classroom_row, projects=projects, canmanageusers=has_permission(P.LISTUSERS), canaddproject=has_permission(P.ADDPROJECT), candeleteproject=has_permission(P.DELETEPROJECT), canaddsandbox=has_permission(P.ACTION, classroom_row.id, None, 0))
 

@@ -150,6 +150,7 @@
     {% set ns = namespace() %}
     {% set ns.lastproject = -1 %}
     {% set ns.curparent = -1 %}
+    {% set ns.sandbox = false %}
     {% for project in projects %}
     {% if project.canview or project.canclone == 1 or candeleteproject %}
       {% if ns.curparent == -1 and project.parent_id == ns.lastparent and project.cloned_as_assignment %}
@@ -161,10 +162,17 @@
         {% set ns.curparent = -1 %}
       {% endif %}
       {% set ns.lastparent = project.id %}
+      {% if not ns.sandbox and project.project_type == "sandbox" %}
+        {% set ns.sandbox = true %}
+        <li> Sandboxes</li>
+        <ul class="projectsublist hidden">
+      {% endif %}
       <li>
         {% if project.canview %}
           <a href="/projects/{{ project.id }}">
-            {%- if project.username and project.email -%}
+            {%- if (project.username or project.email) and ns.sandbox and canmanageusers -%}
+              {{ project.username or project.email }} - {{ project.name -}}
+            {%- elif project.username and project.email -%}
               {{ project.name | replace(project.email, project.username) -}}
             {% else -%}
               {{ project.name -}}

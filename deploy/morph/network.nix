@@ -78,6 +78,7 @@
 #action = [ "systemctl" "restart" "idecl" ];
     };
 
+    nixpkgs.hostPlatform = "x86_64-linux";
     networking.firewall.allowedTCPPorts = [ 80 443 ];
     security.acme.acceptTerms = true;
     security.acme.defaults.email = "ssl@edanaher.net";

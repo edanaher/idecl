@@ -169,9 +169,12 @@
       {% endif %}
       <li>
         {% if project.canview %}
+          {%- if (project.username or project.email) and ns.sandbox and canmanageusers -%}
+            {{ project.username or project.email }} - 
+          {% endif %}
           <a href="/projects/{{ project.id }}">
             {%- if (project.username or project.email) and ns.sandbox and canmanageusers -%}
-              {{ project.username or project.email }} - {{ project.name -}}
+              {{ project.name -}}
             {%- elif project.username and project.email -%}
               {{ project.name | replace(project.email, project.username) -}}
             {% else -%}
@@ -199,7 +202,7 @@
       </li>
     {% endif %}
     {% endfor %}
-    {% if ns.curparent != -1 %}
+    {% if ns.curparent != -1 or ns.sandbox %}
       </ul>
     {% endif %}
   </ul>

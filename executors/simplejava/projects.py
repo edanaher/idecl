@@ -146,6 +146,21 @@ def project(pid):
                 JOIN users ON projects.owner = users.id
                 WHERE projects.parent_id=:pid
             """), [{"pid": row.parent_id}]).all()
+        clonable_classrooms = None
+        # TODO: Handle addproject permissions on other projects but not this one.
+        print("Checking clonable...")
+        if has_permission(P.ADDPROJECT, row.classroom_id) and not row.cloned_as_assignment:
+            print("Checked clonable")
+            # TODO: handle tags properly here
+            clonable_classrooms = conn.execute(text("""
+                SELECT classrooms.id, classrooms.name
+                FROM classrooms
+                JOIN users_roles ON classrooms.id == users_roles.classroom_id OR (users_roles.classroom_id IS NULL AND users_roles.project_id IS NULL)
+                JOIN roles_permissions ON users_roles.role_id = roles_permissions.role_id AND roles_permissions.permission_id=3
+                WHERE users_roles.user_id=:uid AND permission_id = :perm
+                AND roles_permissions.tag_id IS NULL
+            """), [{"uid": current_user.euid, "perm": P.ADDPROJECT.value}]).all()
+            print("clonable classrooms", clonable_classrooms)
 
     if row == None:
         return redirect(f"/classrooms/{classroom}/projects")
@@ -157,6 +172,7 @@ def project(pid):
             # TODO: Cloning a student's project would be nice for experimenting.  Enable it later once behavior is clearer.
             # TODO: these permissions should also check on the project.
             canclone=has_permission(P.ADDPROJECT, row.classroom_id) and not row.cloned_as_assignment,
+            clonable_classrooms=clonable_classrooms,
             canuploadfile=has_permission(P.UPLOADFILE, row.classroom_id),
             canpublish=has_permission(P.ADDPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,
             canunpublish=has_permission(P.DELETEPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,

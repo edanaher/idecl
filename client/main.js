@@ -1284,10 +1284,15 @@ var cloneProject = function(from, to, assignment) {
   }
 }
 
-var closeModal = function(e) {
+var closeModal = function() {
+  var modalContainer = document.getElementById("modalcontainer")
+  modalContainer.classList.add("hidden");
+}
+
+var closeModalTop = function(e) {
   var modalContainer = document.getElementById("modalcontainer")
   if (e.target.id == "modalblackout")
-    modalContainer.classList.add("hidden");
+    closeModal();
 }
 
 var showModal = function() {
@@ -1800,7 +1805,8 @@ window.onload = function() {
     addClickListenerById("switchtheme", toggleDarkMode);
     addClickListenerById("clearterminal", function() { term.write("\x1b[2J\x1b[3J\x1b[H"); });
     addClickListenerById("toggleinstructions", toggleinstructions);
-    addClickListenerById("modalblackout", closeModal);
+    addClickListenerById("modalblackout", closeModalTop);
+    addClickListenerById("cancelclone", closeModal);
   } catch (error) {
     logError(null, error);
   }

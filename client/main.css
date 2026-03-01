@@ -638,3 +638,8 @@ span.tag {
   border-style: solid;
   border-radius: 0.5em;
 }
+
+#cloneprojectmodal > div {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}

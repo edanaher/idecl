@@ -13,6 +13,16 @@
     <script type="text/javascript">var classroom_id = {{ classroom_id }};</script>
   </head>
   <body class="doflex">
+    <div id="modalcontainer" class="hidden">
+      <div id="modalblackout"></div>
+      <div id="cloneprojectmodal" class="modal">
+        Clone to classroom: <select>
+          {% for classroom in clonable_classrooms -%}
+          <option>{{classroom.name}}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
     <div id="topbar">
       <div id="logo"><a href="/">idecl</a></div>
       <div id="classroomname"><a href="/classrooms/{{ classroom_id }}/projects">{{ classroom_name }}</a></div> &gt;

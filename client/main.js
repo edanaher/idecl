@@ -1284,7 +1284,20 @@ var cloneProject = function(from, to, assignment) {
   }
 }
 
+var closeModal = function(e) {
+  var modalContainer = document.getElementById("modalcontainer")
+  if (e.target.id == "modalblackout")
+    modalContainer.classList.add("hidden");
+}
+
+var showModal = function() {
+  var modalContainer = document.getElementById("modalcontainer")
+  modalContainer.classList.remove("hidden");
+}
+
 var cloneProjectInit = function(assignment) {
+  showModal();
+  return;
   var name = prompt("What is the new project name?");
   if (!name)
     return;
@@ -1787,6 +1800,7 @@ window.onload = function() {
     addClickListenerById("switchtheme", toggleDarkMode);
     addClickListenerById("clearterminal", function() { term.write("\x1b[2J\x1b[3J\x1b[H"); });
     addClickListenerById("toggleinstructions", toggleinstructions);
+    addClickListenerById("modalblackout", closeModal);
   } catch (error) {
     logError(null, error);
   }

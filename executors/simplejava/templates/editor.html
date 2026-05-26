@@ -18,14 +18,14 @@
       <div id="cloneprojectmodal" class="modal">
         {% if canclone %}
           <div>
-            Clone to classroom: <select>
+            Clone to classroom: <select id="cloneprojectclassroom">
               {% for classroom in clonable_classrooms -%}
-              <option>{{classroom.name}}</option>
+              <option value="{{classroom.id}}">{{classroom.name}}</option>
               {% endfor %}
             </select>
           </div>
           <div>
-            Project name: <input value="Copy of {{project_name}}"></input>
+            Project name: <input id="cloneprojectname" value="Copy of {{project_name}}"></input>
           </div>
           <div>
             <button id="confirmclone">Clone</button>

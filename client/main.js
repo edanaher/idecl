@@ -1300,18 +1300,22 @@ var showModal = function() {
   modalContainer.classList.remove("hidden");
 }
 
-var cloneProjectInit = function(assignment) {
+var cloneProjectDialog = function(assignment) {
   showModal();
-  return;
-  var name = prompt("What is the new project name?");
-  if (!name)
-    return;
+}
+
+
+var cloneProjectInit = function() {
+  var name = document.getElementById("cloneprojectname").value;
+  var classroom = document.getElementById("cloneprojectclassroom").value;
+
+  closeModal();
 
   var xhr = new XMLHttpRequest();
-  xhr.open("POST", "/classrooms/" + classroom_id + "/projects", true);
+  xhr.open("POST", "/classrooms/" + classroom + "/projects", true);
   xhr.onload = function() {
     var pid = xhr.response;
-    cloneProject(projectId(), pid, assignment);
+    cloneProject(projectId(), pid, false);
     alert("Cloned to project " + name);
   };
   var formdata = new FormData();
@@ -1777,7 +1781,7 @@ window.onload = function() {
     });
     editor.on("blur", saveFile);
     editor.on("change", markDirty);
-    addClickListenerById("cloneproject", function() { cloneProjectInit(false); });
+    addClickListenerById("cloneproject", function() { cloneProjectDialog(false); });
     addClickListenerById("publish", publish);
     addClickListenerById("submit", submit);
     addClickListenerById("compare50", compare50);
@@ -1806,6 +1810,7 @@ window.onload = function() {
     addClickListenerById("clearterminal", function() { term.write("\x1b[2J\x1b[3J\x1b[H"); });
     addClickListenerById("toggleinstructions", toggleinstructions);
     addClickListenerById("modalblackout", closeModalTop);
+    addClickListenerById("confirmclone", cloneProjectInit);
     addClickListenerById("cancelclone", closeModal);
   } catch (error) {
     logError(null, error);

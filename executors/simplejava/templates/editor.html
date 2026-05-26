@@ -16,20 +16,22 @@
     <div id="modalcontainer" class="hidden">
       <div id="modalblackout"></div>
       <div id="cloneprojectmodal" class="modal">
-        <div>
-          Clone to classroom: <select>
-            {% for classroom in clonable_classrooms -%}
-            <option>{{classroom.name}}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          Project name: <input value="Copy of {{project_name}}"></input>
-        </div>
-        <div>
-          <button id="confirmclone">Clone</button>
-          <button id="cancelclone">Cancel</button>
-        </div>
+        {% if canclone %}
+          <div>
+            Clone to classroom: <select>
+              {% for classroom in clonable_classrooms -%}
+              <option>{{classroom.name}}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            Project name: <input value="Copy of {{project_name}}"></input>
+          </div>
+          <div>
+            <button id="confirmclone">Clone</button>
+            <button id="cancelclone">Cancel</button>
+          </div>
+        {% endif %}
       </div>
     </div>
     <div id="topbar">

@@ -146,11 +146,10 @@ def project(pid):
                 JOIN users ON projects.owner = users.id
                 WHERE projects.parent_id=:pid
             """), [{"pid": row.parent_id}]).all()
+        canclone = has_permission(P.ADDPROJECT, row.classroom_id) and not row.cloned_as_assignment,
         clonable_classrooms = None
         # TODO: Handle addproject permissions on other projects but not this one.
-        print("Checking clonable...")
-        if has_permission(P.ADDPROJECT, row.classroom_id) and not row.cloned_as_assignment:
-            print("Checked clonable")
+        if canclone:
             # TODO: handle tags properly here
             clonable_classrooms = conn.execute(text("""
                 SELECT classrooms.id, classrooms.name
@@ -171,7 +170,7 @@ def project(pid):
             classroom_id=row.classroom_id,
             # TODO: Cloning a student's project would be nice for experimenting.  Enable it later once behavior is clearer.
             # TODO: these permissions should also check on the project.
-            canclone=has_permission(P.ADDPROJECT, row.classroom_id) and not row.cloned_as_assignment,
+            canclone=canclone,
             clonable_classrooms=clonable_classrooms,
             canuploadfile=has_permission(P.UPLOADFILE, row.classroom_id),
             canpublish=has_permission(P.ADDPROJECTTAG, row.classroom_id) and not row.cloned_as_assignment,
